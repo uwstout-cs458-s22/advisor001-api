@@ -267,4 +267,71 @@ describe('User Model', () => {
       expect(db.query.mock.calls).toHaveLength(0);
     });
   });
+
+  describe('editing a user', () => {
+    test('User.edit', async () => {
+      const data = dataForGetUser(1);
+      const row = data[0];
+      row.enable = false;
+      row.role = 'admin';
+      const newValues = { enable: row.enable, role: row.role };
+
+      db.query.mockResolvedValue({ rows: data });
+      const user = await User.edit(row.userId, newValues);
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe(
+        'UPDATE $4 SET "enable"=$2, "role"=$3 WHERE "userId"=$1;'
+      );
+      console.log(db.query.mock.calls);
+      expect(db.query.mock.calls[0][1]).toHaveLength(4);
+      expect(db.query.mock.calls[0][1][0]).toBe(row.userId);
+      expect(db.query.mock.calls[0][1][1]).toBe(row.enable);
+      expect(db.query.mock.calls[0][1][2]).toBe(row.role);
+      expect(db.query.mock.calls[0][1][3]).toBe('user');
+      for (const key in Object.keys(row)) {
+        expect(user).toHaveProperty(key, row[key]);
+      }
+    });
+
+    test('User.edit with database error', async () => {
+      const data = dataForGetUser(1);
+      const row = data[0];
+      row.enable = false;
+      row.role = 'admin';
+      const newValues = { enable: row.enable, role: row.role };
+
+      // error thrown during call to db query
+      db.query.mockRejectedValueOnce(new Error('a testing database error'));
+      await expect(User.edit(row.userId, newValues)).rejects.toThrowError(
+        'a testing database error'
+      );
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe(
+        'UPDATE $4 SET "enable"=$2, "role"=$3 WHERE "userId"=$1;'
+      );
+      expect(db.query.mock.calls[0][1]).toHaveLength(4);
+      expect(db.query.mock.calls[0][1][0]).toBe(row.userId);
+      expect(db.query.mock.calls[0][1][1]).toBe(row.enable);
+      expect(db.query.mock.calls[0][1][2]).toBe(row.role);
+      expect(db.query.mock.calls[0][1][3]).toBe('user');
+    });
+
+    test('User.edit with bad input', async () => {
+      await expect(User.edit('userId', 'bad input')).rejects.toThrowError(
+        'UserId and new Status and Role are required.'
+      );
+      expect(db.query.mock.calls).toHaveLength(0);
+    });
+
+    test('User.edit with no input', async () => {
+      await expect(User.edit()).rejects.toThrowError(
+        'UserId and new Status and Role are required.'
+      );
+      expect(db.query.mock.calls).toHaveLength(0);
+    });
+  });
 });
