@@ -60,7 +60,22 @@ async function create(userId, email) {
   }
 }
 
-async function deleteUser(userId) { }
+// if successful delete, return user was deleted
+async function deleteUser(userId) {
+  // userId is required
+  if (userId) {
+    const { text, params } = whereParams({
+      userId: userId,
+    });
+
+    const res = await db.query(`DELETE FROM "user" ${text};`, params);
+    if (res.rows.length > 0) {
+      return 'the user was deleted';
+    }
+  } else {
+    throw HttpError(400, 'UserId is required.');
+  }
+}
 
 module.exports = {
   findOne,
