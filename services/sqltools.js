@@ -27,7 +27,32 @@ function insertValues(values) {
   return { text: '', params: [] };
 }
 
+function updateValues(whereValues, setValues, table) {
+  if (table && setValues && whereValues) {
+    const setValuesLength = Object.keys(setValues).length;
+    const whereValuesLength = Object.keys(whereValues).length;
+
+    if (setValuesLength > 0 && whereValuesLength > 0) {
+      const whereText = whereParams(whereValues).text;
+      const setText = Object.keys(setValues)
+        .map((col, index) => `"${col}"=$${index + whereValuesLength + 1}`)
+        .join(', ');
+      const text = `UPDATE $${
+        whereValuesLength + setValuesLength + 1
+      } SET ${setText} ${whereText};`;
+      const params = Object.values(whereValues).concat(Object.values(setValues)).concat(table);
+      return {
+        text: text,
+        params: params,
+      };
+    }
+  }
+
+  return { text: '', params: [] };
+}
+
 module.exports = {
   whereParams: whereParams,
   insertValues: insertValues,
+  updateValues: updateValues,
 };
