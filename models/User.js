@@ -60,8 +60,11 @@ async function create(userId, email) {
   }
 }
 
+async function deleteUser(userId) { }
+
 module.exports = {
   findOne,
   findAll,
   create,
+  deleteUser,
 };

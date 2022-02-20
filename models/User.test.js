@@ -267,4 +267,41 @@ describe('User Model', () => {
       expect(db.query.mock.calls).toHaveLength(0);
     });
   });
+
+  describe('deleting a user', () => {
+    test('User.deleteUser', async () => {
+      const data = dataForGetUser(1);
+      const userId = data[0].userId;
+
+      db.query.mockResolvedValue({ rows: data });
+      const deleteUser = await User.deleteUser(userId);
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "user" WHERE "userId"=$1;');
+      expect(db.query.mock.calls[0][1]).toHaveLength(1);
+      expect(db.query.mock.calls[0][1][0]).toBe(userId);
+      expect(deleteUser).toBe('the user was deleted');
+    });
+
+    test('User.deleteUser with database error', async () => {
+      const data = dataForGetUser(1);
+      const userId = data[0].userId;
+
+      // error thrown during call to db query
+      db.query.mockRejectedValueOnce(new Error('a testing database error'));
+      await expect(User.deleteUser(userId)).rejects.toThrowError('a testing database error');
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "user" WHERE "userId"=$1;');
+      expect(db.query.mock.calls[0][1]).toHaveLength(1);
+      expect(db.query.mock.calls[0][1][0]).toBe(userId);
+    });
+
+    test('User.deleteUser with no input', async () => {
+      await expect(User.deleteUser()).rejects.toThrowError('UserId is required.');
+      expect(db.query.mock.calls).toHaveLength(0);
+    });
+  });
 });
