@@ -268,7 +268,6 @@ describe('User Model', () => {
     });
   });
 
-
   describe('deleting a user', () => {
     test('User.deleteUser', async () => {
       const data = dataForGetUser(1);
@@ -302,7 +301,8 @@ describe('User Model', () => {
 
     test('User.deleteUser with no input', async () => {
       await expect(User.deleteUser()).rejects.toThrowError('UserId is required.');
-    }
+    });
+  });
   describe('editing a user', () => {
     test('User.edit', async () => {
       const data = dataForGetUser(1);
