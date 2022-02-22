@@ -66,5 +66,21 @@ module.exports = () => {
     }
   });
 
+  router.put('/:userId', authorizeSession, async (req, res, next) => {
+    try {
+      const userId = req.params.userId;
+      if (!userId) {
+        throw HttpError(400, 'Required Parameters Missing');
+      }
+      const user = await User.findOne({ userId: userId });
+
+      if (isEmpty(user)) {
+        throw new HttpError.NotFound();
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return router;
 };
