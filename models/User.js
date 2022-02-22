@@ -1,7 +1,7 @@
 const HttpError = require('http-errors');
 const log = require('loglevel');
 const { db } = require('../services/database');
-const { whereParams, insertValues } = require('../services/sqltools');
+const { whereParams, insertValues, updateValues } = require('../services/sqltools');
 const env = require('../services/environment');
 
 // if found return { ... }
@@ -60,6 +60,7 @@ async function create(userId, email) {
   }
 }
 
+
 // if successful delete, return user was deleted
 async function deleteUser(userId) {
   // userId is required
@@ -75,6 +76,22 @@ async function deleteUser(userId) {
   } else {
     throw HttpError(400, 'UserId is required.');
   }
+async function edit(userId, newValues) {
+  if (userId && newValues && typeof newValues === 'object') {
+    const { text, params } = updateValues(
+      { userId: userId },
+      { enable: newValues.enable, role: newValues.role },
+      'user'
+    );
+
+    const res = await db.query(text, params);
+
+    if (res.rows.length > 0) {
+      return res.rows[0];
+    }
+  } else {
+    throw HttpError(400, 'UserId and new Status and Role are required.');
+  }
 }
 
 module.exports = {
@@ -82,4 +99,5 @@ module.exports = {
   findAll,
   create,
   deleteUser,
+  edit,
 };
