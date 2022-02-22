@@ -60,7 +60,6 @@ async function create(userId, email) {
   }
 }
 
-
 // if successful delete, return user was deleted
 async function deleteUser(userId) {
   // userId is required
@@ -76,6 +75,7 @@ async function deleteUser(userId) {
   } else {
     throw HttpError(400, 'UserId is required.');
   }
+}
 async function edit(userId, newValues) {
   if (userId && newValues && typeof newValues === 'object') {
     const { text, params } = updateValues(
