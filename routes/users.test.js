@@ -410,3 +410,39 @@ describe('POST /users', () => {
     });
   });
 });
+
+describe('DELETE /users', () => {
+  beforeEach(() => {
+    User.create.mockReset();
+    User.create.mockResolvedValue(null);
+    User.findOne.mockReset();
+    User.findOne.mockResolvedValue(null);
+    User.findAll.mockReset();
+    User.findAll.mockResolvedValue(null);
+  });
+
+  async function callGetOnUserRoute(row, key = 'id') {
+    const id = row[key];
+    User.findOne.mockResolvedValueOnce(row);
+    const response = await request(app).get(`/users/${id}`);
+    return response;
+  }
+
+  test('should respond with a 200 status code when user exists and is deleted', async () => {
+    const data = dataForGetUser(1, 100);
+    let response = await callGetOnUserRoute(data[0]);
+    response = await request(app).delete(data[0]);
+    expect(response.statusCode).toBe(200);
+  });
+
+  test('should respond with a 404 status code when user does NOT exists', async () => {
+    User.findOne.mockResolvedValueOnce({});
+    const response = await request(app).delete(`/users/100`);
+    expect(response.statusCode).toBe(404);
+  });
+
+  test('should respond with a 400 status code when passing empty string', async () => {
+    const response = await request(app).delete('/users').send('');
+    expect(response.statusCode).toBe(400);
+  });
+});

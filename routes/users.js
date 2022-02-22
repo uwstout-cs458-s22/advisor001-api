@@ -66,5 +66,23 @@ module.exports = () => {
     }
   });
 
+  router.delete('/:userId', authorizeSession, async (req, res, next) => {
+    try {
+      const userId = req.params.userId;
+      let user = await User.findOne({ userId: userId });
+      if (isEmpty(user)) {
+        throw new HttpError.NotFound();
+      }
+      if (!userId) {
+        throw HttpError(400, 'Bad Parameters');
+      }
+
+      user = await User.deleteUser(userId);
+      res.status(200);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return router;
 };
