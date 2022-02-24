@@ -4,6 +4,12 @@ const { db } = require('../services/database');
 const { whereParams, insertValues, updateValues } = require('../services/sqltools');
 const env = require('../services/environment');
 
+// permission levels
+const rolePermissions = {
+  admin: 999,
+  user: 0,
+};
+
 // if found return { ... }
 // if not found return {}
 // if db error, db.query will throw a rejected promise
@@ -94,10 +100,15 @@ async function edit(userId, newValues) {
   }
 }
 
+function hasMinimumPermission(user, role) {
+  return rolePermissions[user.role] >= rolePermissions[role];
+}
+
 module.exports = {
   findOne,
   findAll,
   create,
   deleteUser,
   edit,
+  hasMinimumPermission,
 };
