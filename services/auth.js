@@ -8,10 +8,14 @@ async function authorizeSession(req, res, next) {
   if (isString(authHeader) && authHeader.startsWith('Bearer ') && authHeader.length > 7) {
     const token = authHeader.substring(7, authHeader.length);
     try {
-      await authenticateStytchSession(token);
+      // capture this info
+      const result = await authenticateStytchSession(token);
       log.debug(
         `${req.method} ${req.originalUrl} success: authorizeSession validated token ${token}`
       );
+      // add user info to the request data
+      req.stytchAuthenticationInfo = result;
+      // we will use it in our route
       next();
     } catch (err) {
       next(HttpError(err.status_code, `Authorization Failed: ${err.error_message}`));
