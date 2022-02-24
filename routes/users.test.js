@@ -12,6 +12,7 @@ jest.mock('../models/User.js', () => {
     findOne: jest.fn(),
     findAll: jest.fn(),
     create: jest.fn(),
+    deleteUser: jest.fn(),
   };
 });
 
@@ -417,20 +418,20 @@ describe('DELETE /users', () => {
     User.create.mockResolvedValue(null);
     User.findOne.mockReset();
     User.findOne.mockResolvedValue(null);
-    User.findAll.mockReset();
-    User.findAll.mockResolvedValue(null);
+    User.deleteUser.mockReset();
+    User.deleteUser.mockResolvedValue(null);
   });
 
-  async function callGetOnUserRoute(row, key = 'id') {
+  async function callDeleteOnUserRoute(row, key = 'id') {
     const id = row[key];
     User.findOne.mockResolvedValueOnce(row);
-    const response = await request(app).get(`/users/${id}`);
+    const response = await request(app).delete(`/users/${id}`);
     return response;
   }
 
   test('should respond with a 200 status code when user exists and is deleted', async () => {
     const data = dataForGetUser(1, 100);
-    let response = await callGetOnUserRoute(data[0]);
+    let response = await callDeleteOnUserRoute(data[0]);
     response = await request(app).delete(data[0]);
     expect(response.statusCode).toBe(200);
   });
