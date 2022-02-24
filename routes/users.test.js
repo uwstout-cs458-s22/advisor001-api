@@ -252,6 +252,20 @@ describe('GET /users', () => {
   });
 });
 
+describe('PUT /users', () => {
+  describe('should update based on information given', () => {});
+
+  describe("should respond 404 when user we're trying to edit is not found", () => {});
+
+  describe('should respond 200 when successfully edited', () => {});
+
+  describe('should respond 400 when queried with missing or malformed parameters', () => {});
+
+  describe("should respond 401 when you don't have edit permissions", () => {});
+
+  describe('should respond 500 for unexpected errors', () => {});
+});
+
 describe('POST /users', () => {
   beforeEach(() => {
     User.findOne.mockReset();
