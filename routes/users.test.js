@@ -431,8 +431,7 @@ describe('DELETE /users', () => {
 
   test('should respond with a 200 status code when user exists and is deleted', async () => {
     const data = dataForGetUser(1, 100);
-    let response = await callDeleteOnUserRoute(data[0]);
-    response = await request(app).delete(data[0]);
+    const response = await callDeleteOnUserRoute(data[0]);
     expect(response.statusCode).toBe(200);
   });
 
