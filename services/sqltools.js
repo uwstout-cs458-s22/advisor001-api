@@ -27,8 +27,8 @@ function insertValues(values) {
   return { text: '', params: [] };
 }
 
-function updateValues(whereValues, setValues, table) {
-  if (table && setValues && whereValues) {
+function updateValues(whereValues, setValues) {
+  if (setValues && whereValues) {
     const setValuesLength = Object.keys(setValues).length;
     const whereValuesLength = Object.keys(whereValues).length;
 
@@ -37,10 +37,8 @@ function updateValues(whereValues, setValues, table) {
       const setText = Object.keys(setValues)
         .map((col, index) => `"${col}"=$${index + whereValuesLength + 1}`)
         .join(', ');
-      const text = `UPDATE $${
-        whereValuesLength + setValuesLength + 1
-      } SET ${setText} ${whereText};`;
-      const params = Object.values(whereValues).concat(Object.values(setValues)).concat(table);
+      const text = `SET ${setText} ${whereText}`;
+      const params = Object.values(whereValues).concat(Object.values(setValues));
       return {
         text: text,
         params: params,
