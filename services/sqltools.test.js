@@ -65,46 +65,36 @@ describe('sql utility tests', () => {
     test('updateValues with parameters', async () => {
       const { text, params } = updateValues(
         { column3: 3, column4: '4' },
-        { column1: 1, column2: '2' },
-        'user'
+        { column1: 1, column2: '2' }
       );
-      expect(text).toBe(
-        'UPDATE $5 SET "column1"=$3, "column2"=$4 WHERE "column3"=$1 AND "column4"=$2;'
-      );
-      expect(params).toHaveLength(5);
+      expect(text).toBe('SET "column1"=$3, "column2"=$4 WHERE "column3"=$1 AND "column4"=$2');
+      expect(params).toHaveLength(4);
       expect(params[0]).toBe(3);
       expect(params[1]).toBe('4');
       expect(params[2]).toBe(1);
       expect(params[3]).toBe('2');
-      expect(params[4]).toBe('user');
     });
 
     test('updateValues with no where values', async () => {
-      const { text, params } = updateValues({}, { column1: 1, column2: '2' }, 'user');
+      const { text, params } = updateValues({}, { column1: 1, column2: '2' });
       expect(text).toBe('');
       expect(params).toHaveLength(0);
     });
 
     test('updateValues with no set values', async () => {
-      const { text, params } = updateValues({ column3: 3, column4: '4' }, {}, 'user');
-      expect(text).toBe('');
-      expect(params).toHaveLength(0);
-    });
-
-    test('updateValues with no table', async () => {
       const { text, params } = updateValues({ column3: 3, column4: '4' }, {});
       expect(text).toBe('');
       expect(params).toHaveLength(0);
     });
 
     test('updateValues with bad where values', async () => {
-      const { text, params } = updateValues(1234, { column1: 1, column2: '2' }, 'user');
+      const { text, params } = updateValues(1234, { column1: 1, column2: '2' });
       expect(text).toBe('');
       expect(params).toHaveLength(0);
     });
 
     test('updateValues with bad set values', async () => {
-      const { text, params } = updateValues({ column3: 3, column4: '4' }, 1234, 'user');
+      const { text, params } = updateValues({ column3: 3, column4: '4' }, 1234);
       expect(text).toBe('');
       expect(params).toHaveLength(0);
     });
