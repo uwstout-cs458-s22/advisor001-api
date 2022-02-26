@@ -86,11 +86,10 @@ async function edit(userId, newValues) {
   if (userId && newValues && typeof newValues === 'object') {
     const { text, params } = updateValues(
       { userId: userId },
-      { enable: newValues.enable, role: newValues.role },
-      'user'
+      { enable: newValues.enable, role: newValues.role }
     );
 
-    const res = await db.query(text, params);
+    const res = await db.query(`UPDATE "user" ${text} RETURNING *;`, params);
 
     if (res.rows.length > 0) {
       return res.rows[0];
