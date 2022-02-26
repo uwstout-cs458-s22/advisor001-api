@@ -317,14 +317,13 @@ describe('User Model', () => {
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
       expect(db.query.mock.calls[0][0]).toBe(
-        'UPDATE $4 SET "enable"=$2, "role"=$3 WHERE "userId"=$1;'
+        'UPDATE "user" SET "enable"=$2, "role"=$3 WHERE "userId"=$1 RETURNING *;'
       );
       console.log(db.query.mock.calls);
-      expect(db.query.mock.calls[0][1]).toHaveLength(4);
+      expect(db.query.mock.calls[0][1]).toHaveLength(3);
       expect(db.query.mock.calls[0][1][0]).toBe(row.userId);
       expect(db.query.mock.calls[0][1][1]).toBe(row.enable);
       expect(db.query.mock.calls[0][1][2]).toBe(row.role);
-      expect(db.query.mock.calls[0][1][3]).toBe('user');
       for (const key in Object.keys(row)) {
         expect(user).toHaveProperty(key, row[key]);
       }
@@ -346,13 +345,12 @@ describe('User Model', () => {
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
       expect(db.query.mock.calls[0][0]).toBe(
-        'UPDATE $4 SET "enable"=$2, "role"=$3 WHERE "userId"=$1;'
+        'UPDATE "user" SET "enable"=$2, "role"=$3 WHERE "userId"=$1 RETURNING *;'
       );
-      expect(db.query.mock.calls[0][1]).toHaveLength(4);
+      expect(db.query.mock.calls[0][1]).toHaveLength(3);
       expect(db.query.mock.calls[0][1][0]).toBe(row.userId);
       expect(db.query.mock.calls[0][1][1]).toBe(row.enable);
       expect(db.query.mock.calls[0][1][2]).toBe(row.role);
-      expect(db.query.mock.calls[0][1][3]).toBe('user');
     });
 
     test('User.edit with bad input', async () => {
