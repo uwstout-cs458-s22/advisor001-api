@@ -100,7 +100,7 @@ async function edit(userId, newValues) {
 }
 
 function hasMinimumPermission(user, role) {
-  return rolePermissions[user.role] >= rolePermissions[role];
+  return rolePermissions[user?.role] >= rolePermissions[role];
 }
 
 module.exports = {
