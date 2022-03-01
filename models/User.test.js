@@ -367,4 +367,53 @@ describe('User Model', () => {
       expect(db.query.mock.calls).toHaveLength(0);
     });
   });
+  describe('checking user permissions with hasMinimumPermission', () => {
+    test('do not allow unprivieged user to use admin role features', () => {
+      const data = dataForGetUser(1);
+      const testUser = data[0];
+      expect(User.hasMinimumPermission(testUser, 'admin')).toBe(false);
+      expect(User.hasMinimumPermission(testUser, 'user')).toBe(true);
+    });
+
+    test('allow admins to use all permissions', () => {
+      const data = dataForGetUser(1);
+      const testUser = data[0];
+      // make this an admin
+      testUser.role = 'admin';
+      // run tests
+      expect(User.hasMinimumPermission(testUser, 'admin')).toBe(true);
+      expect(User.hasMinimumPermission(testUser, 'user')).toBe(true);
+    });
+
+    test('standard user test with invalid permission', () => {
+      const data = dataForGetUser(1);
+      const testUser = data[0];
+      expect(User.hasMinimumPermission(testUser, '')).toBe(false);
+      expect(User.hasMinimumPermission(testUser, undefined)).toBe(false);
+      expect(User.hasMinimumPermission(testUser, {})).toBe(false);
+    });
+
+    test('admin test with invalid permission', () => {
+      const data = dataForGetUser(1);
+      const testUser = data[0];
+      // make this an admin
+      testUser.role = 'admin';
+      // run tests
+      expect(User.hasMinimumPermission(testUser, '')).toBe(false);
+      expect(User.hasMinimumPermission(testUser, undefined)).toBe(false);
+      expect(User.hasMinimumPermission(testUser, {})).toBe(false);
+    });
+
+    test('with an empty or invalid user', () => {
+      expect(User.hasMinimumPermission({}, 'admin')).toBe(false);
+      expect(User.hasMinimumPermission({}, 'user')).toBe(false);
+      expect(User.hasMinimumPermission({}, '')).toBe(false);
+      expect(User.hasMinimumPermission(undefined, 'admin')).toBe(false);
+      expect(User.hasMinimumPermission(undefined, 'user')).toBe(false);
+      expect(User.hasMinimumPermission(undefined, '')).toBe(false);
+      expect(User.hasMinimumPermission([], 'admin')).toBe(false);
+      expect(User.hasMinimumPermission([], 'user')).toBe(false);
+      expect(User.hasMinimumPermission([], '')).toBe(false);
+    });
+  });
 });
