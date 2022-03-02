@@ -70,7 +70,7 @@ module.exports = () => {
   router.put('/:userId', authorizeSession, async (req, res, next) => {
     try {
       // are we allowed?
-      const editorUserId = req?.stytchAuthenticationInfo?.session?.user_id;
+      const editorUserId = req.stytchAuthenticationInfo.session.user_id;
       const editor = await User.findOne({ userId: editorUserId });
 
       if (isEmpty(editor)) {
