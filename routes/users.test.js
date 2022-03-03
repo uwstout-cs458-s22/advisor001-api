@@ -442,7 +442,7 @@ describe('DELETE /users', () => {
   });
 
   test('should respond with a 400 status code when passing empty string', async () => {
-    const response = await request(app).delete('/users').send('');
+    const response = await request(app).delete('/users/').send('');
     expect(response.statusCode).toBe(400);
   });
 });

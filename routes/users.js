@@ -66,7 +66,7 @@ module.exports = () => {
     }
   });
 
-  router.delete('/:userId', authorizeSession, async (req, res, next) => {
+  router.delete('/:userId?', authorizeSession, async (req, res, next) => {
     try {
       const userId = req.params.userId;
       if (!userId || userId === '') {
