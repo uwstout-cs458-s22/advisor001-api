@@ -328,7 +328,7 @@ describe('PUT /users', () => {
   }
 
   describe('given an empty URL bar', () => {
-    test('should result in 404', async () => {
+    test('should result in 400', async () => {
       const editor = samplePrivilegedUser();
       const user = dataForGetUser(1)[0];
 
@@ -345,8 +345,8 @@ describe('PUT /users', () => {
 
       const response = await callPutOnUserRoute('', desiredChanges); // NO USER ID
 
-      expect(response.statusCode).toBe(404);
-      expect(response.body.error.message).toBe('Not Found');
+      expect(response.statusCode).toBe(400);
+      expect(response.body.error.message).toBe('Required Parameters Missing');
     });
   });
 

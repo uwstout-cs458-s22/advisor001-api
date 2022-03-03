@@ -67,7 +67,7 @@ module.exports = () => {
   });
 
   // edit users
-  router.put('/:userId', authorizeSession, async (req, res, next) => {
+  router.put('/:userId?', authorizeSession, async (req, res, next) => {
     try {
       // are we allowed?
       const editorUserId = req.stytchAuthenticationInfo.session.user_id;
@@ -80,20 +80,24 @@ module.exports = () => {
         throw HttpError(401, 'You do not have permission to edit!');
       }
 
+      // is the given id a valid format & non-empty?
       const userId = req.params.userId;
-      if (!userId) {
+      if (!userId || userId === '') {
         throw HttpError(400, 'Required Parameters Missing');
       }
       const user = await User.findOne({ userId: userId });
+
       // make sure exists
       if (isEmpty(user)) {
         throw new HttpError.NotFound();
       }
+
       // perform the edit
       const editResult = await User.edit(userId, {
         enable: req.body.enable || user.enable,
         role: req.body.role || user.role,
       });
+
       // success
       log.info(`${req.method} ${req.originalUrl} success: returning edited user ${editResult}`);
       return res.send(editResult);
