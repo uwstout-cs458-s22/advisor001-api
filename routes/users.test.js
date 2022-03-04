@@ -12,6 +12,7 @@ jest.mock('../models/User.js', () => {
     findOne: jest.fn(),
     findAll: jest.fn(),
     create: jest.fn(),
+    deleteUser: jest.fn(),
   };
 });
 
@@ -408,5 +409,40 @@ describe('POST /users', () => {
       const response = await request(app).post('/users').send('');
       expect(response.statusCode).toBe(400);
     });
+  });
+});
+
+describe('DELETE /users', () => {
+  beforeEach(() => {
+    User.create.mockReset();
+    User.create.mockResolvedValue(null);
+    User.findOne.mockReset();
+    User.findOne.mockResolvedValue(null);
+    User.deleteUser.mockReset();
+    User.deleteUser.mockResolvedValue(null);
+  });
+
+  async function callDeleteOnUserRoute(row, key = 'id') {
+    const id = row[key];
+    User.findOne.mockResolvedValueOnce(row);
+    const response = await request(app).delete(`/users/${id}`);
+    return response;
+  }
+
+  test('should respond with a 200 status code when user exists and is deleted', async () => {
+    const data = dataForGetUser(1, 100);
+    const response = await callDeleteOnUserRoute(data[0]);
+    expect(response.statusCode).toBe(200);
+  });
+
+  test('should respond with a 404 status code when user does NOT exists', async () => {
+    User.findOne.mockResolvedValueOnce({});
+    const response = await request(app).delete(`/users/100`);
+    expect(response.statusCode).toBe(404);
+  });
+
+  test('should respond with a 400 status code when passing empty string', async () => {
+    const response = await request(app).delete('/users/').send('');
+    expect(response.statusCode).toBe(400);
   });
 });
