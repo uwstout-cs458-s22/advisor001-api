@@ -60,10 +60,7 @@ describe('Course Model', () => {
       db.query.mockResolvedValue({ rows: [data] });
       const course = await Course.findOne(id);
 
-      console.log(data);
-      console.log([data]);
       for (const key in Object.keys(data)) {
-        console.log(`Key: ${key}`);
         expect(course).toHaveProperty(key, data[key]);
       }
     });
