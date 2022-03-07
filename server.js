@@ -27,12 +27,18 @@ const { initialize } = require('./services/database');
 initialize();
 
 const app = require('./app')();
-app.listen(environment.port, () =>
+app.listen(environment.port, () => {
   log.info(
     `Advisor API has started with the following configuration:\n${JSON.stringify(
       environment,
       null,
       2
     )}`
-  )
-);
+  );
+  if (environment.debugMode) {
+    log.warn(
+      'Advisor is running in DEBUG MODE, meaning it is NOT SAFE for production.',
+      'If this was not intended, please change or remove the DEBUG_MODE flag.'
+    );
+  }
+});
