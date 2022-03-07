@@ -27,19 +27,19 @@ function initialize() {
       );
       CREATE TABLE IF NOT EXISTS "term" (
       name text,
-      id serial
+      id serial,
       PRIMARY KEY (id)
       );
       CREATE TABLE IF NOT EXISTS "section" (
-      course serial, //references course.id
-      term serial, //references term.id
+      course serial, /*references course.id*/
+      term serial, /*references term.id*/
       instructor text,
       id serial,
       asynchronous boolean,
-      regdays text CHECK (regdays IN ('Monday','Tuesday','Wednesday','Thursday','Friday)), //The days when the class regularly meets
-      start serial, //When the class regularly starts in military time, or 0 if it does not meet that day.
-      end serial,
-      altdays text CHECK (altdays IN ('Monday','Tuesday','Wednesday','Thursday','Friday)), //The days when the class has a different meeting time
+      regdays text CHECK (regdays IN ('Monday','Tuesday','Wednesday','Thursday','Friday')), /*The days when the class regularly meets*/
+      starttime serial, /*When the class regularly starts in military time, or 0 if it does not meet that day.*/
+      endtime serial,
+      altdays text CHECK (altdays IN ('Monday','Tuesday','Wednesday','Thursday','Friday')), /*The days when the class has a different meeting time*/
       altstart serial,
       altend serial,
       PRIMARY KEY (id)
