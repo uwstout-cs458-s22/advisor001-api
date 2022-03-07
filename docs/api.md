@@ -16,3 +16,5 @@ Every request received by the API must also be accompanied with the Stytch sessi
 [/users GET](users_get.md)
 
 [/users POST](users_post.md)
+
+[/users_DELETE](users_delete.md)
