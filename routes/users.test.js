@@ -30,10 +30,13 @@ jest.mock('../services/environment', () => {
 });
 
 jest.mock('../services/auth', () => {
+  const { setClearanceLevel } = jest.requireActual('../services/auth');
+
   return {
     authorizeSession: jest.fn().mockImplementation((req, res, next) => {
       return next();
     }),
+    setClearanceLevel,
   };
 });
 
@@ -393,7 +396,7 @@ describe('PUT /users', () => {
       const response = await callPutOnUserRoute(user.userId, desiredChanges);
 
       expect(response.statusCode).toBe(401);
-      expect(response.body.error.message).toBe('You do not have permission to edit!');
+      expect(response.body.error.message).toBe('You are not allowed to do that!');
     });
 
     test('should 404 when the user is not found', async () => {

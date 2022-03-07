@@ -25,6 +25,29 @@ async function authorizeSession(req, res, next) {
   }
 }
 
+const { hasMinimumPermission, findOne } = require('../models/User.js');
+const { isEmpty } = require('./../services/utils');
+
+function setClearanceLevel(level) {
+  return async (req, res, next) => {
+    try {
+      const editorUserId = req.stytchAuthenticationInfo.session.user_id;
+      const editor = await findOne({ userId: editorUserId });
+
+      if (isEmpty(editor)) {
+        next(HttpError(500, 'Your account is not found in the database!'));
+      }
+      if (!hasMinimumPermission(editor, level)) {
+        next(HttpError(401, 'You are not allowed to do that!'));
+      }
+      next();
+    } catch (err) {
+      next(HttpError(500, 'An unknown error occurred during authorization!'));
+    }
+  };
+}
+
 module.exports = {
   authorizeSession,
+  setClearanceLevel,
 };
