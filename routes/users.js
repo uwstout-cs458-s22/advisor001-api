@@ -66,7 +66,6 @@ module.exports = () => {
     }
   });
 
-
   // edit users
   router.put('/:userId?', authorizeSession, async (req, res, next) => {
     try {
@@ -109,9 +108,19 @@ module.exports = () => {
 
   router.delete('/:userId?', authorizeSession, async (req, res, next) => {
     try {
+      const editorUserId = req.stytchAuthenticationInfo.session.user_id;
+      const editor = await User.findOne({ userId: editorUserId });
+
+      if (isEmpty(editor)) {
+        throw HttpError(500, 'Your account is not found in the database!');
+      }
+      if (!User.hasMinimumPermission(editor, 'admin')) {
+        throw HttpError(401, 'You do not have permission to delete!');
+      }
+
       const userId = req.params.userId;
       if (!userId || userId === '') {
-        throw HttpError(400, 'Bad Parameters');
+        throw HttpError(400, 'Required Parameters Missing');
       }
 
       let user = await User.findOne({ userId: userId });
