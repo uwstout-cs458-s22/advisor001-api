@@ -120,7 +120,7 @@ module.exports = () => {
 
       const userId = req.params.userId;
       if (!userId || userId === '') {
-        throw HttpError(400, 'Required Parameters Missing');
+        throw HttpError(400, 'Bad Parameters');
       }
 
       let user = await User.findOne({ userId: userId });
