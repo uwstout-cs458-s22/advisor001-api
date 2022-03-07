@@ -657,7 +657,7 @@ describe('DELETE /users', () => {
       expect(User.deleteUser).not.toBeCalled();
 
       expect(response.statusCode).toBe(401);
-      expect(response.body.error.message).toBe('You do not have permission to delete!');
+      expect(response.body.error.message).toBe('You are not allowed to do that!');
     });
   });
 
@@ -731,7 +731,7 @@ describe('DELETE /users', () => {
 
       expect(User.deleteUser).not.toBeCalled();
       expect(response.statusCode).toBe(401);
-      expect(response.body.error.message).toBe('You do not have permission to delete!');
+      expect(response.body.error.message).toBe('You are not allowed to do that!');
     });
   });
 });
