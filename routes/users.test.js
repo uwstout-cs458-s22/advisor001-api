@@ -7,11 +7,16 @@ beforeAll(() => {
   log.disableAll();
 });
 
-jest.mock('../models/User.js', () => {
+jest.mock('../models/User', () => {
+  const { hasMinimumPermission } = jest.requireActual('../models/User');
+
   return {
     findOne: jest.fn(),
     findAll: jest.fn(),
     create: jest.fn(),
+    edit: jest.fn(),
+    hasMinimumPermission,
+    deleteUser: jest.fn(),
   };
 });
 
@@ -32,6 +37,8 @@ jest.mock('../services/auth', () => {
   };
 });
 
+const auth = require('../services/auth');
+
 // a helper that creates an array structure for getUserById
 function dataForGetUser(rows, offset = 0) {
   const data = [];
@@ -46,6 +53,49 @@ function dataForGetUser(rows, offset = 0) {
     });
   }
   return data;
+}
+
+// a helper that returns one admin user row
+function samplePrivilegedUser() {
+  return {
+    id: '0',
+    email: 'sandbox@stytch.com',
+    userId: 'user-test-16d9ba61-97a1-4ba4-9720-b03761dc50c6',
+    enable: 'true',
+    role: 'admin',
+  };
+}
+
+// a helper that returns sample auth data -- taken directly from the Stytch API reference
+function sampleStytchAuthenticationInfo(userId, email) {
+  return {
+    status_code: 200,
+    request_id: 'request-id-test-b05c992f-ebdc-489d-a754-c7e70ba13141',
+    session: {
+      attributes: {
+        ip_address: '203.0.113.1',
+        user_agent:
+          'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36',
+      },
+      authentication_factors: [
+        {
+          delivery_method: 'email',
+          email_factor: {
+            email_address: `${email}`,
+            email_id: 'email-test-81bf03a8-86e1-4d95-bd44-bb3495224953',
+          },
+          last_authenticated_at: '2021-08-09T07:41:52Z',
+          type: 'magic_link',
+        },
+      ],
+      expires_at: '2021-08-10T07:41:52Z',
+      last_accessed_at: '2021-08-09T07:41:52Z',
+      session_id: 'session-test-fe6c042b-6286-479f-8a4f-b046a6c46509',
+      started_at: '2021-08-09T07:41:52Z',
+      user_id: `${userId}`,
+    },
+    session_token: 'mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q',
+  };
 }
 
 describe('GET /users', () => {
@@ -252,6 +302,144 @@ describe('GET /users', () => {
   });
 });
 
+describe('PUT /users', () => {
+  // TODO please make sure these tests meet the user acceptance criteria
+
+  beforeEach(() => {
+    User.findOne.mockReset();
+    User.findOne.mockResolvedValue(null);
+    User.findAll.mockReset();
+    User.findAll.mockResolvedValue(null);
+    User.edit.mockReset();
+    User.edit.mockResolvedValue(null);
+  });
+
+  // helper for matching the header to the user passed
+  function resolveAuthToMatchUser(user) {
+    auth.authorizeSession.mockImplementationOnce((req, res, next) => {
+      req.stytchAuthenticationInfo = sampleStytchAuthenticationInfo(user.userId, user.email);
+      return next();
+    });
+  }
+
+  // put helper
+  async function callPutOnUserRoute(userId, body) {
+    const response = await request(app).put(`/users/${userId}`).send(body);
+    return response;
+  }
+
+  describe('given an empty URL bar', () => {
+    test('should result in 400', async () => {
+      const editor = samplePrivilegedUser();
+      const user = dataForGetUser(1)[0];
+
+      const desiredChanges = {
+        role: 'admin',
+        enable: 'true',
+      };
+
+      resolveAuthToMatchUser(editor);
+
+      User.findOne.mockResolvedValueOnce(editor);
+      User.findOne.mockResolvedValueOnce(user);
+      User.edit.mockResolvedValue({});
+
+      const response = await callPutOnUserRoute('', desiredChanges); // NO USER ID
+
+      expect(response.statusCode).toBe(400);
+      expect(response.body.error.message).toBe('Required Parameters Missing');
+    });
+  });
+
+  describe('when URL bar is non-empty', () => {
+    test('should 500 when editor is not found', async () => {
+      const editor = samplePrivilegedUser();
+      const user = dataForGetUser(1)[0];
+
+      const desiredChanges = {
+        role: 'admin',
+        enable: 'true',
+      };
+
+      resolveAuthToMatchUser(editor);
+
+      User.findOne.mockResolvedValueOnce({}); // NO EDITOR
+      User.findOne.mockResolvedValueOnce(user);
+      User.edit.mockResolvedValueOnce(Object.assign(user, desiredChanges));
+
+      const response = await callPutOnUserRoute(user.userId, desiredChanges);
+
+      expect(response.statusCode).toBe(500);
+      expect(response.body.error.message).toBe('Your account is not found in the database!');
+    });
+
+    test('should 401 when not authorized to edit users', async () => {
+      const rows = dataForGetUser(2, 100);
+      const editor = rows[0]; // UNPRIVILEGED USER
+      const user = rows[1];
+      editor.enable = 'true';
+
+      const desiredChanges = {
+        role: 'admin',
+        enable: 'true',
+      };
+
+      resolveAuthToMatchUser(editor);
+
+      User.findOne.mockResolvedValueOnce(editor);
+      User.findOne.mockResolvedValueOnce(user);
+      User.edit.mockResolvedValueOnce({});
+
+      const response = await callPutOnUserRoute(user.userId, desiredChanges);
+
+      expect(response.statusCode).toBe(401);
+      expect(response.body.error.message).toBe('You do not have permission to edit!');
+    });
+
+    test('should 404 when the user is not found', async () => {
+      const editor = samplePrivilegedUser();
+
+      const desiredChanges = {
+        role: 'admin',
+        enable: 'true',
+      };
+
+      resolveAuthToMatchUser(editor);
+
+      User.findOne.mockResolvedValueOnce(editor);
+      User.findOne.mockResolvedValueOnce({}); // NO USER
+      User.edit.mockResolvedValueOnce({});
+
+      const response = await callPutOnUserRoute('user-test-someguid1', desiredChanges);
+      expect(response.statusCode).toBe(404);
+      expect(response.body.error.message).toBe('Not Found');
+    });
+
+    test('should respond 200 and successfully return edited version of user', async () => {
+      const editor = samplePrivilegedUser();
+      const user = dataForGetUser(1)[0];
+
+      const desiredChanges = {
+        role: 'admin',
+        enable: 'true',
+      };
+
+      resolveAuthToMatchUser(editor);
+
+      User.findOne.mockResolvedValueOnce(editor);
+      User.findOne.mockResolvedValueOnce(user);
+
+      const expectedReturn = Object.assign(user, desiredChanges);
+      User.edit.mockResolvedValueOnce(expectedReturn);
+
+      const response = await callPutOnUserRoute(user.userId, desiredChanges);
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body).toEqual(expectedReturn);
+    });
+  });
+});
+
 describe('POST /users', () => {
   beforeEach(() => {
     User.findOne.mockReset();
@@ -408,5 +596,40 @@ describe('POST /users', () => {
       const response = await request(app).post('/users').send('');
       expect(response.statusCode).toBe(400);
     });
+  });
+});
+
+describe('DELETE /users', () => {
+  beforeEach(() => {
+    User.create.mockReset();
+    User.create.mockResolvedValue(null);
+    User.findOne.mockReset();
+    User.findOne.mockResolvedValue(null);
+    User.deleteUser.mockReset();
+    User.deleteUser.mockResolvedValue(null);
+  });
+
+  async function callDeleteOnUserRoute(row, key = 'id') {
+    const id = row[key];
+    User.findOne.mockResolvedValueOnce(row);
+    const response = await request(app).delete(`/users/${id}`);
+    return response;
+  }
+
+  test('should respond with a 200 status code when user exists and is deleted', async () => {
+    const data = dataForGetUser(1, 100);
+    const response = await callDeleteOnUserRoute(data[0]);
+    expect(response.statusCode).toBe(200);
+  });
+
+  test('should respond with a 404 status code when user does NOT exists', async () => {
+    User.findOne.mockResolvedValueOnce({});
+    const response = await request(app).delete(`/users/100`);
+    expect(response.statusCode).toBe(404);
+  });
+
+  test('should respond with a 400 status code when passing empty string', async () => {
+    const response = await request(app).delete('/users/').send('');
+    expect(response.statusCode).toBe(400);
   });
 });

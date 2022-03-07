@@ -66,5 +66,68 @@ module.exports = () => {
     }
   });
 
+
+  // edit users
+  router.put('/:userId?', authorizeSession, async (req, res, next) => {
+    try {
+      // are we allowed?
+      const editorUserId = req.stytchAuthenticationInfo.session.user_id;
+      const editor = await User.findOne({ userId: editorUserId });
+
+      if (isEmpty(editor)) {
+        throw HttpError(500, 'Your account is not found in the database!');
+      }
+      if (!User.hasMinimumPermission(editor, 'admin')) {
+        throw HttpError(401, 'You do not have permission to edit!');
+      }
+
+      // is the given id a valid format & non-empty?
+      const userId = req.params.userId;
+      if (!userId || userId === '') {
+        throw HttpError(400, 'Required Parameters Missing');
+      }
+      const user = await User.findOne({ userId: userId });
+
+      // make sure exists
+      if (isEmpty(user)) {
+        throw new HttpError.NotFound();
+      }
+
+      // perform the edit
+      const editResult = await User.edit(userId, {
+        enable: req.body.enable || user.enable,
+        role: req.body.role || user.role,
+      });
+
+      // success
+      log.info(`${req.method} ${req.originalUrl} success: returning edited user ${editResult}`);
+      return res.send(editResult);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.delete('/:userId?', authorizeSession, async (req, res, next) => {
+    try {
+      const userId = req.params.userId;
+      if (!userId || userId === '') {
+        throw HttpError(400, 'Bad Parameters');
+      }
+
+      let user = await User.findOne({ userId: userId });
+      if (isEmpty(user)) {
+        console.log(req.params);
+        throw new HttpError.NotFound();
+      }
+
+      user = await User.deleteUser(userId);
+
+      res.status(200);
+      res.send();
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return router;
 };
