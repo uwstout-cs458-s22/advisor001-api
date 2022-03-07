@@ -641,7 +641,7 @@ describe('DELETE /users', () => {
       expect(User.deleteUser).not.toBeCalled();
 
       expect(response.statusCode).toBe(400);
-      expect(response.body.error.message).toBe('Bad Parameters');
+      expect(response.body.error.message).toBe('Required Parameters Missing');
     });
 
     test('should respond with a 401 status code when empty string and not authorized', async () => {
