@@ -95,37 +95,32 @@ module.exports = () => {
     }
   });
 
-  router.delete('/:userId?', authorizeSession, async (req, res, next) => {
-    try {
-      const editorUserId = req.stytchAuthenticationInfo.session.user_id;
-      const editor = await User.findOne({ userId: editorUserId });
+  router.delete(
+    '/:userId?',
+    authorizeSession,
+    setClearanceLevel('admin'),
+    async (req, res, next) => {
+      try {
+        const userId = req.params.userId;
+        if (!userId || userId === '') {
+          throw HttpError(400, 'Bad Parameters');
+        }
 
-      if (isEmpty(editor)) {
-        throw HttpError(500, 'Your account is not found in the database!');
+        let user = await User.findOne({ userId: userId });
+        if (isEmpty(user)) {
+          console.log(req.params);
+          throw new HttpError.NotFound();
+        }
+
+        user = await User.deleteUser(userId);
+
+        res.status(200);
+        res.send();
+      } catch (error) {
+        next(error);
       }
-      if (!User.hasMinimumPermission(editor, 'admin')) {
-        throw HttpError(401, 'You do not have permission to delete!');
-      }
-
-      const userId = req.params.userId;
-      if (!userId || userId === '') {
-        throw HttpError(400, 'Bad Parameters');
-      }
-
-      let user = await User.findOne({ userId: userId });
-      if (isEmpty(user)) {
-        console.log(req.params);
-        throw new HttpError.NotFound();
-      }
-
-      user = await User.deleteUser(userId);
-
-      res.status(200);
-      res.send();
-    } catch (error) {
-      next(error);
     }
-  });
+  );
 
   return router;
 };
