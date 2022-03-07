@@ -9,4 +9,5 @@ module.exports = {
   sessionDuration: process.env.SESSION_DURATION || 60,
   masterAdminEmail: process.env.MASTER_ADMIN_EMAIL,
   databaseUrl: process.env.DATABASE_URL,
+  debugMode: process.env.DEBUG_MODE | 0 || 0, // trick to convert .env string to int
 };
