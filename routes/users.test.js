@@ -609,27 +609,126 @@ describe('DELETE /users', () => {
     User.deleteUser.mockResolvedValue(null);
   });
 
-  async function callDeleteOnUserRoute(row, key = 'id') {
-    const id = row[key];
+  async function callDeleteOnUserRoute(row, key = 'userId') {
+    const id = row[key] === undefined ? '' : row[key];
     User.findOne.mockResolvedValueOnce(row);
     const response = await request(app).delete(`/users/${id}`);
     return response;
   }
 
-  test('should respond with a 200 status code when user exists and is deleted', async () => {
-    const data = dataForGetUser(1, 100);
-    const response = await callDeleteOnUserRoute(data[0]);
-    expect(response.statusCode).toBe(200);
+  // helper for matching the header to the user passed
+  function resolveAuthToMatchUser(user) {
+    auth.authorizeSession.mockImplementationOnce((req, res, next) => {
+      req.stytchAuthenticationInfo = sampleStytchAuthenticationInfo(user.userId, user.email);
+      return next();
+    });
+  }
+
+  describe('given an empty URL bar', () => {
+    test('should respond with a 400 status code when passing empty string', async () => {
+      const deleter = samplePrivilegedUser();
+      resolveAuthToMatchUser(deleter);
+      User.findOne.mockResolvedValueOnce(deleter);
+      const response = await callDeleteOnUserRoute({});
+
+      expect(User.findOne.mock.calls).toHaveLength(1);
+      expect(User.findOne.mock.calls[0]).toHaveLength(1);
+      expect(User.findOne.mock.calls[0][0]).toHaveProperty('userId', deleter.userId);
+
+      expect(User.deleteUser).not.toBeCalled();
+
+      expect(response.statusCode).toBe(400);
+      expect(response.body.error.message).toBe('Required Parameters Missing');
+    });
+
+    test('should respond with a 401 status code when empty string and not authorized', async () => {
+      const deleter = dataForGetUser(1, 100)[0];
+      deleter.enable = 'true';
+      resolveAuthToMatchUser(deleter);
+      User.findOne.mockResolvedValueOnce(deleter);
+      const response = await callDeleteOnUserRoute({});
+
+      expect(User.findOne.mock.calls).toHaveLength(1);
+      expect(User.findOne.mock.calls[0]).toHaveLength(1);
+      expect(User.findOne.mock.calls[0][0]).toHaveProperty('userId', deleter.userId);
+      expect(User.deleteUser).not.toBeCalled();
+
+      expect(response.statusCode).toBe(401);
+      expect(response.body.error.message).toBe('You do not have permission to delete!');
+    });
   });
 
-  test('should respond with a 404 status code when user does NOT exists', async () => {
-    User.findOne.mockResolvedValueOnce({});
-    const response = await request(app).delete(`/users/100`);
-    expect(response.statusCode).toBe(404);
-  });
+  describe('when URL bar is non-empty', () => {
+    test('should respond with a 200 status code when user exists and is deleted', async () => {
+      const user = dataForGetUser(1, 100)[0];
+      const deleter = samplePrivilegedUser();
+      resolveAuthToMatchUser(deleter);
+      User.findOne.mockResolvedValueOnce(deleter);
+      const response = await callDeleteOnUserRoute(user);
 
-  test('should respond with a 400 status code when passing empty string', async () => {
-    const response = await request(app).delete('/users/').send('');
-    expect(response.statusCode).toBe(400);
+      expect(User.findOne.mock.calls).toHaveLength(2);
+      expect(User.findOne.mock.calls[0]).toHaveLength(1);
+      expect(User.findOne.mock.calls[0][0]).toHaveProperty('userId', deleter.userId);
+      expect(User.findOne.mock.calls[1]).toHaveLength(1);
+      expect(User.findOne.mock.calls[1][0]).toHaveProperty('userId', user.userId);
+
+      expect(User.deleteUser).toBeCalled();
+      expect(User.deleteUser.mock.calls).toHaveLength(1);
+      expect(User.deleteUser.mock.calls[0]).toHaveLength(1);
+      expect(User.deleteUser.mock.calls[0][0]).toBe(user.userId);
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('should respond with a 404 status code when user does NOT exists', async () => {
+      const deleter = samplePrivilegedUser();
+      resolveAuthToMatchUser(deleter);
+      User.findOne.mockResolvedValueOnce(deleter);
+
+      User.findOne.mockResolvedValueOnce({});
+      const response = await request(app).delete(`/users/100`);
+
+      expect(User.findOne.mock.calls).toHaveLength(2);
+      expect(User.findOne.mock.calls[0]).toHaveLength(1);
+      expect(User.findOne.mock.calls[0][0]).toHaveProperty('userId', deleter.userId);
+      expect(User.findOne.mock.calls[1]).toHaveLength(1);
+      expect(User.findOne.mock.calls[1][0]).toHaveProperty('userId', '100');
+      expect(User.deleteUser).not.toBeCalled();
+
+      expect(response.statusCode).toBe(404);
+    });
+
+    test('should respond with 500 when the editor is not found', async () => {
+      const deleter = samplePrivilegedUser();
+      const user = dataForGetUser(1, 100)[0];
+      resolveAuthToMatchUser(deleter);
+      User.findOne.mockResolvedValueOnce({});
+      const response = await callDeleteOnUserRoute(user);
+
+      expect(User.findOne.mock.calls).toHaveLength(1);
+      expect(User.findOne.mock.calls[0]).toHaveLength(1);
+      expect(User.findOne.mock.calls[0][0]).toHaveProperty('userId', deleter.userId);
+      expect(User.deleteUser).not.toBeCalled();
+
+      expect(response.statusCode).toBe(500);
+      expect(response.body.error.message).toBe('Your account is not found in the database!');
+    });
+
+    test('should respond with 401 when the editor is not authorized', async () => {
+      const rows = dataForGetUser(2, 100);
+      const deleter = rows[0];
+      const user = rows[1];
+      deleter.enable = 'true';
+      resolveAuthToMatchUser(deleter);
+      User.findOne.mockResolvedValueOnce(deleter);
+      const response = await callDeleteOnUserRoute(user);
+
+      expect(User.findOne.mock.calls).toHaveLength(1);
+      expect(User.findOne.mock.calls[0]).toHaveLength(1);
+      expect(User.findOne.mock.calls[0][0]).toHaveProperty('userId', deleter.userId);
+
+      expect(User.deleteUser).not.toBeCalled();
+      expect(response.statusCode).toBe(401);
+      expect(response.body.error.message).toBe('You do not have permission to delete!');
+    });
   });
 });
