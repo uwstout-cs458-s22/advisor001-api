@@ -33,8 +33,6 @@ jest.mock('../services/auth', () => {
   };
 });
 
-const auth = require('../services/auth');
-
 function dataForGetCourse(rows, offset = 0) {
   const data = [];
   for (let i = 1; i <= rows; i++) {
@@ -48,3 +46,64 @@ function dataForGetCourse(rows, offset = 0) {
   }
   return data;
 }
+
+describe('GET /course', () => {
+  beforeEach(() => {
+    Course.findOne.mockReset();
+    Course.findOne.mockResolvedValue(null);
+  });
+
+  // helper functions - id is a numeric value
+  async function callGetOnCourseRoute(row, key = 'id') {
+    const id = row[key];
+    Course.findOne.mockResolvedValueOnce(row);
+    const response = await request(app).get(`/course/${id}`);
+    return response;
+  }
+
+  describe('given a row id', () => {
+    test('should make a call to Course.findOne', async () => {
+      const row = dataForGetCourse(1)[0];
+      await callGetOnCourseRoute(row);
+      expect(Course.findOne.mock.calls).toHaveLength(1);
+      expect(Course.findOne.mock.calls[0]).toHaveLength(1);
+      expect(Course.findOne.mock.calls[0][0]).toHaveProperty('id', row.id);
+    });
+
+    test('should respond with a json object containg the user data', async () => {
+      const data = dataForGetCourse(10);
+      for (const row of data) {
+        const { body: course } = await callGetOnCourseRoute(row);
+        expect(course.id).toBe(row.id);
+        expect(course.email).toBe(row.email);
+        expect(course.userId).toBe(row.userId);
+        expect(course.enable).toBe(row.enable);
+        expect(course.role).toBe(row.role);
+      }
+    });
+
+    test('should specify json in the content type header', async () => {
+      const data = dataForGetCourse(1, 100);
+      const response = await callGetOnCourseRoute(data[0]);
+      expect(response.headers['content-type']).toEqual(expect.stringContaining('json'));
+    });
+
+    test('should respond with a 200 status code when user exists', async () => {
+      const data = dataForGetCourse(1, 100);
+      const response = await callGetOnCourseRoute(data[0]);
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('should respond with a 404 status code when user does NOT exists', async () => {
+      Course.findOne.mockResolvedValueOnce({});
+      const response = await request(app).get(`/users/100`);
+      expect(response.statusCode).toBe(404);
+    });
+
+    test('should respond with a 500 status code when an error occurs', async () => {
+      Course.findOne.mockRejectedValueOnce(new Error('Some Database Error'));
+      const response = await request(app).get(`/users/100`);
+      expect(response.statusCode).toBe(500);
+    });
+  });
+});
