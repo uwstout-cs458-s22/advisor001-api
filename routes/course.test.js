@@ -70,15 +70,14 @@ describe('GET /course', () => {
       expect(Course.findOne.mock.calls[0][0]).toHaveProperty('id', row.id);
     });
 
-    test('should respond with a json object containg the user data', async () => {
+    test('should respond with a json object containing the course data', async () => {
       const data = dataForGetCourse(10);
       for (const row of data) {
         const { body: course } = await callGetOnCourseRoute(row);
         expect(course.id).toBe(row.id);
-        expect(course.email).toBe(row.email);
-        expect(course.userId).toBe(row.userId);
-        expect(course.enable).toBe(row.enable);
-        expect(course.role).toBe(row.role);
+        expect(course.department).toBe(row.department);
+        expect(course.number).toBe(row.number);
+        expect(course.credits).toBe(row.credits);
       }
     });
 
@@ -88,21 +87,21 @@ describe('GET /course', () => {
       expect(response.headers['content-type']).toEqual(expect.stringContaining('json'));
     });
 
-    test('should respond with a 200 status code when user exists', async () => {
+    test('should respond with a 200 status code when course exists', async () => {
       const data = dataForGetCourse(1, 100);
       const response = await callGetOnCourseRoute(data[0]);
       expect(response.statusCode).toBe(200);
     });
 
-    test('should respond with a 404 status code when user does NOT exists', async () => {
+    test('should respond with a 404 status code when course does NOT exists', async () => {
       Course.findOne.mockResolvedValueOnce({});
-      const response = await request(app).get(`/users/100`);
+      const response = await request(app).get(`/course/100`);
       expect(response.statusCode).toBe(404);
     });
 
     test('should respond with a 500 status code when an error occurs', async () => {
       Course.findOne.mockRejectedValueOnce(new Error('Some Database Error'));
-      const response = await request(app).get(`/users/100`);
+      const response = await request(app).get(`/course/100`);
       expect(response.statusCode).toBe(500);
     });
   });
