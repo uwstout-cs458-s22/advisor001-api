@@ -32,7 +32,7 @@ async function deleteCourse(id) {
 
     const res = await db.query(`DELETE FROM "course" ${text};`, params);
     if (res.rows.length > 0) {
-      return 'the course was deleted';
+      return true;
     }
   } else {
     throw HttpError(400, 'Id is required.');

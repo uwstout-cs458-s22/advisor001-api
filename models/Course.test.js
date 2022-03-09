@@ -81,7 +81,7 @@ describe('Course Model', () => {
       await expect(Course.findOne()).rejects.toThrowError('Id is required.');
     });
   });
-  
+
   describe('deleting a course', () => {
     test('Course.deleteCourse with expected data', async () => {
       const data = dataForGetCourse(1);
@@ -95,7 +95,7 @@ describe('Course Model', () => {
       expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "course" WHERE "id"=$1;');
       expect(db.query.mock.calls[0][1]).toHaveLength(1);
       expect(db.query.mock.calls[0][1][0]).toBe(id);
-      expect(deleteCourse).toBe('the course was deleted');
+      expect(deleteCourse).toBe(true);
     });
 
     test('Course.deleteCourse with database error', async () => {
