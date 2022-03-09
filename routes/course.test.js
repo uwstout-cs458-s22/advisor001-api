@@ -67,7 +67,7 @@ describe('GET /course', () => {
       await callGetOnCourseRoute(row);
       expect(Course.findOne.mock.calls).toHaveLength(1);
       expect(Course.findOne.mock.calls[0]).toHaveLength(1);
-      expect(Course.findOne.mock.calls[0][0]).toHaveProperty('id', row.id);
+      expect(Course.findOne.mock.calls[0][0]).toBe(row.id);
     });
 
     test('should respond with a json object containing the course data', async () => {
