@@ -15,7 +15,7 @@ module.exports = () => {
       if (isEmpty(course)) {
         throw new HttpError.NotFound();
       }
-      log.info(`${req.method} ${req.originalUrl} success: returning user ${courseId}`);
+      log.info(`${req.method} ${req.originalUrl} success: returning course ${courseId}`);
       return res.send(course);
     } catch (error) {
       next(error);
