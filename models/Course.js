@@ -22,6 +22,24 @@ async function findOne(id) {
   return {};
 }
 
+// if successful delete, return course was deleted
+async function deleteCourse(id) {
+  // check that id is not nullable
+  if (id) {
+    const { text, params } = whereParams({
+      id: id,
+    });
+
+    const res = await db.query(`DELETE FROM "course" ${text};`, params);
+    if (res.rows.length > 0) {
+      return true;
+    }
+  } else {
+    throw HttpError(400, 'Id is required.');
+  }
+}
+
 module.exports = {
   findOne,
+  deleteCourse,
 };

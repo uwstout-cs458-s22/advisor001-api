@@ -81,4 +81,40 @@ describe('Course Model', () => {
       await expect(Course.findOne()).rejects.toThrowError('Id is required.');
     });
   });
+
+  describe('deleting a course', () => {
+    test('Course.deleteCourse with expected data', async () => {
+      const data = dataForGetCourse(1);
+      const id = data[0].id;
+
+      db.query.mockResolvedValue({ rows: data });
+      const deleteCourse = await Course.deleteCourse(id);
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "course" WHERE "id"=$1;');
+      expect(db.query.mock.calls[0][1]).toHaveLength(1);
+      expect(db.query.mock.calls[0][1][0]).toBe(id);
+      expect(deleteCourse).toBe(true);
+    });
+
+    test('Course.deleteCourse with database error', async () => {
+      const data = dataForGetCourse(1);
+      const id = data[0].id;
+
+      // error thrown during call to db query
+      db.query.mockRejectedValueOnce(new Error('a testing database error'));
+      await expect(Course.deleteCourse(id)).rejects.toThrowError('a testing database error');
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "course" WHERE "id"=$1;');
+      expect(db.query.mock.calls[0][1]).toHaveLength(1);
+      expect(db.query.mock.calls[0][1][0]).toBe(id);
+    });
+
+    test('Course.deleteCourse with no input', async () => {
+      await expect(Course.deleteCourse()).rejects.toThrowError('Id is required.');
+    });
+  });
 });
