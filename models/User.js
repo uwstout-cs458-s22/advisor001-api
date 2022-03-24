@@ -99,6 +99,16 @@ async function edit(userId, newValues) {
   }
 }
 
+async function count() {
+  const res = await db.query(`SELECT COUNT(*) FROM "user"`);
+
+  if (res.rows.length > 0) {
+    return res.rows[0];
+  } else {
+    throw HttpError(500, 'Some Error Occurred');
+  }
+}
+
 function hasMinimumPermission(user, role) {
   return rolePermissions[user?.role] >= rolePermissions[role];
 }
@@ -110,4 +120,5 @@ module.exports = {
   deleteUser,
   edit,
   hasMinimumPermission,
+  count,
 };

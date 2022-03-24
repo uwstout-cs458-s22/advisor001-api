@@ -416,4 +416,14 @@ describe('User Model', () => {
       expect(User.hasMinimumPermission([], '')).toBe(false);
     });
   });
+
+  describe('Count Users', () => {
+    test('One User in the Database', () => {
+      const row = dataForGetUser(1);
+      db.query.mockResolvedValue({ rows: [row] });
+      const count = User.count();
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(count).toBe(1);
+    });
+  });
 });
