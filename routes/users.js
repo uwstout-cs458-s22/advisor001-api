@@ -3,7 +3,7 @@ const log = require('loglevel');
 const HttpError = require('http-errors');
 const { isEmpty } = require('./../services/utils');
 const User = require('./../models/User');
-const { authorizeSession } = require('./../services/auth');
+const { authorizeSession, setClearanceLevel } = require('./../services/auth');
 
 module.exports = () => {
   const router = express.Router();
@@ -66,21 +66,9 @@ module.exports = () => {
     }
   });
 
-
   // edit users
-  router.put('/:userId?', authorizeSession, async (req, res, next) => {
+  router.put('/:userId?', authorizeSession, setClearanceLevel('admin'), async (req, res, next) => {
     try {
-      // are we allowed?
-      const editorUserId = req.stytchAuthenticationInfo.session.user_id;
-      const editor = await User.findOne({ userId: editorUserId });
-
-      if (isEmpty(editor)) {
-        throw HttpError(500, 'Your account is not found in the database!');
-      }
-      if (!User.hasMinimumPermission(editor, 'admin')) {
-        throw HttpError(401, 'You do not have permission to edit!');
-      }
-
       // is the given id a valid format & non-empty?
       const userId = req.params.userId;
       if (!userId || userId === '') {
@@ -107,27 +95,32 @@ module.exports = () => {
     }
   });
 
-  router.delete('/:userId?', authorizeSession, async (req, res, next) => {
-    try {
-      const userId = req.params.userId;
-      if (!userId || userId === '') {
-        throw HttpError(400, 'Bad Parameters');
+  router.delete(
+    '/:userId?',
+    authorizeSession,
+    setClearanceLevel('admin'),
+    async (req, res, next) => {
+      try {
+        const userId = req.params.userId;
+        if (!userId || userId === '') {
+          throw HttpError(400, 'Required Parameters Missing');
+        }
+
+        let user = await User.findOne({ userId: userId });
+        if (isEmpty(user)) {
+          console.log(req.params);
+          throw new HttpError.NotFound();
+        }
+
+        user = await User.deleteUser(userId);
+
+        res.status(200);
+        res.send();
+      } catch (error) {
+        next(error);
       }
-
-      let user = await User.findOne({ userId: userId });
-      if (isEmpty(user)) {
-        console.log(req.params);
-        throw new HttpError.NotFound();
-      }
-
-      user = await User.deleteUser(userId);
-
-      res.status(200);
-      res.send();
-    } catch (error) {
-      next(error);
     }
-  });
+  );
 
   return router;
 };
