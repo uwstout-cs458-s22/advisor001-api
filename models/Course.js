@@ -43,15 +43,15 @@ async function deleteCourse(id) {
 
 /**
  * Adds course to database
- * 
+ *
  * @param  {Number} courseId
  * @param  {String} department
  * @param  {String} number
  * @param  {String} id
  * @param  {String} credits
- * 
+ *
  * @returns {object} course object if successfully returned
- * 
+ *
  * if adding duplicate throws 500 error 'Course already added;'
  * if course types are not compatable, throws 500 error 'Incompatable Course Parameter Types'
  * if any paramters are null, throw a 500 error 'Missing Course Paramters'
@@ -65,16 +65,14 @@ async function addCourse(courseId, department, number, id, credits) {
       typeof id === 'string' &&
       typeof credits === 'string'
     ) {
-
       if (findOne({ courseId })) {
-		  console.table({
-			courseId: courseId,
-			department: department,
-			number: number,
-			id: id,
-			credits: credits
-
-		  })
+        console.table({
+          courseId: courseId,
+          department: department,
+          number: number,
+          id: id,
+          credits: credits,
+        });
         throw HttpError(500, 'Course already addded');
       }
 
