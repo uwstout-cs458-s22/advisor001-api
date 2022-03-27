@@ -43,7 +43,6 @@ async function deleteCourse(id) {
 
 /**
  * Adds course to database
-
  * 
  * @param  {Number} courseId
  * @param  {String} department
@@ -54,7 +53,8 @@ async function deleteCourse(id) {
  * @returns {object} course object if successfully returned
  * 
  * if adding duplicate throws 500 error 'Course already added;'
- * if course types 
+ * if course types are not compatable, throws 500 error 'Incompatable Course Parameter Types'
+ * if any paramters are null, throw a 500 error 'Missing Course Paramters'
  */
 async function addCourse(courseId, department, number, id, credits) {
   if (courseId && department && number && id && credits) {
