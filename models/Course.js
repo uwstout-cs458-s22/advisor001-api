@@ -4,28 +4,103 @@ const { db } = require('../services/database');
 const { whereParams, insertValues, updateValues } = require('../services/sqltools');
 const env = require('../services/environment');
 
-
 // if found return { ... }
 // if not found return {}
 // if db error, db.query will throw a rejected promise
-async function findOne(criteria) {
-	const { text, params } = whereParams(criteria);
-	const res = await db.query(`SELECT * from "course" ${text} LIMIT 1;`, params);
-	if (res.rows.length > 0) {
-	  log.debug(`Successfully found user from db with criteria: ${text}, ${JSON.stringify(params)}`);
-	  return res.rows[0];
-	}
-	log.debug(`No users found in db with criteria: ${text}, ${JSON.stringify(params)}`);
-	return {};
+async function findOne(id) {
+  if (id) {
+    const { text, params } = whereParams({
+      id: id,
+    });
+
+    const res = await db.query(`SELECT * from "course" ${text} LIMIT 1;`, params);
+    if (res.rows.length > 0) {
+      return res.rows[0];
+    }
+  } else {
+    throw HttpError(400, 'Id is required.');
   }
 
+  return {};
+}
 
+// if successful delete, return course was deleted
+async function deleteCourse(id) {
+  // check that id is not nullable
+  if (id) {
+    const { text, params } = whereParams({
+      id: id,
+    });
 
-  module.exports = {
-	findOne,
-	// findAll,
-	// create,
-	// deleteUser,
-	// edit,
-  };
-  
+    const res = await db.query(`DELETE FROM "course" ${text};`, params);
+    if (res.rows.length > 0) {
+      return true;
+    }
+  } else {
+    throw HttpError(400, 'Id is required.');
+  }
+}
+
+/**
+ * Adds course to database
+
+ * 
+ * @param  {Number} courseId
+ * @param  {String} department
+ * @param  {String} number
+ * @param  {String} id
+ * @param  {String} credits
+ * 
+ * @returns {object} course object if successfully returned
+ * 
+ * if adding duplicate throws 500 error 'Course already added;'
+ * if course types 
+ */
+async function addCourse(courseId, department, number, id, credits) {
+  if (courseId && department && number && id && credits) {
+    if (
+      typeof courseId === 'number' &&
+      typeof department === 'string' &&
+      typeof number === 'string' &&
+      typeof id === 'string' &&
+      typeof credits === 'string'
+    ) {
+      //   try {
+
+      //     throw HttpError(500, 'Course already addded');
+      //   } catch (e) {}
+
+      if (findOne({ courseId })) {
+		  console.table({
+			courseId: courseId,
+			department: department,
+			number: number,
+			id: id,
+			credits: credits
+
+		  })
+        throw HttpError(500, 'Course already addded');
+      }
+
+      const res = await db.query(
+        `INSERT INTO (courseId, department, number, id, credits courses) VALUES (${courseId}, ${department}, ${number}, ${id}, ${credits})`
+      );
+
+      if (!res) {
+        throw HttpError(500, 'Error adding course');
+      }
+
+      return res.rows[0];
+    } else {
+      throw HttpError(500, 'Incompatable Course Parameter Types');
+    }
+  } else {
+    throw HttpError(500, 'Missing Course Parameters');
+  }
+}
+
+module.exports = {
+  findOne,
+  addCourse,
+  deleteCourse,
+};
