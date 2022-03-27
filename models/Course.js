@@ -65,10 +65,6 @@ async function addCourse(courseId, department, number, id, credits) {
       typeof id === 'string' &&
       typeof credits === 'string'
     ) {
-      //   try {
-
-      //     throw HttpError(500, 'Course already addded');
-      //   } catch (e) {}
 
       if (findOne({ courseId })) {
 		  console.table({
