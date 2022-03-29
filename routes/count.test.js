@@ -3,13 +3,19 @@ const request = require('supertest');
 const app = require('../app')();
 
 const User = require('../models/User');
-// const Course = require('../models/Course');
+const Course = require('../models/Course');
 
 beforeAll(() => {
   log.disableAll();
 });
 
 jest.mock('../models/User', () => {
+  return {
+    count: jest.fn(),
+  };
+});
+
+jest.mock('../models/Course', () => {
   return {
     count: jest.fn(),
   };
@@ -35,23 +41,65 @@ jest.mock('../services/auth', () => {
   };
 });
 
-describe('GET /count', () => {
+describe('GET /count (users)', () => {
   beforeEach(() => {
     User.count.mockReset();
     User.count.mockResolvedValue(null);
   });
-
   async function callGetOnCountRoute(row, tableName) {
     User.count.mockResolvedValueOnce(row);
     const response = await request(app).get(`/count/${tableName}`);
     return response;
   }
+
   describe('user count', () => {
     test('if there is one user in the table', async () => {
       const row = [{ count: 1 }];
       await callGetOnCountRoute(row, 'user');
       expect(row).toHaveLength(1);
       expect(row[0]).toHaveProperty('count', 1);
+    });
+    test('if there is zero users in the table', async () => {
+      const row = [{ count: 0 }];
+      await callGetOnCountRoute(row, 'user');
+      expect(row).toHaveLength(1);
+      expect(row[0]).toHaveProperty('count', 0);
+    });
+    test('if the table does not exist', async () => {
+      const row = [{ count: 1 }];
+      const response = await callGetOnCountRoute(row, 'foo');
+      expect(response.statusCode).toBe(404);
+    });
+  });
+});
+
+describe('GET /count (courses)', () => {
+  beforeEach(() => {
+    Course.count.mockReset();
+    Course.count.mockResolvedValue(null);
+  });
+  async function callGetOnCountRoute(row, tableName) {
+    Course.count.mockResolvedValueOnce(row);
+    const response = await request(app).get(`/count/${tableName}`);
+    return response;
+  }
+  describe('course count', () => {
+    test('if there is one course in the table', async () => {
+      const row = [{ count: 1 }];
+      await callGetOnCountRoute(row, 'course');
+      expect(row).toHaveLength(1);
+      expect(row[0]).toHaveProperty('count', 1);
+    });
+    test('if there is zero courses in the table', async () => {
+      const row = [{ count: 0 }];
+      await callGetOnCountRoute(row, 'course');
+      expect(row).toHaveLength(1);
+      expect(row[0]).toHaveProperty('count', 0);
+    });
+    test('if the table does not exist', async () => {
+      const row = [{ count: 1 }];
+      const response = await callGetOnCountRoute(row, 'foo');
+      expect(response.statusCode).toBe(404);
     });
   });
 });
