@@ -1,10 +1,10 @@
-# Count User
+# Show Course
 
 Returns json data of the count of users in the Database.
 
 **URL**
 
-/users
+/courses
 
 - **Method:**
 
@@ -67,7 +67,7 @@ None
 
 ```javascript
 $.ajax({
-  url: '/users',
+  url: '/courses',
   dataType: 'json',
   type: 'GET',
   beforeSend: function (xhr) {
