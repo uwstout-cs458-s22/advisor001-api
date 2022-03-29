@@ -4,8 +4,8 @@ const HttpError = require('http-errors');
 const { isEmpty } = require('./../services/utils');
 const { authorizeSession } = require('./../services/auth');
 const counters = {
-  user: require('./../User').count,
-  // course: require('./../Course').count,
+  user: require('./../models/User').count,
+  // course: require('./../models/Course').count,
 };
 
 module.exports = () => {

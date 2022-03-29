@@ -29,6 +29,9 @@ jest.mock('../services/auth', () => {
     authorizeSession: jest.fn().mockImplementation((req, res, next) => {
       return next();
     }),
+    setClearanceLevel: jest.fn().mockImplementation((level) => (req, res, next) => {
+      return next();
+    }),
   };
 });
 
@@ -44,10 +47,11 @@ describe('GET /count', () => {
     return response;
   }
   describe('user count', () => {
-    test('something', async () => {
-      const row = 0;
-      await callGetOnCountRoute(row);
-      expect(row.count).toBe(0);
+    test('if there is one user in the table', async () => {
+      const row = [{ count: 1 }];
+      await callGetOnCountRoute(row, 'user');
+      expect(row).toHaveLength(1);
+      expect(row[0]).toHaveProperty('count', 1);
     });
   });
 });
