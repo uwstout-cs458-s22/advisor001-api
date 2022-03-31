@@ -55,13 +55,13 @@ describe('GET /count (users)', () => {
   describe('user count', () => {
     test('if there is one user in the table', async () => {
       const row = [{ count: 1 }];
-      await callGetOnCountRoute(row, 'user');
+      await callGetOnCountRoute(row, 'users');
       expect(row).toHaveLength(1);
       expect(row[0]).toHaveProperty('count', 1);
     });
     test('if there is zero users in the table', async () => {
       const row = [{ count: 0 }];
-      await callGetOnCountRoute(row, 'user');
+      await callGetOnCountRoute(row, 'users');
       expect(row).toHaveLength(1);
       expect(row[0]).toHaveProperty('count', 0);
     });
@@ -86,13 +86,13 @@ describe('GET /count (courses)', () => {
   describe('course count', () => {
     test('if there is one course in the table', async () => {
       const row = [{ count: 1 }];
-      await callGetOnCountRoute(row, 'course');
+      await callGetOnCountRoute(row, 'courses');
       expect(row).toHaveLength(1);
       expect(row[0]).toHaveProperty('count', 1);
     });
     test('if there is zero courses in the table', async () => {
       const row = [{ count: 0 }];
-      await callGetOnCountRoute(row, 'course');
+      await callGetOnCountRoute(row, 'courses');
       expect(row).toHaveLength(1);
       expect(row[0]).toHaveProperty('count', 0);
     });
