@@ -39,7 +39,18 @@ async function deleteCourse(id) {
   }
 }
 
+async function count() {
+  const res = await db.query(`SELECT COUNT(*) FROM "course"`);
+
+  if (res.rows.length > 0) {
+    return res.rows[0];
+  } else {
+    throw HttpError(500, 'Some Error Occurred');
+  }
+}
+
 module.exports = {
   findOne,
   deleteCourse,
+  count,
 };

@@ -8,8 +8,10 @@ module.exports = () => {
   router.use(bodyParser.json());
   const courseRoutes = require('./course')();
   const usersRoutes = require('./users')();
+  const countRoutes = require('./count')();
   router.use('/users', usersRoutes);
   router.use('/course', courseRoutes);
+  router.use('/count', countRoutes);
   router.get('/health', (req, res) => {
     const uptime = process.uptime();
     const data = {
