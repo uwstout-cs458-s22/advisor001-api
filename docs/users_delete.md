@@ -100,4 +100,16 @@ Deletes a specified user, selected by userId.
   
   ## Sample Call
   
-  **Need to complete this part**
+  ```javascript
+  $.ajax({
+    url: '/users/1',
+    dataType: 'json',
+    type: 'DELETE',
+    beforeSend: function (xhr) {
+      xhr.setRequestHeader('Authorization', 'Bearer t-7614f875-8423-4f20-a674-d7cf3096290e');
+    },
+    success: function (r) {
+      console.log(r);
+    },
+  });
+  ```
