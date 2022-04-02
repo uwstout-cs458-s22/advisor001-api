@@ -281,7 +281,7 @@ describe('User Model', () => {
       expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "user" WHERE "userId"=$1;');
       expect(db.query.mock.calls[0][1]).toHaveLength(1);
       expect(db.query.mock.calls[0][1][0]).toBe(userId);
-      expect(deleteUser).toBe('the user was deleted');
+      expect(deleteUser).toBe(true);
     });
 
     test('User.deleteUser with database error', async () => {

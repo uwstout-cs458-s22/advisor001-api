@@ -76,7 +76,7 @@ async function deleteUser(userId) {
 
     const res = await db.query(`DELETE FROM "user" ${text};`, params);
     if (res.rows.length > 0) {
-      return 'the user was deleted';
+      return true;
     }
   } else {
     throw HttpError(400, 'UserId is required.');
