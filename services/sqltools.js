@@ -49,8 +49,19 @@ function updateValues(whereValues, setValues) {
   return { text: '', params: [] };
 }
 
+function specificCriteria(tableName, criteria) {
+  const newCriteria = {};
+  for (const key in criteria) {
+    // userId becomes user"."userId -- somewhat hacky
+    newCriteria[`${tableName}"."${key}`] = criteria[key];
+  }
+  // done
+  return newCriteria;
+}
+
 module.exports = {
-  whereParams: whereParams,
-  insertValues: insertValues,
-  updateValues: updateValues,
+  whereParams,
+  insertValues,
+  updateValues,
+  specificCriteria,
 };
