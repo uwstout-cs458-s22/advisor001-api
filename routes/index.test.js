@@ -11,4 +11,11 @@ describe('Index Route Tests', () => {
     const response = await request(app).get('/doesnotexists');
     expect(response.statusCode).toBe(404);
   });
+  test('check health route', async () => {
+    const response = await request(app).get('/health');
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toHaveProperty('uptime');
+    expect(response.body).toHaveProperty('date');
+    expect(response.body).toHaveProperty('message', 'Ok');
+  });
 });
