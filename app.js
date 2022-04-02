@@ -8,7 +8,7 @@ module.exports = () => {
   app.use('/', routes);
 
   // default error catch
-  app.use((request, response, next) => {
+  app.use(require('./services/auth').authorizeSession, (req, res, next) => {
     return next(new HttpError.NotFound());
   });
 
