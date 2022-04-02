@@ -1,43 +1,30 @@
 const express = require('express');
 const log = require('loglevel');
-const HttpError = require('http-errors');
-const { isEmpty } = require('./../services/utils');
 const { authorizeSession } = require('./../services/auth');
+
+// list of counter functions
 const counters = {
-  user: require('./../models/User').count,
-  course: require('./../models/Course').count,
+  users: require('./../models/User').count,
+  courses: require('./../models/Course').count,
 };
 
 module.exports = () => {
   const router = express.Router();
 
-  router.get('/users', authorizeSession, async (req, res, next) => {
-    try {
-      const row = await counters.user();
-      if (isEmpty(row)) {
-        throw HttpError.InternalServerError(`Cannot Count ${req.originalUrl}`);
+  // generate all counter routes
+  for (const counter of Object.keys(counters)) {
+    router.get(`/${counter}`, authorizeSession, async (req, res, next) => {
+      try {
+        const row = await counters[counter]();
+        log.info(
+          `${req.method} ${req.originalUrl} success: returning count of ${row.count} ${counter}`
+        );
+        res.send(row);
+      } catch (err) {
+        next(err);
       }
-      log.info(`${req.method} ${req.originalUrl} success: returning count of ${row.count} user(s)`);
-      res.send(row);
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  router.get('/courses', authorizeSession, async (req, res, next) => {
-    try {
-      const row = await counters.course();
-      if (isEmpty(row)) {
-        throw HttpError.InternalServerError(`Cannot Count ${req.originalUrl}`);
-      }
-      log.info(
-        `${req.method} ${req.originalUrl} success: returning count of ${row.count} course(s)`
-      );
-      res.send(row);
-    } catch (err) {
-      next(err);
-    }
-  });
+    });
+  }
 
   return router;
 };
