@@ -34,7 +34,7 @@ Returns json data about a single course.
 
   ```json
   {
-    "id": 1234`,
+    "id": 1234,
     "prefix": "MATH",
     "suffix": 225,
     "title": "Differential Equations",
@@ -131,7 +131,7 @@ Returns a json array about all courses.
   ```json
   [
     {
-      "id": 1234`,
+      "id": 1234,
       "prefix": "MATH",
       "suffix": 225,
       "title": "Differential Equations",
