@@ -36,8 +36,8 @@ Returns json data about a single course.
   {
     "id": 1234`,
     "prefix": "MATH",
-    "suffix": "225",
-    "title": 'Differential Equations',
+    "suffix": 225,
+    "title": "Differential Equations",
     "credits": 3,
   }
   ```
@@ -133,15 +133,15 @@ Returns a json array about all courses.
     {
       "id": 1234`,
       "prefix": "MATH",
-      "suffix": "225",
-      "title": 'Differential Equations',
+      "suffix": 225,
+      "title": "Differential Equations",
       "credits": 3,
     },
     {
       "id": 4321,
       "prefix": "CS",
       "suffix": "244",
-      "title": 'Data Structures',
+      "title": "Data Structures",
       "credits": 3,
     }
   ]
