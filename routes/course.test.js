@@ -33,15 +33,18 @@ jest.mock('../services/auth', () => {
   };
 });
 
+// a helper that creates an array structure for getCourseById
 function dataForGetCourse(rows, offset = 0) {
   const data = [];
   for (let i = 1; i <= rows; i++) {
     const value = i + offset;
     data.push({
       id: `${value}`,
-      department: 'DEP',
-      number: `${value}`,
-      credits: '3',
+      prefix: 'DEP',
+      suffix: `${100 + i}`,
+      title: 'Introduction to Whatever',
+      description: 'Department consent required',
+      credits: 3,
     });
   }
   return data;
@@ -67,17 +70,17 @@ describe('GET /course', () => {
       await callGetOnCourseRoute(row);
       expect(Course.findOne.mock.calls).toHaveLength(1);
       expect(Course.findOne.mock.calls[0]).toHaveLength(1);
-      expect(Course.findOne.mock.calls[0][0]).toBe(row.id);
+      expect(Course.findOne.mock.calls[0][0]).toHaveProperty('id', row.id);
     });
 
     test('should respond with a json object containing the course data', async () => {
       const data = dataForGetCourse(10);
       for (const row of data) {
         const { body: course } = await callGetOnCourseRoute(row);
-        expect(course.id).toBe(row.id);
-        expect(course.department).toBe(row.department);
-        expect(course.number).toBe(row.number);
-        expect(course.credits).toBe(row.credits);
+
+        for (const key in Object.keys(row)) {
+          expect(course).toHaveProperty(key, row[key]);
+        }
       }
     });
 
