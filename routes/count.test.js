@@ -1,3 +1,4 @@
+const HttpError = require('http-errors');
 const log = require('loglevel');
 const request = require('supertest');
 const app = require('../app')();
@@ -54,19 +55,19 @@ describe('GET /count (users)', () => {
 
   describe('user count', () => {
     test('if there is one user in the table', async () => {
-      const row = [{ count: 1 }];
-      await callGetOnCountRoute(row, 'users');
-      expect(row).toHaveLength(1);
-      expect(row[0]).toHaveProperty('count', 1);
+      const row = { count: 1 };
+      const response = await callGetOnCountRoute(row, 'users');
+      expect(response.statusCode).toBe(200);
+      expect(response.body).toHaveProperty('count', 1);
     });
     test('if there is zero users in the table', async () => {
-      const row = [{ count: 0 }];
-      await callGetOnCountRoute(row, 'users');
-      expect(row).toHaveLength(1);
-      expect(row[0]).toHaveProperty('count', 0);
+      const row = { count: 0 };
+      const response = await callGetOnCountRoute(row, 'users');
+      expect(response.statusCode).toBe(200);
+      expect(response.body).toHaveProperty('count', 0);
     });
     test('if the table does not exist', async () => {
-      const row = [{ count: 1 }];
+      const row = { count: 1 };
       const response = await callGetOnCountRoute(row, 'foo');
       expect(response.statusCode).toBe(404);
     });
@@ -85,21 +86,29 @@ describe('GET /count (courses)', () => {
   }
   describe('course count', () => {
     test('if there is one course in the table', async () => {
-      const row = [{ count: 1 }];
-      await callGetOnCountRoute(row, 'courses');
-      expect(row).toHaveLength(1);
-      expect(row[0]).toHaveProperty('count', 1);
+      const row = { count: 1 };
+      const response = await callGetOnCountRoute(row, 'courses');
+      expect(response.statusCode).toBe(200);
+      expect(response.body).toHaveProperty('count', 1);
     });
     test('if there is zero courses in the table', async () => {
-      const row = [{ count: 0 }];
-      await callGetOnCountRoute(row, 'courses');
-      expect(row).toHaveLength(1);
-      expect(row[0]).toHaveProperty('count', 0);
+      const row = { count: 0 };
+      const response = await callGetOnCountRoute(row, 'courses');
+      expect(response.statusCode).toBe(200);
+      expect(response.body).toHaveProperty('count', 0);
     });
     test('if the table does not exist', async () => {
-      const row = [{ count: 1 }];
+      const row = { count: 1 };
       const response = await callGetOnCountRoute(row, 'foo');
       expect(response.statusCode).toBe(404);
+    });
+    test('if there is an error thrown by the model', async () => {
+      Course.count.mockRejectedValueOnce(HttpError(500, 'Some Error Occurred'));
+      const row = [{ count: 0 }];
+      const response = await callGetOnCountRoute(row, 'courses');
+      expect(response.statusCode).toBe(500);
+      expect(response.body.error).not.toBeFalsy();
+      expect(response.body.error.message).toBe('Some Error Occurred');
     });
   });
 });
