@@ -440,6 +440,25 @@ describe('PUT /users', () => {
       expect(response.statusCode).toBe(200);
       expect(response.body).toEqual(expectedReturn);
     });
+
+    test('should still work even if no body parameters are specified', async () => {
+      const editor = samplePrivilegedUser();
+      const user = dataForGetUser(1)[0];
+
+      const desiredChanges = {};
+
+      resolveAuthToMatchUser(editor);
+
+      User.findOne.mockResolvedValueOnce(editor);
+      User.findOne.mockResolvedValueOnce(user);
+
+      User.edit.mockResolvedValueOnce(user);
+
+      const response = await callPutOnUserRoute(user.userId, desiredChanges);
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body).toEqual(user);
+    });
   });
 });
 
