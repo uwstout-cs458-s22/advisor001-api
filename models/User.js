@@ -6,7 +6,8 @@ const env = require('../services/environment');
 
 // permission levels
 const rolePermissions = {
-  admin: 999,
+  admin: 99999,
+  director: 100,
   user: 0,
 };
 
