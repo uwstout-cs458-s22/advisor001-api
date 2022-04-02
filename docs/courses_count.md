@@ -67,7 +67,7 @@ None
 
 ```javascript
 $.ajax({
-  url: '/courses',
+  url: '/count/courses',
   dataType: 'json',
   type: 'GET',
   beforeSend: function (xhr) {
