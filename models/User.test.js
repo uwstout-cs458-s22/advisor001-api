@@ -317,14 +317,13 @@ describe('User Model', () => {
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
       expect(db.query.mock.calls[0][0]).toBe(
-        'UPDATE $4 SET "enable"=$2, "role"=$3 WHERE "userId"=$1;'
+        'UPDATE "user" SET "enable"=$2, "role"=$3 WHERE "userId"=$1 RETURNING *;'
       );
       console.log(db.query.mock.calls);
-      expect(db.query.mock.calls[0][1]).toHaveLength(4);
+      expect(db.query.mock.calls[0][1]).toHaveLength(3);
       expect(db.query.mock.calls[0][1][0]).toBe(row.userId);
       expect(db.query.mock.calls[0][1][1]).toBe(row.enable);
       expect(db.query.mock.calls[0][1][2]).toBe(row.role);
-      expect(db.query.mock.calls[0][1][3]).toBe('user');
       for (const key in Object.keys(row)) {
         expect(user).toHaveProperty(key, row[key]);
       }
@@ -346,13 +345,12 @@ describe('User Model', () => {
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
       expect(db.query.mock.calls[0][0]).toBe(
-        'UPDATE $4 SET "enable"=$2, "role"=$3 WHERE "userId"=$1;'
+        'UPDATE "user" SET "enable"=$2, "role"=$3 WHERE "userId"=$1 RETURNING *;'
       );
-      expect(db.query.mock.calls[0][1]).toHaveLength(4);
+      expect(db.query.mock.calls[0][1]).toHaveLength(3);
       expect(db.query.mock.calls[0][1][0]).toBe(row.userId);
       expect(db.query.mock.calls[0][1][1]).toBe(row.enable);
       expect(db.query.mock.calls[0][1][2]).toBe(row.role);
-      expect(db.query.mock.calls[0][1][3]).toBe('user');
     });
 
     test('User.edit with bad input', async () => {
@@ -367,6 +365,66 @@ describe('User Model', () => {
         'UserId and new Status and Role are required.'
       );
       expect(db.query.mock.calls).toHaveLength(0);
+    });
+  });
+  describe('checking user permissions with hasMinimumPermission', () => {
+    test('do not allow unprivieged user to use admin role features', () => {
+      const data = dataForGetUser(1);
+      const testUser = data[0];
+      expect(User.hasMinimumPermission(testUser, 'admin')).toBe(false);
+      expect(User.hasMinimumPermission(testUser, 'user')).toBe(true);
+    });
+
+    test('allow admins to use all permissions', () => {
+      const data = dataForGetUser(1);
+      const testUser = data[0];
+      // make this an admin
+      testUser.role = 'admin';
+      // run tests
+      expect(User.hasMinimumPermission(testUser, 'admin')).toBe(true);
+      expect(User.hasMinimumPermission(testUser, 'user')).toBe(true);
+    });
+
+    test('standard user test with invalid permission', () => {
+      const data = dataForGetUser(1);
+      const testUser = data[0];
+      expect(User.hasMinimumPermission(testUser, '')).toBe(false);
+      expect(User.hasMinimumPermission(testUser, undefined)).toBe(false);
+      expect(User.hasMinimumPermission(testUser, {})).toBe(false);
+    });
+
+    test('admin test with invalid permission', () => {
+      const data = dataForGetUser(1);
+      const testUser = data[0];
+      // make this an admin
+      testUser.role = 'admin';
+      // run tests
+      expect(User.hasMinimumPermission(testUser, '')).toBe(false);
+      expect(User.hasMinimumPermission(testUser, undefined)).toBe(false);
+      expect(User.hasMinimumPermission(testUser, {})).toBe(false);
+    });
+
+    test('with an empty or invalid user', () => {
+      expect(User.hasMinimumPermission({}, 'admin')).toBe(false);
+      expect(User.hasMinimumPermission({}, 'user')).toBe(false);
+      expect(User.hasMinimumPermission({}, '')).toBe(false);
+      expect(User.hasMinimumPermission(undefined, 'admin')).toBe(false);
+      expect(User.hasMinimumPermission(undefined, 'user')).toBe(false);
+      expect(User.hasMinimumPermission(undefined, '')).toBe(false);
+      expect(User.hasMinimumPermission([], 'admin')).toBe(false);
+      expect(User.hasMinimumPermission([], 'user')).toBe(false);
+      expect(User.hasMinimumPermission([], '')).toBe(false);
+    });
+  });
+
+  describe('Count Users', () => {
+    test('One User in the Database', async () => {
+      db.query.mockResolvedValue({ rows: [{ count: 1 }] });
+      const res = await User.count();
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(1);
+      expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "user"`);
+      expect(res).toHaveProperty('count', 1);
     });
   });
 });

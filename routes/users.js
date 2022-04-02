@@ -3,7 +3,7 @@ const log = require('loglevel');
 const HttpError = require('http-errors');
 const { isEmpty } = require('./../services/utils');
 const User = require('./../models/User');
-const { authorizeSession } = require('./../services/auth');
+const { authorizeSession, setClearanceLevel } = require('./../services/auth');
 
 module.exports = () => {
   const router = express.Router();
@@ -65,6 +65,62 @@ module.exports = () => {
       next(error);
     }
   });
+
+  // edit users
+  router.put('/:userId?', authorizeSession, setClearanceLevel('admin'), async (req, res, next) => {
+    try {
+      // is the given id a valid format & non-empty?
+      const userId = req.params.userId;
+      if (!userId || userId === '') {
+        throw HttpError(400, 'Required Parameters Missing');
+      }
+      const user = await User.findOne({ userId: userId });
+
+      // make sure exists
+      if (isEmpty(user)) {
+        throw new HttpError.NotFound();
+      }
+
+      // perform the edit
+      const editResult = await User.edit(userId, {
+        enable: req.body.enable || user.enable,
+        role: req.body.role || user.role,
+      });
+
+      // success
+      log.info(`${req.method} ${req.originalUrl} success: returning edited user ${editResult}`);
+      return res.send(editResult);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.delete(
+    '/:userId?',
+    authorizeSession,
+    setClearanceLevel('admin'),
+    async (req, res, next) => {
+      try {
+        const userId = req.params.userId;
+        if (!userId || userId === '') {
+          throw HttpError(400, 'Required Parameters Missing');
+        }
+
+        let user = await User.findOne({ userId: userId });
+        if (isEmpty(user)) {
+          console.log(req.params);
+          throw new HttpError.NotFound();
+        }
+
+        user = await User.deleteUser(userId);
+
+        res.status(200);
+        res.send();
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
 
   return router;
 };

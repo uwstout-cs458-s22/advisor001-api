@@ -4,6 +4,12 @@ const { db } = require('../services/database');
 const { whereParams, insertValues, updateValues } = require('../services/sqltools');
 const env = require('../services/environment');
 
+// permission levels
+const rolePermissions = {
+  admin: 999,
+  user: 0,
+};
+
 // if found return { ... }
 // if not found return {}
 // if db error, db.query will throw a rejected promise
@@ -80,11 +86,10 @@ async function edit(userId, newValues) {
   if (userId && newValues && typeof newValues === 'object') {
     const { text, params } = updateValues(
       { userId: userId },
-      { enable: newValues.enable, role: newValues.role },
-      'user'
+      { enable: newValues.enable, role: newValues.role }
     );
 
-    const res = await db.query(text, params);
+    const res = await db.query(`UPDATE "user" ${text} RETURNING *;`, params);
 
     if (res.rows.length > 0) {
       return res.rows[0];
@@ -94,10 +99,26 @@ async function edit(userId, newValues) {
   }
 }
 
+async function count() {
+  const res = await db.query(`SELECT COUNT(*) FROM "user"`);
+
+  if (res.rows.length > 0) {
+    return res.rows[0];
+  } else {
+    throw HttpError(500, 'Some Error Occurred');
+  }
+}
+
+function hasMinimumPermission(user, role) {
+  return rolePermissions[user?.role] >= rolePermissions[role];
+}
+
 module.exports = {
   findOne,
   findAll,
   create,
   deleteUser,
   edit,
+  hasMinimumPermission,
+  count,
 };
