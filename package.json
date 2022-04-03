@@ -56,6 +56,12 @@
       "services/environment.js",
       "./server.js"
     ],
+    "setupFilesAfterEnv": [
+      "./jest/tests_common"
+    ],
+    "testPathIgnorePatterns": [
+      "jest/*"
+    ],
     "coverageThreshold": {
       "global": {
         "lines": 90
