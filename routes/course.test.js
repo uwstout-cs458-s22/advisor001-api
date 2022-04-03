@@ -10,6 +10,7 @@ beforeAll(() => {
 jest.mock('../models/Course', () => {
   return {
     findOne: jest.fn(),
+    findAll: jest.fn(),
   };
 });
 
@@ -39,8 +40,9 @@ function dataForGetCourse(rows, offset = 0) {
     const value = i + offset;
     data.push({
       id: `${value}`,
-      department: 'DEP',
-      number: `${value}`,
+      prefix: 'CS',
+      suffix: `${value}`,
+      title: 'Computer Science 1',
       credits: '3',
     });
   }
@@ -51,6 +53,8 @@ describe('GET /course', () => {
   beforeEach(() => {
     Course.findOne.mockReset();
     Course.findOne.mockResolvedValue(null);
+    Course.findAll.mockReset();
+    Course.findAll.mockResolvedValue(null);
   });
 
   // helper functions - id is a numeric value
@@ -103,6 +107,99 @@ describe('GET /course', () => {
       Course.findOne.mockRejectedValueOnce(new Error('Some Database Error'));
       const response = await request(app).get(`/course/100`);
       expect(response.statusCode).toBe(500);
+    });
+  });
+
+  describe('querying a group of courses', () => {
+    test('should make a call to Course.findAll', async () => {
+      const data = dataForGetCourse(10);
+      Course.findAll.mockResolvedValueOnce(data);
+      await request(app).get(`/course`);
+      expect(Course.findAll.mock.calls).toHaveLength(1);
+      expect(Course.findAll.mock.calls[0]).toHaveLength(3);
+      expect(Course.findAll.mock.calls[0][0]).toBeNull();
+      expect(Course.findAll.mock.calls[0][1]).toBeUndefined();
+      expect(Course.findAll.mock.calls[0][2]).toBeUndefined();
+    });
+
+    test('should make a call to findAll - with limits', async () => {
+      const data = dataForGetCourse(3);
+      Course.findAll.mockResolvedValueOnce(data);
+      await request(app).get(`/course?limit=3`);
+      expect(Course.findAll.mock.calls).toHaveLength(1);
+      expect(Course.findAll.mock.calls[0]).toHaveLength(3);
+      expect(Course.findAll.mock.calls[0][0]).toBeNull();
+      expect(Course.findAll.mock.calls[0][1]).toBe('3');
+      expect(Course.findAll.mock.calls[0][2]).toBeUndefined();
+    });
+
+    test('should make a call to findAll - with offset', async () => {
+      const data = dataForGetCourse(3);
+      Course.findAll.mockResolvedValueOnce(data);
+      await request(app).get(`/course?offset=1`);
+      expect(Course.findAll.mock.calls).toHaveLength(1);
+      expect(Course.findAll.mock.calls[0]).toHaveLength(3);
+      expect(Course.findAll.mock.calls[0][0]).toBeNull();
+      expect(Course.findAll.mock.calls[0][1]).toBeUndefined();
+      expect(Course.findAll.mock.calls[0][2]).toBe('1');
+    });
+
+    test('should make a call to findAll- with limit and offset', async () => {
+      const data = dataForGetCourse(3, 1);
+      Course.findAll.mockResolvedValueOnce(data);
+      await request(app).get(`/course?limit=3&offset=1`);
+      expect(Course.findAll.mock.calls).toHaveLength(1);
+      expect(Course.findAll.mock.calls[0]).toHaveLength(3);
+      expect(Course.findAll.mock.calls[0][0]).toBeNull();
+      expect(Course.findAll.mock.calls[0][1]).toBe('3');
+      expect(Course.findAll.mock.calls[0][2]).toBe('1');
+    });
+
+    test('should respond with a json array object containg the course data', async () => {
+      const data = dataForGetCourse(5);
+      Course.findAll.mockResolvedValueOnce(data);
+      const { body: courses } = await request(app).get(`/course`);
+      expect(courses).toHaveLength(data.length);
+      for (let i = 0; i < data.length; i++) {
+        expect(courses[i].id).toBe(data[i].id);
+        expect(courses[i].prefix).toBe(data[i].prefix);
+        expect(courses[i].suffix).toBe(data[i].suffix);
+        expect(courses[i].title).toBe(data[i].title);
+        expect(courses[i].description).toBe(data[i].description);
+        expect(courses[i].credits).toBe(data[i].credits);
+      }
+    });
+
+    test('should respond with a json array object containg no data', async () => {
+      Course.findAll.mockResolvedValueOnce([]);
+      const response = await request(app).get(`/course`);
+      expect(response.body).toHaveLength(0);
+    });
+
+    test('should specify json in the content type header', async () => {
+      Course.findAll.mockResolvedValueOnce([]);
+      const response = await request(app).get(`/course`);
+      expect(response.headers['content-type']).toEqual(expect.stringContaining('json'));
+    });
+
+    test('should respond with a 200 status code when course data returned', async () => {
+      const data = dataForGetCourse(5);
+      Course.findAll.mockResolvedValueOnce(data);
+      const response = await request(app).get(`/course`);
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('should respond with a 200 status code when course data returned (even no courses)', async () => {
+      Course.findAll.mockResolvedValueOnce([]);
+      const response = await request(app).get(`/course`);
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('should respond with a 500 status code when an error occurs', async () => {
+      Course.findAll.mockRejectedValueOnce(new Error('Some Database Failure'));
+      const response = await request(app).get(`/course`);
+      expect(response.statusCode).toBe(500);
+      expect(response.body.error.message).toBe('Some Database Failure');
     });
   });
 });

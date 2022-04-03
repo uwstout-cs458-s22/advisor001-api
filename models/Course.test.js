@@ -27,8 +27,9 @@ function dataForGetCourse(rows, offset = 0) {
     const value = i + offset;
     data.push({
       id: `${value}`,
-      department: 'DEP',
-      number: `${value}`,
+      prefix: 'CS',
+      suffix: `${value}`,
+      title: 'Computer Science 1',
       credits: '3',
     });
   }
@@ -82,6 +83,97 @@ describe('Course Model', () => {
     });
   });
 
+  describe('querying groups of courses', () => {
+    test('should make a call to Course.findAll - no criteria, no limits, no offsets', async () => {
+      const data = dataForGetCourse(5);
+      db.query.mockResolvedValue({ rows: data });
+
+      const courses = await Course.findAll();
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe('SELECT * from "course"  LIMIT $1 OFFSET $2;');
+      expect(db.query.mock.calls[0][1]).toHaveLength(2);
+      expect(db.query.mock.calls[0][1][0]).toBe(100);
+      expect(db.query.mock.calls[0][1][1]).toBe(0);
+      expect(courses).toHaveLength(data.length);
+
+      for (let i = 0; i < data.length; i++) {
+        for (const key in Object.keys(data[i])) {
+          expect(courses[i]).toHaveProperty(key, data[i][key]);
+        }
+      }
+    });
+
+    test('should make a call to Course.findAll - with criteria, no limits, no offsets', async () => {
+      const data = dataForGetCourse(5);
+      db.query.mockResolvedValue({ rows: data });
+      const courses = await Course.findAll({ credits: 3 }, undefined);
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe(
+        'SELECT * from "course" WHERE "credits"=$1 LIMIT $2 OFFSET $3;'
+      );
+      expect(db.query.mock.calls[0][1]).toHaveLength(3);
+      expect(db.query.mock.calls[0][1][0]).toBe(3);
+      expect(db.query.mock.calls[0][1][1]).toBe(100);
+      expect(db.query.mock.calls[0][1][2]).toBe(0);
+      expect(courses).toHaveLength(data.length);
+      for (let i = 0; i < data.length; i++) {
+        for (const key in Object.keys(data[i])) {
+          expect(courses[i]).toHaveProperty(key, data[i][key]);
+        }
+      }
+    });
+
+    test('should make a call to Course.findAll - with criteria, with limits, no offsets', async () => {
+      const data = dataForGetCourse(3);
+      db.query.mockResolvedValue({ rows: data });
+      const courses = await Course.findAll({ credits: 3 }, 5);
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe(
+        'SELECT * from "course" WHERE "credits"=$1 LIMIT $2 OFFSET $3;'
+      );
+      expect(db.query.mock.calls[0][1]).toHaveLength(3);
+      expect(db.query.mock.calls[0][1][0]).toBe(3);
+      expect(db.query.mock.calls[0][1][1]).toBe(5);
+      expect(db.query.mock.calls[0][1][2]).toBe(0);
+      expect(courses).toHaveLength(data.length);
+      for (let i = 0; i < data.length; i++) {
+        for (const key in Object.keys(data[i])) {
+          expect(courses[i]).toHaveProperty(key, data[i][key]);
+        }
+      }
+    });
+
+    test('should make a call to Course.findAll - with criteria, with limits, with offsets', async () => {
+      const data = dataForGetCourse(3, 1);
+      db.query.mockResolvedValue({ rows: data });
+      const courses = await Course.findAll({ credits: 3 }, 5, 1);
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe(
+        'SELECT * from "course" WHERE "credits"=$1 LIMIT $2 OFFSET $3;'
+      );
+      expect(db.query.mock.calls[0][1]).toHaveLength(3);
+      expect(db.query.mock.calls[0][1][0]).toBe(3);
+      expect(db.query.mock.calls[0][1][1]).toBe(5);
+      expect(db.query.mock.calls[0][1][2]).toBe(1);
+      expect(courses).toHaveLength(data.length);
+      for (let i = 0; i < data.length; i++) {
+        for (const key in Object.keys(data[i])) {
+          expect(courses[i]).toHaveProperty(key, data[i][key]);
+        }
+      }
+    });
+
+    test('should return null for database error', async () => {
+      db.query.mockRejectedValueOnce(new Error('a testing database error'));
+      await expect(Course.findAll()).rejects.toThrowError('a testing database error');
+    });
+  });
+
   describe('deleting a course', () => {
     test('Course.deleteCourse with expected data', async () => {
       const data = dataForGetCourse(1);
@@ -119,7 +211,7 @@ describe('Course Model', () => {
   });
 
   describe('Count Courses', () => {
-    test('One User in the Database', async () => {
+    test('One Course in the Database', async () => {
       db.query.mockResolvedValue({ rows: [{ count: 1 }] });
       const res = await Course.count();
       expect(db.query.mock.calls).toHaveLength(1);

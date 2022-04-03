@@ -6,6 +6,7 @@ const { authorizeSession } = require('./../services/auth');
 const counters = {
   user: require('./../models/User').count,
   course: require('./../models/Course').count,
+  term: require('./../models/Term').count,
 };
 
 module.exports = () => {
@@ -33,6 +34,19 @@ module.exports = () => {
       log.info(
         `${req.method} ${req.originalUrl} success: returning count of ${row.count} course(s)`
       );
+      res.send(row);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get('/terms', authorizeSession, async (req, res, next) => {
+    try {
+      const row = await counters.term();
+      if (isEmpty(row)) {
+        throw HttpError.InternalServerError(`Cannot Count ${req.originalUrl}`);
+      }
+      log.info(`${req.method} ${req.originalUrl} success: returning count of ${row.count} term(s)`);
       res.send(row);
     } catch (err) {
       next(err);
