@@ -1,10 +1,10 @@
-# Show Course
+# Count Courses
 
 Returns json data of the count of users in the Database.
 
 **URL**
 
-/courses
+/count/courses
 
 - **Method:**
 
