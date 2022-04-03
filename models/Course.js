@@ -1,4 +1,5 @@
 const HttpError = require('http-errors');
+const log = require('loglevel');
 const { db } = require('../services/database');
 const { whereParams, updateValues } = require('../services/sqltools');
 const { isEmpty, isObject } = require('../services/utils');
@@ -16,6 +17,20 @@ async function findOne(criteria) {
     return res.rows[0];
   }
   return {};
+}
+
+// if found return [ {}, {} ... ]
+// if not found return []
+// if db error, db.query will throw a rejected promise
+async function findAll(criteria, limit = 100, offset = 0) {
+  const { text, params } = whereParams(criteria);
+  const n = params.length;
+  const p = params.concat([limit, offset]);
+  const res = await db.query(`SELECT * from "course" ${text} LIMIT $${n + 1} OFFSET $${n + 2};`, p);
+  log.debug(
+    `Retrieved ${res.rows.length} courses from db with criteria: ${text}, ${JSON.stringify(params)}`
+  );
+  return res.rows;
 }
 
 // if successful delete, return course was deleted
@@ -76,6 +91,7 @@ async function count() {
 
 module.exports = {
   findOne,
+  findAll,
   deleteCourse,
   edit,
   count,

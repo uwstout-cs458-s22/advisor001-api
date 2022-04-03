@@ -6,6 +6,7 @@ const { authorizeSession } = require('./../services/auth');
 const counters = {
   users: require('./../models/User').count,
   courses: require('./../models/Course').count,
+  terms: require('./../models/Term').count,
 };
 
 module.exports = () => {
