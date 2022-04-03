@@ -22,3 +22,5 @@ Every request received by the API must also be accompanied with the Stytch sessi
 [/users GET COUNT](users_count.md)
 
 [/course GET COUNT](courses_count.md)
+
+[/term GET COUNT](terms_count.md)

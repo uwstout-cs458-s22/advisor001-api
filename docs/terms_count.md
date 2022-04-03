@@ -1,10 +1,10 @@
-# Count Courses
+# Count Terms
 
-Returns json data of the count of users in the Database.
+Returns json data of the count of terms in the Database.
 
 **URL**
 
-/count/courses
+/count/terms
 
 - **Method:**
 
@@ -67,7 +67,7 @@ None
 
 ```javascript
 $.ajax({
-  url: '/count/courses',
+  url: '/count/terms',
   dataType: 'json',
   type: 'GET',
   beforeSend: function (xhr) {

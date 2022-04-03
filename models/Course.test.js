@@ -211,7 +211,7 @@ describe('Course Model', () => {
   });
 
   describe('Count Courses', () => {
-    test('One User in the Database', async () => {
+    test('One Course in the Database', async () => {
       db.query.mockResolvedValue({ rows: [{ count: 1 }] });
       const res = await Course.count();
       expect(db.query.mock.calls).toHaveLength(1);

@@ -24,11 +24,13 @@ module.exports = () => {
     try {
       const courseId = req.params.courseId;
       const course = await Course.findOne(courseId);
+      // catch if the course does not exist
       if (isEmpty(course)) {
         throw new HttpError.NotFound();
       }
       log.info(`${req.method} ${req.originalUrl} success: returning course ${courseId}`);
       return res.send(course);
+      // catch general errors
     } catch (error) {
       next(error);
     }
