@@ -116,7 +116,7 @@ Edits a specified user, selected by userId.
   
   ```javascript
   $.ajax({
-    url: '/users/1',
+    url: '/users/user-test-16d9ba61-97a1-4ba4-9720-b03761dc50c6',
     body: '{"enable": true, "role" = "admin"}
     dataType: 'json',
     type: 'PUT',
