@@ -1,46 +1,7 @@
-const HttpError = require('http-errors');
-const log = require('loglevel');
-const request = require('supertest');
-const app = require('../app')();
-
-const User = require('../models/User');
-const Course = require('../models/Course');
-
-beforeAll(() => {
-  log.disableAll();
-});
-
-jest.mock('../models/User', () => {
-  return {
-    count: jest.fn(),
-  };
-});
-
-jest.mock('../models/Course', () => {
-  return {
-    count: jest.fn(),
-  };
-});
-
-jest.mock('../services/environment', () => {
-  return {
-    port: 3001,
-    stytchProjectId: 'project-test-11111111-1111-1111-1111-111111111111',
-    stytchSecret: 'secret-test-111111111111',
-    masterAdminEmail: 'master@gmail.com',
-  };
-});
-
-jest.mock('../services/auth', () => {
-  return {
-    authorizeSession: jest.fn().mockImplementation((req, res, next) => {
-      return next();
-    }),
-    setClearanceLevel: jest.fn().mockImplementation((level) => (req, res, next) => {
-      return next();
-    }),
-  };
-});
+// Must be at the top. Provided by jest/tests_common
+global.jest.init();
+global.jest.init_routes();
+const { User, Course, app, request } = global.jest;
 
 describe('GET /count (users)', () => {
   beforeEach(() => {
@@ -103,7 +64,7 @@ describe('GET /count (courses)', () => {
       expect(response.statusCode).toBe(404);
     });
     test('if there is an error thrown by the model', async () => {
-      Course.count.mockRejectedValueOnce(HttpError(500, 'Some Error Occurred'));
+      Course.count.mockRejectedValueOnce(new Error('Some Error Occurred'));
       const row = [{ count: 0 }];
       const response = await callGetOnCountRoute(row, 'courses');
       expect(response.statusCode).toBe(500);
