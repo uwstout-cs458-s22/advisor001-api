@@ -1,10 +1,10 @@
-# Count User
+# Count Users
 
 Returns json data of the count of users in the Database.
 
 **URL**
 
-/users
+/count/users
 
 - **Method:**
 
