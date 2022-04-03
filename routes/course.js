@@ -12,7 +12,7 @@ module.exports = () => {
   router.get('/', authorizeSession, async (req, res, next) => {
     try {
       const courses = await Course.findAll(null, req.query.limit, req.query.offset);
-      log.info(`${req.method} ${req.originalUrl} success: returning ${courses.length} user(s)`);
+      log.info(`${req.method} ${req.originalUrl} success: returning ${courses.length} course(s)`);
       return res.send(courses);
     } catch (error) {
       next(error);
