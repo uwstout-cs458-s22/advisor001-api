@@ -30,7 +30,8 @@ function dataForGetCourse(rows, offset = 0) {
       prefix: 'CS',
       suffix: `${value}`,
       title: 'Computer Science 1',
-      credits: '3',
+      description: `An introduction to Computer Science`,
+      credits: 3,
     });
   }
   return data;
@@ -47,7 +48,7 @@ describe('Course Model', () => {
       const data = dataForGetCourse(1);
       const id = data[0].id;
 
-      db.query.mockResolvedValue({ rows: data });
+      db.query.mockResolvedValueOnce({ rows: data });
       await Course.findOne(id);
 
       expect(db.query.mock.calls).toHaveLength(1);
@@ -58,7 +59,7 @@ describe('Course Model', () => {
       const data = dataForGetCourse(1);
       const id = data[0].id;
 
-      db.query.mockResolvedValue({ rows: [data] });
+      db.query.mockResolvedValueOnce({ rows: [data] });
       const course = await Course.findOne(id);
 
       for (const key in Object.keys(data)) {
@@ -67,7 +68,7 @@ describe('Course Model', () => {
     });
 
     test('should return empty for unfound course', async () => {
-      db.query.mockResolvedValue({ rows: [] });
+      db.query.mockResolvedValueOnce({ rows: [] });
       const course = await Course.findOne(123);
 
       expect(Object.keys(course)).toHaveLength(0);
@@ -86,7 +87,7 @@ describe('Course Model', () => {
   describe('querying groups of courses', () => {
     test('should make a call to Course.findAll - no criteria, no limits, no offsets', async () => {
       const data = dataForGetCourse(5);
-      db.query.mockResolvedValue({ rows: data });
+      db.query.mockResolvedValueOnce({ rows: data });
 
       const courses = await Course.findAll();
 
@@ -107,7 +108,7 @@ describe('Course Model', () => {
 
     test('should make a call to Course.findAll - with criteria, no limits, no offsets', async () => {
       const data = dataForGetCourse(5);
-      db.query.mockResolvedValue({ rows: data });
+      db.query.mockResolvedValueOnce({ rows: data });
       const courses = await Course.findAll({ credits: 3 }, undefined);
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
@@ -128,7 +129,7 @@ describe('Course Model', () => {
 
     test('should make a call to Course.findAll - with criteria, with limits, no offsets', async () => {
       const data = dataForGetCourse(3);
-      db.query.mockResolvedValue({ rows: data });
+      db.query.mockResolvedValueOnce({ rows: data });
       const courses = await Course.findAll({ credits: 3 }, 5);
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
@@ -149,7 +150,7 @@ describe('Course Model', () => {
 
     test('should make a call to Course.findAll - with criteria, with limits, with offsets', async () => {
       const data = dataForGetCourse(3, 1);
-      db.query.mockResolvedValue({ rows: data });
+      db.query.mockResolvedValueOnce({ rows: data });
       const courses = await Course.findAll({ credits: 3 }, 5, 1);
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
@@ -179,7 +180,7 @@ describe('Course Model', () => {
       const data = dataForGetCourse(1);
       const id = data[0].id;
 
-      db.query.mockResolvedValue({ rows: data });
+      db.query.mockResolvedValueOnce({ rows: data });
       const deleteCourse = await Course.deleteCourse(id);
 
       expect(db.query.mock.calls).toHaveLength(1);
@@ -216,82 +217,50 @@ describe('Course Model', () => {
       db.query.mockResolvedValue(null);
     });
 
-    test('Adding single course success', async () => {
-      db.query.mockResolvedValue({ rows: [] });
-      const randomCourse = dataForTestCourse();
+    // helper that runs the add
+    function doAdd(newCourse, duplicate = false) {
+      db.query.mockResolvedValueOnce(duplicate ? { rows: [newCourse] } : { rows: [] });
+      db.query.mockResolvedValueOnce({ rows: [newCourse] });
+      return Course.addCourse(newCourse);
+    }
 
-      const result = await Course.addCourse(
-        randomCourse.courseId,
-        randomCourse.department,
-        randomCourse.number,
-        randomCourse.id,
-        randomCourse.credits
-      );
-      expect(result).toHaveLength(1);
+    test('Adding single course success', async () => {
+      const course = dataForGetCourse(1)[0];
+      const result = await doAdd(course);
+
+      // should return property
+      for (const key of Object.keys(course)) {
+        expect(result).toHaveProperty(key, course[key]);
+      }
     });
 
     test('Inputting invalid value', async () => {
-      db.query.mockResolvedValue({ rows: [] });
-      const randomCourse = dataForTestCourse();
+      const course = dataForGetCourse(1)[0];
+      course.description = { test: "object that's not string" };
 
-      randomCourse.department = { test: "object that's not string" };
-
-      await expect(
-        await Course.addCourse(
-          randomCourse.courseId,
-          randomCourse.department,
-          randomCourse.number,
-          randomCourse.id,
-          randomCourse.credits
-        )
-      ).rejects.toThrowError('Incompatable Course Parameter Types');
+      await expect(doAdd(course)).rejects.toThrowError('Incompatible Course Parameter Types');
     });
 
     test('Inputting null parameters', async () => {
-      db.query.mockResolvedValue({ rows: [] });
+      await expect(doAdd(null)).rejects.toThrowError('Missing Course Parameters');
+      expect(db.query).not.toBeCalled();
+    });
 
-      await expect(await Course.addCourse(null, null, null, null, null)).rejects.toThrowError(
-        'Missing Course Parameters'
-      );
+    test('Inputting empty object', async () => {
+      await expect(doAdd({})).rejects.toThrowError('Missing Course Parameters');
+      expect(db.query).not.toBeCalled();
     });
 
     test('Inputting duplicate course', async () => {
-      db.query.mockResolvedValue({ rows: [] });
-      const randomCourse = dataForTestCourse();
-
-      await Course.addCourse(
-        randomCourse.courseId,
-        randomCourse.department,
-        randomCourse.number,
-        randomCourse.id,
-        randomCourse.credits
-      );
-
-      const secondResult = await Course.addCourse(
-        randomCourse.courseId,
-        randomCourse.department,
-        randomCourse.number,
-        randomCourse.id,
-        randomCourse.credits
-      );
-
-      await expect(secondResult).rejects.toThrowError('Course already addded');
+      const course = dataForGetCourse(1)[0];
+      await doAdd(course);
+      await expect(doAdd(course, true)).rejects.toThrowError('Course already added');
     });
   });
 
-  describe('Count Courses', () => {
-    test('One User in the Database', async () => {
-      db.query.mockResolvedValue({ rows: [{ count: 1 }] });
-      const res = await Course.count();
-      expect(db.query.mock.calls).toHaveLength(1);
-      expect(db.query.mock.calls[0]).toHaveLength(1);
-      expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "course"`);
-      expect(res).toHaveProperty('count', 1);
-    });
-  });
   describe('Count Courses', () => {
     test('One Course in the Database', async () => {
-      db.query.mockResolvedValue({ rows: [{ count: 1 }] });
+      db.query.mockResolvedValueOnce({ rows: [{ count: 1 }] });
       const res = await Course.count();
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(1);

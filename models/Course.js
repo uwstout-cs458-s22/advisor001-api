@@ -2,7 +2,7 @@ const HttpError = require('http-errors');
 const log = require('loglevel');
 const { db } = require('../services/database');
 const { whereParams, insertValues } = require('../services/sqltools');
-const { isEmpty } = require('../services/utils');
+const { isEmpty, isString, isNumber } = require('../services/utils');
 
 // if found return { ... }
 // if not found return {}
@@ -56,11 +56,11 @@ async function deleteCourse(id) {
 }
 
 const validParams = {
-  prefix: true,
-  suffix: true,
-  title: true,
-  description: true,
-  credits: true,
+  prefix: isString,
+  suffix: isString,
+  title: isString,
+  description: isString,
+  credits: isNumber,
 };
 
 /**
@@ -74,14 +74,23 @@ const validParams = {
  * if adding duplicate throws 500 error 'Course already added;'
  */
 async function addCourse(properties) {
+  if (!properties) {
+    throw HttpError(500, 'Missing Course Parameters');
+  }
   for (const param in validParams) {
-    if (properties[param] === undefined) {
+    if (properties?.[param] === undefined) {
       throw HttpError(500, 'Missing Course Parameters');
     }
+    if (!validParams[param](properties?.[param])) {
+      throw HttpError(500, 'Incompatible Course Parameter Types');
+    }
   }
-  if (!isEmpty(findOne({ courseId: properties.courseId }))) {
+
+  const alreadyThere = await findOne({ courseId: properties.courseId });
+
+  if (!isEmpty(alreadyThere)) {
     console.table(properties);
-    throw HttpError(500, 'Course already addded');
+    throw HttpError(500, 'Course already added');
   }
 
   const { text, params } = insertValues(properties);
