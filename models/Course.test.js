@@ -1,41 +1,8 @@
-const log = require('loglevel');
-const { db } = require('../services/database');
+global.jest.init(false); // Init without models
+global.jest.init_db();
+const { dataForGetCourse, db } = global.jest;
+
 const Course = require('./Course');
-
-beforeAll(() => {
-  log.disableAll();
-});
-
-jest.mock('../services/database.js', () => {
-  return {
-    db: {
-      query: jest.fn(),
-    },
-  };
-});
-
-jest.mock('../services/environment.js', () => {
-  return {
-    masterAdminEmail: 'master@gmail.com',
-  };
-});
-
-// a helper that creates an array structure for getCourseById
-function dataForGetCourse(rows, offset = 0) {
-  const data = [];
-  for (let i = 1; i <= rows; i++) {
-    const value = i + offset;
-    data.push({
-      id: `${value}`,
-      prefix: 'DEP',
-      suffix: `${100 + i}`,
-      title: 'Introduction to Whatever',
-      description: 'Department consent required',
-      credits: 3,
-    });
-  }
-  return data;
-}
 
 describe('Course Model', () => {
   beforeEach(() => {
@@ -121,7 +88,7 @@ describe('Course Model', () => {
   });
 
   describe('Count Courses', () => {
-    test('One User in the Database', async () => {
+    test('One Course in the Database', async () => {
       db.query.mockResolvedValue({ rows: [{ count: 1 }] });
       const res = await Course.count();
       expect(db.query.mock.calls).toHaveLength(1);
@@ -129,5 +96,80 @@ describe('Course Model', () => {
       expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "course"`);
       expect(res).toHaveProperty('count', 1);
     });
+  });
+});
+describe('editing a course', () => {
+  beforeEach(() => {
+    db.query.mockReset();
+    db.query.mockResolvedValue(null);
+  });
+
+  test('Course.edit', async () => {
+    const data = dataForGetCourse(1);
+    const row = data[0];
+    row.credits = 1;
+    row.prefix = 'CS';
+    const newValues = { credits: row.credits, prefix: row.prefix };
+
+    db.query.mockResolvedValue({ rows: data });
+    const course = await Course.edit(row.id, newValues);
+
+    expect(db.query.mock.calls).toHaveLength(1);
+    expect(db.query.mock.calls[0]).toHaveLength(2);
+    expect(db.query.mock.calls[0][0]).toBe(
+      'UPDATE "course" SET "credits"=$2, "prefix"=$3 WHERE "id"=$1 RETURNING *;'
+    );
+    console.log(db.query.mock.calls);
+    expect(db.query.mock.calls[0][1]).toHaveLength(3);
+    expect(db.query.mock.calls[0][1][0]).toBe(row.id);
+    expect(db.query.mock.calls[0][1][1]).toBe(row.credits);
+    expect(db.query.mock.calls[0][1][2]).toBe(row.prefix);
+    for (const key in Object.keys(row)) {
+      expect(course).toHaveProperty(key, row[key]);
+    }
+  });
+
+  test('Course.edit with database error', async () => {
+    const data = dataForGetCourse(1);
+    const row = data[0];
+    row.credits = 1;
+    row.prefix = 'CS';
+    const newValues = { credits: row.credits, prefix: row.prefix };
+
+    // error thrown during call to db query
+    db.query.mockRejectedValueOnce(new Error('a testing database error'));
+    await expect(Course.edit(row.id, newValues)).rejects.toThrowError('a testing database error');
+
+    expect(db.query.mock.calls).toHaveLength(1);
+    expect(db.query.mock.calls[0]).toHaveLength(2);
+    expect(db.query.mock.calls[0][0]).toBe(
+      'UPDATE "course" SET "credits"=$2, "prefix"=$3 WHERE "id"=$1 RETURNING *;'
+    );
+    console.log(db.query.mock.calls);
+    expect(db.query.mock.calls[0][1]).toHaveLength(3);
+    expect(db.query.mock.calls[0][1][0]).toBe(row.id);
+    expect(db.query.mock.calls[0][1][1]).toBe(row.credits);
+    expect(db.query.mock.calls[0][1][2]).toBe(row.prefix);
+  });
+
+  test('Course.edit with bad input', async () => {
+    await expect(Course.edit('id', 'bad input')).rejects.toThrowError('Id is required.');
+    expect(db.query.mock.calls).toHaveLength(0);
+  });
+
+  test('Course.edit with no input', async () => {
+    await expect(Course.edit()).rejects.toThrowError('Id is required.');
+    expect(db.query.mock.calls).toHaveLength(0);
+  });
+});
+
+describe('Count Courses', () => {
+  test('One Course in the Database', async () => {
+    db.query.mockResolvedValue({ rows: [{ count: 1 }] });
+    const res = await Course.count();
+    expect(db.query.mock.calls).toHaveLength(1);
+    expect(db.query.mock.calls[0]).toHaveLength(1);
+    expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "course"`);
+    expect(res).toHaveProperty('count', 1);
   });
 });
