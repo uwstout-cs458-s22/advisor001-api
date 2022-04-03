@@ -1,10 +1,10 @@
-# Count User
+# Count Terms
 
 Returns json data of the count of terms in the Database.
 
 **URL**
 
-/users
+/count/terms
 
 - **Method:**
 
