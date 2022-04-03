@@ -14,9 +14,9 @@ Edits a specified user, selected by userId.
 
    _Optional:_ User identifier (Fails if empty)
 
-  `userId=[integer]`
+  `userId=[text]`
 
-  `/users/1234`
+  `/users/user-test-f8b0f866-35de-4ba4-9a15-925775baebe`
 
 - **Data Params**
 
