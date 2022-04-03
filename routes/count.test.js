@@ -1,8 +1,7 @@
-
 // Must be at the top. Provided by jest/tests_common
 global.jest.init();
 global.jest.init_routes();
-const { User, Course, app, request } = global.jest;
+const { User, Term, Course, app, request } = global.jest;
 
 describe('GET /count (users)', () => {
   beforeEach(() => {
