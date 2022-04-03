@@ -1,7 +1,7 @@
 const HttpError = require('http-errors');
 const { db } = require('../services/database');
-const { whereParams } = require('../services/sqltools');
-const { isEmpty } = require('../services/utils');
+const { whereParams, updateValues } = require('../services/sqltools');
+const { isEmpty, isObject } = require('../services/utils');
 
 // if found return { ... }
 // if not found return {}
@@ -33,6 +33,37 @@ async function deleteCourse(id) {
   }
 }
 
+const validParams = {
+  prefix: true,
+  suffix: true,
+  title: true,
+  description: true,
+  credits: true,
+};
+
+async function edit(id, newValues) {
+  if (id && newValues && isObject(newValues)) {
+    // to be set
+    const setValues = {};
+    // validate newValues
+    for (const param in newValues) {
+      if (validParams[param]) {
+        setValues[param] = newValues[param];
+      }
+    }
+    // now update values
+    const { text, params } = updateValues({ id }, setValues);
+
+    const res = await db.query(`UPDATE "course" ${text} RETURNING *;`, params);
+
+    if (res.rows.length > 0) {
+      return res.rows[0];
+    }
+  } else {
+    throw HttpError(400, 'Id is required.');
+  }
+}
+
 async function count() {
   const res = await db.query(`SELECT COUNT(*) FROM "course"`);
 
@@ -46,5 +77,6 @@ async function count() {
 module.exports = {
   findOne,
   deleteCourse,
+  edit,
   count,
 };
