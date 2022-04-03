@@ -7,7 +7,19 @@ const { authorizeSession } = require('./../services/auth');
 
 module.exports = () => {
   const router = express.Router();
-  // single course get restful endpoint
+
+  // Get multiple courses
+  router.get('/', authorizeSession, async (req, res, next) => {
+    try {
+      const courses = await Course.findAll(null, req.query.limit, req.query.offset);
+      log.info(`${req.method} ${req.originalUrl} success: returning ${courses.length} course(s)`);
+      return res.send(courses);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Get single course
   router.get('/:courseId', authorizeSession, async (req, res, next) => {
     try {
       const courseId = req.params.courseId;
