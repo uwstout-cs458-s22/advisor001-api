@@ -1,115 +1,16 @@
-const log = require('loglevel');
-const request = require('supertest');
-const app = require('../app')();
-const User = require('../models/User');
+// Must be at the top. Provided by jest/tests_common
+global.jest.init();
+global.jest.init_routes();
+const { User, auth, app, request, dataForGetUser, samplePrivilegedUser } = global.jest;
 
-beforeAll(() => {
-  log.disableAll();
-});
-
-jest.mock('../models/User', () => {
-  const { hasMinimumPermission } = jest.requireActual('../models/User');
-
-  return {
-    findOne: jest.fn(),
-    findAll: jest.fn(),
-    create: jest.fn(),
-    edit: jest.fn(),
-    hasMinimumPermission,
-    deleteUser: jest.fn(),
-  };
-});
-
-jest.mock('../services/environment', () => {
-  return {
-    port: 3001,
-    stytchProjectId: 'project-test-11111111-1111-1111-1111-111111111111',
-    stytchSecret: 'secret-test-111111111111',
-    masterAdminEmail: 'master@gmail.com',
-  };
-});
-
-jest.mock('../services/auth', () => {
-  const { setClearanceLevel } = jest.requireActual('../services/auth');
-
-  return {
-    authorizeSession: jest.fn().mockImplementation((req, res, next) => {
-      return next();
-    }),
-    setClearanceLevel,
-  };
-});
-
-const auth = require('../services/auth');
-
-// a helper that creates an array structure for getUserById
-function dataForGetUser(rows, offset = 0) {
-  const data = [];
-  for (let i = 1; i <= rows; i++) {
-    const value = i + offset;
-    data.push({
-      id: `${value}`,
-      email: `email${value}@uwstout.edu`,
-      userId: `user-test-someguid${value}`,
-      enable: 'false',
-      role: 'user',
-    });
-  }
-  return data;
-}
-
-// a helper that returns one admin user row
-function samplePrivilegedUser() {
-  return {
-    id: '0',
-    email: 'sandbox@stytch.com',
-    userId: 'user-test-16d9ba61-97a1-4ba4-9720-b03761dc50c6',
-    enable: 'true',
-    role: 'admin',
-  };
-}
-
-// a helper that returns sample auth data -- taken directly from the Stytch API reference
-function sampleStytchAuthenticationInfo(userId, email) {
-  return {
-    status_code: 200,
-    request_id: 'request-id-test-b05c992f-ebdc-489d-a754-c7e70ba13141',
-    session: {
-      attributes: {
-        ip_address: '203.0.113.1',
-        user_agent:
-          'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36',
-      },
-      authentication_factors: [
-        {
-          delivery_method: 'email',
-          email_factor: {
-            email_address: `${email}`,
-            email_id: 'email-test-81bf03a8-86e1-4d95-bd44-bb3495224953',
-          },
-          last_authenticated_at: '2021-08-09T07:41:52Z',
-          type: 'magic_link',
-        },
-      ],
-      expires_at: '2021-08-10T07:41:52Z',
-      last_accessed_at: '2021-08-09T07:41:52Z',
-      session_id: 'session-test-fe6c042b-6286-479f-8a4f-b046a6c46509',
-      started_at: '2021-08-09T07:41:52Z',
-      user_id: `${userId}`,
-    },
-    session_token: 'mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q',
-  };
-}
+/*
+Custom extensions defined in test_models
+- User.resetAllMocks()
+- auth.loginAs(user, [dbUser - optional])
+*/
 
 describe('GET /users', () => {
-  beforeEach(() => {
-    User.create.mockReset();
-    User.create.mockResolvedValue(null);
-    User.findOne.mockReset();
-    User.findOne.mockResolvedValue(null);
-    User.findAll.mockReset();
-    User.findAll.mockResolvedValue(null);
-  });
+  beforeEach(User.resetAllMocks);
 
   // helper functions - id is a numeric value
   async function callGetOnUserRoute(row, key = 'id') {
@@ -118,7 +19,6 @@ describe('GET /users', () => {
     const response = await request(app).get(`/users/${id}`);
     return response;
   }
-  // helper functions - userId is a text value
 
   describe('given a row id', () => {
     test('should make a call to User.findOne', async () => {
@@ -133,11 +33,10 @@ describe('GET /users', () => {
       const data = dataForGetUser(10);
       for (const row of data) {
         const { body: user } = await callGetOnUserRoute(row);
-        expect(user.id).toBe(row.id);
-        expect(user.email).toBe(row.email);
-        expect(user.userId).toBe(row.userId);
-        expect(user.enable).toBe(row.enable);
-        expect(user.role).toBe(row.role);
+        // expect all keys to match
+        for (const key of Object.keys(user)) {
+          expect(user[key]).toBe(row[key]);
+        }
       }
     });
 
@@ -308,22 +207,7 @@ describe('GET /users', () => {
 describe('PUT /users', () => {
   // TODO please make sure these tests meet the user acceptance criteria
 
-  beforeEach(() => {
-    User.findOne.mockReset();
-    User.findOne.mockResolvedValue(null);
-    User.findAll.mockReset();
-    User.findAll.mockResolvedValue(null);
-    User.edit.mockReset();
-    User.edit.mockResolvedValue(null);
-  });
-
-  // helper for matching the header to the user passed
-  function resolveAuthToMatchUser(user) {
-    auth.authorizeSession.mockImplementationOnce((req, res, next) => {
-      req.stytchAuthenticationInfo = sampleStytchAuthenticationInfo(user.userId, user.email);
-      return next();
-    });
-  }
+  beforeEach(User.resetAllMocks);
 
   // put helper
   async function callPutOnUserRoute(userId, body) {
@@ -341,9 +225,8 @@ describe('PUT /users', () => {
         enable: 'true',
       };
 
-      resolveAuthToMatchUser(editor);
+      auth.loginAs(editor);
 
-      User.findOne.mockResolvedValueOnce(editor);
       User.findOne.mockResolvedValueOnce(user);
       User.edit.mockResolvedValue({});
 
@@ -355,7 +238,7 @@ describe('PUT /users', () => {
   });
 
   describe('when URL bar is non-empty', () => {
-    test('should 500 when editor is not found', async () => {
+    test('should 500 when editor is not found in database', async () => {
       const editor = samplePrivilegedUser();
       const user = dataForGetUser(1)[0];
 
@@ -364,9 +247,8 @@ describe('PUT /users', () => {
         enable: 'true',
       };
 
-      resolveAuthToMatchUser(editor);
+      auth.loginAs(editor, {}); // NO EDITOR (2nd param is database-resolved user)
 
-      User.findOne.mockResolvedValueOnce({}); // NO EDITOR
       User.findOne.mockResolvedValueOnce(user);
       User.edit.mockResolvedValueOnce(Object.assign(user, desiredChanges));
 
@@ -387,9 +269,8 @@ describe('PUT /users', () => {
         enable: 'true',
       };
 
-      resolveAuthToMatchUser(editor);
+      auth.loginAs(editor);
 
-      User.findOne.mockResolvedValueOnce(editor);
       User.findOne.mockResolvedValueOnce(user);
       User.edit.mockResolvedValueOnce({});
 
@@ -407,9 +288,8 @@ describe('PUT /users', () => {
         enable: 'true',
       };
 
-      resolveAuthToMatchUser(editor);
+      auth.loginAs(editor);
 
-      User.findOne.mockResolvedValueOnce(editor);
       User.findOne.mockResolvedValueOnce({}); // NO USER
       User.edit.mockResolvedValueOnce({});
 
@@ -427,9 +307,8 @@ describe('PUT /users', () => {
         enable: 'true',
       };
 
-      resolveAuthToMatchUser(editor);
+      auth.loginAs(editor);
 
-      User.findOne.mockResolvedValueOnce(editor);
       User.findOne.mockResolvedValueOnce(user);
 
       const expectedReturn = Object.assign(user, desiredChanges);
@@ -447,11 +326,9 @@ describe('PUT /users', () => {
 
       const desiredChanges = {};
 
-      resolveAuthToMatchUser(editor);
+      auth.loginAs(editor);
 
-      User.findOne.mockResolvedValueOnce(editor);
       User.findOne.mockResolvedValueOnce(user);
-
       User.edit.mockResolvedValueOnce(user);
 
       const response = await callPutOnUserRoute(user.userId, desiredChanges);
@@ -463,12 +340,7 @@ describe('PUT /users', () => {
 });
 
 describe('POST /users', () => {
-  beforeEach(() => {
-    User.findOne.mockReset();
-    User.findOne.mockResolvedValue(null);
-    User.create.mockReset();
-    User.create.mockResolvedValue(null);
-  });
+  beforeEach(User.resetAllMocks);
 
   describe('given a email and userId (stytch_id)', () => {
     test('should call both User.findOne and User.create', async () => {
@@ -622,14 +494,7 @@ describe('POST /users', () => {
 });
 
 describe('DELETE /users', () => {
-  beforeEach(() => {
-    User.create.mockReset();
-    User.create.mockResolvedValue(null);
-    User.findOne.mockReset();
-    User.findOne.mockResolvedValue(null);
-    User.deleteUser.mockReset();
-    User.deleteUser.mockResolvedValue(null);
-  });
+  beforeEach(User.resetAllMocks);
 
   async function callDeleteOnUserRoute(row, key = 'userId') {
     const id = row[key] === undefined ? '' : row[key];
@@ -638,19 +503,10 @@ describe('DELETE /users', () => {
     return response;
   }
 
-  // helper for matching the header to the user passed
-  function resolveAuthToMatchUser(user) {
-    auth.authorizeSession.mockImplementationOnce((req, res, next) => {
-      req.stytchAuthenticationInfo = sampleStytchAuthenticationInfo(user.userId, user.email);
-      return next();
-    });
-  }
-
   describe('given an empty URL bar', () => {
     test('should respond with a 400 status code when passing empty string', async () => {
       const deleter = samplePrivilegedUser();
-      resolveAuthToMatchUser(deleter);
-      User.findOne.mockResolvedValueOnce(deleter);
+      auth.loginAs(deleter);
       const response = await callDeleteOnUserRoute({});
 
       expect(User.findOne.mock.calls).toHaveLength(1);
@@ -666,8 +522,7 @@ describe('DELETE /users', () => {
     test('should respond with a 401 status code when empty string and not authorized', async () => {
       const deleter = dataForGetUser(1, 100)[0];
       deleter.enable = 'true';
-      resolveAuthToMatchUser(deleter);
-      User.findOne.mockResolvedValueOnce(deleter);
+      auth.loginAs(deleter);
       const response = await callDeleteOnUserRoute({});
 
       expect(User.findOne.mock.calls).toHaveLength(1);
@@ -684,8 +539,7 @@ describe('DELETE /users', () => {
     test('should respond with a 200 status code when user exists and is deleted', async () => {
       const user = dataForGetUser(1, 100)[0];
       const deleter = samplePrivilegedUser();
-      resolveAuthToMatchUser(deleter);
-      User.findOne.mockResolvedValueOnce(deleter);
+      auth.loginAs(deleter);
       const response = await callDeleteOnUserRoute(user);
 
       expect(User.findOne.mock.calls).toHaveLength(2);
@@ -703,8 +557,7 @@ describe('DELETE /users', () => {
 
     test('should respond with a 404 status code when user does NOT exists', async () => {
       const deleter = samplePrivilegedUser();
-      resolveAuthToMatchUser(deleter);
-      User.findOne.mockResolvedValueOnce(deleter);
+      auth.loginAs(deleter);
 
       User.findOne.mockResolvedValueOnce({});
       const response = await request(app).delete(`/users/100`);
@@ -719,11 +572,10 @@ describe('DELETE /users', () => {
       expect(response.statusCode).toBe(404);
     });
 
-    test('should respond with 500 when the editor is not found', async () => {
+    test('should 500 when editor is not found in database', async () => {
       const deleter = samplePrivilegedUser();
       const user = dataForGetUser(1, 100)[0];
-      resolveAuthToMatchUser(deleter);
-      User.findOne.mockResolvedValueOnce({});
+      auth.loginAs(deleter, {}); // NO EDITOR (2nd param is database-resolved user)
       const response = await callDeleteOnUserRoute(user);
 
       expect(User.findOne.mock.calls).toHaveLength(1);
@@ -740,8 +592,7 @@ describe('DELETE /users', () => {
       const deleter = rows[0];
       const user = rows[1];
       deleter.enable = 'true';
-      resolveAuthToMatchUser(deleter);
-      User.findOne.mockResolvedValueOnce(deleter);
+      auth.loginAs(deleter);
       const response = await callDeleteOnUserRoute(user);
 
       expect(User.findOne.mock.calls).toHaveLength(1);
