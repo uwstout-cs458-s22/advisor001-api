@@ -79,13 +79,6 @@ async function addCourse(properties) {
     }
   }
 
-  const alreadyThere = await findOne({ courseId: properties.courseId });
-
-  if (!isEmpty(alreadyThere)) {
-    console.table(properties);
-    throw HttpError(500, 'Course already added');
-  }
-
   const { text, params } = insertValues(properties);
 
   const res = await db.query(`INSERT INTO "course" ${text} RETURNING *;`, params);
