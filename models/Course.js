@@ -1,26 +1,21 @@
 const HttpError = require('http-errors');
 const log = require('loglevel');
 const { db } = require('../services/database');
-const { whereParams, insertValues } = require('../services/sqltools');
-const { isEmpty, isString, isNumber } = require('../services/utils');
+const { whereParams, insertValues, updateValues } = require('../services/sqltools');
+const { isEmpty, isObject, isString, isNumber } = require('../services/utils');
 
 // if found return { ... }
 // if not found return {}
 // if db error, db.query will throw a rejected promise
-async function findOne(id) {
-  if (id) {
-    const { text, params } = whereParams({
-      id: id,
-    });
-
-    const res = await db.query(`SELECT * from "course" ${text} LIMIT 1;`, params);
-    if (res.rows.length > 0) {
-      return res.rows[0];
-    }
-  } else {
-    throw HttpError(400, 'Id is required.');
+async function findOne(criteria) {
+  if (!criteria || isEmpty(criteria)) {
+    throw HttpError.BadRequest('Id is required.');
   }
-
+  const { text, params } = whereParams(criteria);
+  const res = await db.query(`SELECT * from "course" ${text} LIMIT 1;`, params);
+  if (res.rows.length > 0) {
+    return res.rows[0];
+  }
   return {};
 }
 
@@ -42,9 +37,7 @@ async function findAll(criteria, limit = 100, offset = 0) {
 async function deleteCourse(id) {
   // check that id is not nullable
   if (id) {
-    const { text, params } = whereParams({
-      id: id,
-    });
+    const { text, params } = whereParams({ id });
 
     const res = await db.query(`DELETE FROM "course" ${text};`, params);
     if (res.rows.length > 0) {
@@ -109,6 +102,29 @@ async function addCourse(properties) {
   throw HttpError(500, 'Unexpected DB Condition, insert sucessful with no returned record');
 }
 
+async function edit(id, newValues) {
+  if (id && newValues && isObject(newValues)) {
+    // to be set
+    const setValues = {};
+    // validate newValues
+    for (const param in newValues) {
+      if (validParams[param]) {
+        setValues[param] = newValues[param];
+      }
+    }
+    // now update values
+    const { text, params } = updateValues({ id }, setValues);
+
+    const res = await db.query(`UPDATE "course" ${text} RETURNING *;`, params);
+
+    if (res.rows.length > 0) {
+      return res.rows[0];
+    }
+  } else {
+    throw HttpError(400, 'Id is required.');
+  }
+}
+
 async function count() {
   const res = await db.query(`SELECT COUNT(*) FROM "course"`);
 
@@ -124,5 +140,6 @@ module.exports = {
   findAll,
   addCourse,
   deleteCourse,
+  edit,
   count,
 };

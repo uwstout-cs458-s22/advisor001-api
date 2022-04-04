@@ -1,41 +1,8 @@
-const log = require('loglevel');
-const { db } = require('../services/database');
-const env = require('../services/environment');
+global.jest.init(false); // Init without models
+global.jest.init_db();
+const { dataForGetUser, db, env } = global.jest;
+
 const User = require('./User');
-
-beforeAll(() => {
-  log.disableAll();
-});
-
-jest.mock('../services/database.js', () => {
-  return {
-    db: {
-      query: jest.fn(),
-    },
-  };
-});
-
-jest.mock('../services/environment.js', () => {
-  return {
-    masterAdminEmail: 'master@gmail.com',
-  };
-});
-
-// a helper that creates an array structure for getUserById
-function dataForGetUser(rows, offset = 0) {
-  const data = [];
-  for (let i = 1; i <= rows; i++) {
-    const value = i + offset;
-    data.push({
-      id: `${value}`,
-      email: `email${value}@uwstout.edu`,
-      userId: `user-test-someguid${value}`,
-      enable: 'true',
-      role: 'user',
-    });
-  }
-  return data;
-}
 
 describe('User Model', () => {
   beforeEach(() => {
@@ -281,7 +248,7 @@ describe('User Model', () => {
       expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "user" WHERE "userId"=$1;');
       expect(db.query.mock.calls[0][1]).toHaveLength(1);
       expect(db.query.mock.calls[0][1][0]).toBe(userId);
-      expect(deleteUser).toBe('the user was deleted');
+      expect(deleteUser).toBe(true);
     });
 
     test('User.deleteUser with database error', async () => {
