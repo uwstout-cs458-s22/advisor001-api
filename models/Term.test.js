@@ -1,24 +1,8 @@
-const log = require('loglevel');
-const { db } = require('../services/database');
+global.jest.init(false);
+global.jest.init_db();
+
+const { db } = global.jest;
 const Term = require('./Term');
-
-beforeAll(() => {
-  log.disableAll();
-});
-
-jest.mock('../services/database.js', () => {
-  return {
-    db: {
-      query: jest.fn(),
-    },
-  };
-});
-
-jest.mock('../services/environment.js', () => {
-  return {
-    masterAdminEmail: 'master@gmail.com',
-  };
-});
 
 describe('Course Model', () => {
   beforeEach(() => {
