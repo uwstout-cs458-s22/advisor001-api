@@ -185,8 +185,7 @@ describe('Course Model', () => {
     });
 
     // helper that runs the add
-    function doAdd(newCourse, duplicate = false) {
-      db.query.mockResolvedValueOnce(duplicate ? { rows: [newCourse] } : { rows: [] });
+    function doAdd(newCourse) {
       db.query.mockResolvedValueOnce({ rows: [newCourse] });
       return Course.addCourse(newCourse);
     }
@@ -216,12 +215,6 @@ describe('Course Model', () => {
     test('Inputting empty object', async () => {
       await expect(doAdd({})).rejects.toThrowError('Missing Course Parameters');
       expect(db.query).not.toBeCalled();
-    });
-
-    test('Inputting duplicate course', async () => {
-      const course = dataForGetCourse(1)[0];
-      await doAdd(course);
-      await expect(doAdd(course, true)).rejects.toThrowError('Course already added');
     });
   });
 
