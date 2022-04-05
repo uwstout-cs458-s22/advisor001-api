@@ -77,20 +77,6 @@ global.jest = {
 
   // --- miscellaneous helper functions ---
 
-  // a helper that creates an array structure for getTermById
-  dataForGetTerm: function (rows, offset = 0) {
-    const data = [];
-    for (let i = 1; i <= rows; i++) {
-      const value = i + offset;
-      data.push({
-        id: `${value}`,
-        title: 'FALL-2022',
-        startyear: 2022,
-        semester: 2,
-      });
-    }
-    return data;
-  },
   // a helper that creates an array structure for getCourseById
   dataForGetCourse: function (rows, offset = 0) {
     const data = [];
@@ -103,6 +89,20 @@ global.jest = {
         title: 'Introduction to Whatever',
         description: 'Department consent required',
         credits: 3,
+      });
+    }
+    return data;
+  },
+  // a helper that creates an array structure for getTermById
+  dataForGetTerm: function (rows, offset = 0) {
+    const data = [];
+    for (let i = 1; i <= rows; i++) {
+      const value = i + offset;
+      data.push({
+        id: `${value}`,
+        title: 'FALL-2022',
+        startyear: 2022,
+        semester: 2,
       });
     }
     return data;
