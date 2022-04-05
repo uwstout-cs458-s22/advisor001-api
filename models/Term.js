@@ -1,8 +1,8 @@
 const HttpError = require('http-errors');
 const log = require('loglevel');
 const { db } = require('../services/database');
-const { whereParams, insertValues, updateValues } = require('../services/sqltools');
-const { isEmpty, isObject, isString, isNumber } = require('../services/utils');
+const { whereParams } = require('../services/sqltools');
+const { isEmpty } = require('../services/utils');
 
 // if found return { ... }
 // if not found return {}
