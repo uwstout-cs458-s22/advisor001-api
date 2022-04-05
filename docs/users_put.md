@@ -1,6 +1,6 @@
-# Delete User
+# Edit User
 
-Deletes a specified user, selected by userId.
+Edits a specified user, selected by userId.
 
 - **URL**
 
@@ -8,15 +8,21 @@ Deletes a specified user, selected by userId.
 
 - **Method**
 
-  `DELETE`
+  `PUT`
 
 - **URL Params**
 
-  userId? (Optional)
+   _Optional:_ User identifier (Fails if empty)
+
+  `userId=[text]`
+
+  `/users/user-test-f8b0f866-35de-4ba4-9a15-925775baebe`
 
 - **Data Params**
 
-  None
+  `enable=[bool]`
+  &
+  `role=[string]`
 
 - **Auth required** : YES, Bearer token in Authorization header
 
@@ -29,7 +35,15 @@ Deletes a specified user, selected by userId.
     `200`
   
   **Content:**
-    None
+  ```json
+  {
+    "id": 1234,
+    "email": "joe25@example.com",
+    "enable": true,
+    "role": "user",
+    "userId": "user-test-f8b0f866-35de-4ba4-9a15-925775baebe"
+  }
+  ```
     
 - **Error Response:**
   
@@ -103,8 +117,9 @@ Deletes a specified user, selected by userId.
   ```javascript
   $.ajax({
     url: '/users/user-test-16d9ba61-97a1-4ba4-9720-b03761dc50c6',
+    body: '{"enable": true, "role" = "admin"}
     dataType: 'json',
-    type: 'DELETE',
+    type: 'PUT',
     beforeSend: function (xhr) {
       xhr.setRequestHeader('Authorization', 'Bearer t-7614f875-8423-4f20-a674-d7cf3096290e');
     },
