@@ -35,4 +35,6 @@ module.exports = () => {
       next(error);
     }
   });
+
+  return router;
 };
