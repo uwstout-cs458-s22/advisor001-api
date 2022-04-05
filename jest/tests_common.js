@@ -86,7 +86,7 @@ global.jest = {
         id: `${value}`,
         title: 'FALL-2022',
         startyear: 2022,
-        semester: 3,
+        semester: 2,
       });
     }
     return data;
