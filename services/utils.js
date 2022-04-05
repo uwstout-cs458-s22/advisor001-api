@@ -13,9 +13,15 @@ function isObject(a) {
 function isString(a) {
   return typeof a === 'string' || a instanceof String;
 }
+
+function isNumber(a) {
+  return typeof a === 'number' || a instanceof Number;
+}
+
 module.exports = {
   isEmpty,
   isArray,
   isObject,
   isString,
+  isNumber,
 };

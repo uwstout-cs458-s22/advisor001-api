@@ -36,6 +36,20 @@ module.exports = () => {
     }
   });
 
+  // Create course
+  router.post('/', authorizeSession, async (req, res, next) => {
+    try {
+      const { prefix, suffix, title, description, credits } = req.body;
+      const properties = { prefix, suffix, title, description, credits };
+
+      const course = await Course.addCourse(properties);
+
+      return res.send(course);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.put('/:id?', authorizeSession, setClearanceLevel('director'), async (req, res, next) => {
     try {
       // is the given id a valid format & non-empty?
