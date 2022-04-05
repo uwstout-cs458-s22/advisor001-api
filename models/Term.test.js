@@ -50,4 +50,106 @@ describe('Term Model', () => {
       await expect(Term.findOne()).rejects.toThrowError('Id is required.');
     });
   });
+
+  describe('querying groups of terms', () => {
+    test('should make a call to Term.findAll - no criteria, no limits, no offsets', async () => {
+      const data = dataForGetTerm(5);
+      db.query.mockResolvedValueOnce({ rows: data });
+
+      const terms = await Term.findAll();
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe('SELECT * from "term"  LIMIT $1 OFFSET $2;');
+      expect(db.query.mock.calls[0][1]).toHaveLength(2);
+      expect(db.query.mock.calls[0][1][0]).toBe(100);
+      expect(db.query.mock.calls[0][1][1]).toBe(0);
+      expect(terms).toHaveLength(data.length);
+
+      for (let i = 0; i < data.length; i++) {
+        for (const key in Object.keys(data[i])) {
+          expect(terms[i]).toHaveProperty(key, data[i][key]);
+        }
+      }
+    });
+
+    test('should make a call to Term.findAll - with criteria, no limits, no offsets', async () => {
+      const data = dataForGetTerm(5);
+      db.query.mockResolvedValueOnce({ rows: data });
+      const terms = await Term.findAll({ semester: 3 }, undefined);
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe(
+        'SELECT * from "term" WHERE "semester"=$1 LIMIT $2 OFFSET $3;'
+      );
+      expect(db.query.mock.calls[0][1]).toHaveLength(3);
+      expect(db.query.mock.calls[0][1][0]).toBe(3);
+      expect(db.query.mock.calls[0][1][1]).toBe(100);
+      expect(db.query.mock.calls[0][1][2]).toBe(0);
+      expect(terms).toHaveLength(data.length);
+      for (let i = 0; i < data.length; i++) {
+        for (const key in Object.keys(data[i])) {
+          expect(terms[i]).toHaveProperty(key, data[i][key]);
+        }
+      }
+    });
+
+    test('should make a call to Term.findAll - with criteria, with limits, no offsets', async () => {
+      const data = dataForGetTerm(3);
+      db.query.mockResolvedValueOnce({ rows: data });
+      const terms = await Term.findAll({ semester: 3 }, 5);
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe(
+        'SELECT * from "term" WHERE "semester"=$1 LIMIT $2 OFFSET $3;'
+      );
+      expect(db.query.mock.calls[0][1]).toHaveLength(3);
+      expect(db.query.mock.calls[0][1][0]).toBe(3);
+      expect(db.query.mock.calls[0][1][1]).toBe(5);
+      expect(db.query.mock.calls[0][1][2]).toBe(0);
+      expect(terms).toHaveLength(data.length);
+      for (let i = 0; i < data.length; i++) {
+        for (const key in Object.keys(data[i])) {
+          expect(terms[i]).toHaveProperty(key, data[i][key]);
+        }
+      }
+    });
+
+    test('should make a call to Term.findAll - with criteria, with limits, with offsets', async () => {
+      const data = dataForGetTerm(3, 1);
+      db.query.mockResolvedValueOnce({ rows: data });
+      const terms = await Term.findAll({ semester: 3 }, 5, 1);
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe(
+        'SELECT * from "term" WHERE "semester"=$1 LIMIT $2 OFFSET $3;'
+      );
+      expect(db.query.mock.calls[0][1]).toHaveLength(3);
+      expect(db.query.mock.calls[0][1][0]).toBe(3);
+      expect(db.query.mock.calls[0][1][1]).toBe(5);
+      expect(db.query.mock.calls[0][1][2]).toBe(1);
+      expect(terms).toHaveLength(data.length);
+      for (let i = 0; i < data.length; i++) {
+        for (const key in Object.keys(data[i])) {
+          expect(terms[i]).toHaveProperty(key, data[i][key]);
+        }
+      }
+    });
+
+    test('should return null for database error', async () => {
+      db.query.mockRejectedValueOnce(new Error('a testing database error'));
+      await expect(Term.findAll()).rejects.toThrowError('a testing database error');
+    });
+  });
+
+  describe('Count Terms', () => {
+    test('One Term in the Database', async () => {
+      db.query.mockResolvedValueOnce({ rows: [{ count: 1 }] });
+      const res = await Term.count();
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(1);
+      expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "term"`);
+      expect(res).toHaveProperty('count', 1);
+    });
+  });
 });
