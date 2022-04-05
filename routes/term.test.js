@@ -1,16 +1,7 @@
 // Must be at the top. Provided by jest/tests_common
 global.jest.init();
 global.jest.init_routes();
-const {
-  Term,
-  auth,
-  app,
-  request,
-  dataForGetTerm,
-  dataForGetCourse,
-  dataForGetUser,
-  samplePrivilegedUser,
-} = global.jest;
+const { Term, app, request, dataForGetTerm } = global.jest;
 
 /*
 Custom extensions defined in test_models
