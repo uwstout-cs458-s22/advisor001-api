@@ -1,4 +1,4 @@
-# Show User
+# Show Course
 
 Returns json data about a single course.
 
