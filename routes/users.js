@@ -108,7 +108,6 @@ module.exports = () => {
 
         let user = await User.findOne({ userId: userId });
         if (isEmpty(user)) {
-          console.log(req.params);
           throw new HttpError.NotFound();
         }
 
