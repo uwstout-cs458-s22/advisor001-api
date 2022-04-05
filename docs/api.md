@@ -28,3 +28,6 @@ Every request received by the API must also be accompanied with the Stytch sessi
 [/course GET COUNT](courses_count.md)
 
 [/term GET COUNT](terms_count.md)
+
+### Terms
+[/term GET](term_get.md)
