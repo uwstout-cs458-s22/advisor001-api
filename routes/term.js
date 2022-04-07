@@ -3,7 +3,7 @@ const log = require('loglevel');
 const HttpError = require('http-errors');
 const { isEmpty } = require('./../services/utils');
 const Term = require('./../models/Term');
-const { authorizeSession } = require('./../services/auth');
+const { authorizeSession, setClearanceLevel } = require('./../services/auth');
 
 module.exports = () => {
   const router = express.Router();
@@ -35,6 +35,33 @@ module.exports = () => {
       next(error);
     }
   });
+
+  // delete a single term
+  router.delete(
+    '/:termId?',
+    authorizeSession,
+    setClearanceLevel('director'),
+    async (req, res, next) => {
+      try {
+        const termId = req.params.termId;
+        if (!termId || termId === '') {
+          throw HttpError(400, 'Required Parameters Missing');
+        }
+
+        let term = await Term.findOne({ id: termId });
+        if (isEmpty(term)) {
+          throw new HttpError.NotFound();
+        }
+
+        term = await Term.deleteTerm(termId);
+
+        res.status(200);
+        res.send();
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
 
   return router;
 };

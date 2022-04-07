@@ -1,7 +1,8 @@
 // Must be at the top. Provided by jest/tests_common
 global.jest.init();
 global.jest.init_routes();
-const { Term, app, request, dataForGetTerm } = global.jest;
+const { Term, app, request, dataForGetTerm, dataForGetUser, auth, samplePrivilegedUser } =
+  global.jest;
 
 /*
 Custom extensions defined in test_models
@@ -155,6 +156,80 @@ describe('GET /term', () => {
       const response = await request(app).get(`/term`);
       expect(response.statusCode).toBe(500);
       expect(response.body.error.message).toBe('Some Database Failure');
+    });
+  });
+});
+
+describe('DELETE /term', () => {
+  beforeEach(Term.resetAllMocks);
+
+  async function callDeleteOnTermRoute(row, key = 'id') {
+    const id = row[key] === undefined ? '' : row[key];
+    Term.findOne.mockResolvedValueOnce(row);
+    const response = await request(app).delete(`/term/${id}`);
+    return response;
+  }
+
+  test('should respond with a 401 status code when empty string and not authorized', async () => {
+    const deleter = dataForGetUser(1, 100)[0];
+    deleter.enable = 'true';
+    auth.loginAs(deleter);
+    const response = await callDeleteOnTermRoute({});
+
+    expect(Term.findOne).not.toBeCalled();
+    expect(Term.deleteTerm).not.toBeCalled();
+
+    expect(response.statusCode).toBe(401);
+    expect(response.body.error.message).toBe('You are not allowed to do that!');
+  });
+
+  test('should respond with a 400 status code when empty string and authorized', async () => {
+    const deleter = dataForGetUser(1, 100)[0];
+    deleter.enable = 'true';
+    deleter.role = 'director';
+    auth.loginAs(deleter);
+    const response = await callDeleteOnTermRoute({});
+
+    expect(Term.findOne).not.toBeCalled();
+    expect(Term.deleteTerm).not.toBeCalled();
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body.error.message).toBe('Required Parameters Missing');
+  });
+
+  describe('when URL bar is non-empty', () => {
+    test('should respond with a 200 status code when Term exists and is deleted', async () => {
+      const term = dataForGetTerm(1, 100)[0];
+      const deleter = samplePrivilegedUser();
+      deleter.role = 'director';
+      auth.loginAs(deleter);
+
+      const response = await callDeleteOnTermRoute(term);
+
+      expect(Term.findOne.mock.calls).toHaveLength(1);
+      expect(Term.findOne.mock.calls[0]).toHaveLength(1);
+      expect(Term.findOne.mock.calls[0][0]).toHaveProperty('id', term.id);
+
+      expect(Term.deleteTerm).toBeCalled();
+      expect(Term.deleteTerm.mock.calls).toHaveLength(1);
+      expect(Term.deleteTerm.mock.calls[0]).toHaveLength(1);
+      expect(Term.deleteTerm.mock.calls[0][0]).toBe(term.id);
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('should respond with a 404 status code when term does NOT exist', async () => {
+      const deleter = samplePrivilegedUser();
+      auth.loginAs(deleter);
+
+      Term.findOne.mockResolvedValueOnce({});
+      const response = await request(app).delete(`/term/100`);
+
+      expect(Term.findOne.mock.calls).toHaveLength(1);
+      expect(Term.findOne.mock.calls[0]).toHaveLength(1);
+      expect(Term.findOne.mock.calls[0][0]).toHaveProperty('id', '100');
+      expect(Term.deleteTerm).not.toBeCalled();
+
+      expect(response.statusCode).toBe(404);
     });
   });
 });
