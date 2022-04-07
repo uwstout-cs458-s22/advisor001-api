@@ -93,6 +93,7 @@ global.jest = {
     }
     return data;
   },
+
   // a helper that creates an array structure for getUserById
   dataForGetUser: function (rows, offset = 0) {
     const data = [];
