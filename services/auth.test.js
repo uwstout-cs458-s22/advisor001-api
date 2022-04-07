@@ -1,19 +1,8 @@
-const log = require('loglevel');
+global.jest.init(false); // Init without models
+
 const stytchwrapper = require('./stytchwrapper');
 const auth = require('./auth');
 const { getMockReq, getMockRes } = require('@jest-mock/express');
-
-beforeAll(() => {
-  log.disableAll();
-});
-
-jest.mock('./environment', () => {
-  return {
-    stytchProjectId: 'project-test-11111111-1111-1111-1111-111111111111',
-    stytchSecret: 'secret-test-111111111111',
-    stytchEnv: 'test',
-  };
-});
 
 jest.mock('./stytchwrapper', () => {
   return {
