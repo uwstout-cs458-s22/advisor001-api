@@ -1,10 +1,10 @@
-# Show Course
+# Show Term
 
-Returns json data about a single course.
+Returns json data about a single term.
 
 - **URL**
 
-  /course/:id
+  /term/:id
 
 - **Method:**
 
@@ -16,7 +16,7 @@ Returns json data about a single course.
 
   `id=[integer]`
 
-  `/course/1234`
+  `/term/1234`
 
 - **Data Params**
 
@@ -35,10 +35,9 @@ Returns json data about a single course.
   ```json
   {
     "id": 1234,
-    "prefix": "MATH",
-    "suffix": 225,
-    "title": "Differential Equations",
-    "credits": 3,
+    "title": "FALL-2022",
+    "startyear": 2022,
+    "semester": 2,
   }
   ```
 
@@ -76,7 +75,7 @@ Returns json data about a single course.
 
 ```javascript
 $.ajax({
-  url: '/course/1234',
+  url: '/term/1234',
   dataType: 'json',
   type: 'GET',
   beforeSend: function (xhr) {
@@ -88,13 +87,13 @@ $.ajax({
 });
 ```
 
-# Show a Course List
+# Show a Term List
 
-Returns a json array about all courses.
+Returns a json array about all terms, based on passed criteria.
 
 - **URL**
 
-  /course/
+  /term/
 
 - **Method:**
 
@@ -102,17 +101,17 @@ Returns a json array about all courses.
 
 - **URL Params**
 
-  _Optional:_ Limit the course records returned
+  _Optional:_ Limit the term records returned
 
   `limit=[integer]`
 
-  `/course?limit=50`
+  `/term?limit=50`
 
   _Optional:_ Offset the first record locator
 
   `offset=[integer]`
 
-  `/course?offset=12`
+  `/term?offset=12`
 
 - **Data Params**
 
@@ -131,18 +130,16 @@ Returns a json array about all courses.
   ```json
   [
     {
-      "id": 1234,
-      "prefix": "MATH",
-      "suffix": 225,
-      "title": "Differential Equations",
-      "credits": 3,
+    "id": 1234,
+    "title": "FALL-2022",
+    "startyear": 2022,
+    "semester": 2,
     },
     {
-      "id": 4321,
-      "prefix": "CS",
-      "suffix": "244",
-      "title": "Data Structures",
-      "credits": 3,
+    "id": 4321,
+    "title": "SPRINT-2023",
+    "startyear": 2023,
+    "semester": 0,
     }
   ]
   ```
@@ -170,7 +167,7 @@ Returns a json array about all courses.
 
 ```javascript
 $.ajax({
-  url: '/course/',
+  url: '/term/',
   dataType: 'json',
   type: 'GET',
   beforeSend: function (xhr) {
