@@ -83,7 +83,7 @@ describe('Program Model', () => {
           'SELECT * from "program" WHERE "description"=$1 LIMIT $2 OFFSET $3;'
         );
         expect(db.query.mock.calls[0][1]).toHaveLength(3);
-        expect(db.query.mock.calls[0][1][0]).toBe(3);
+        expect(db.query.mock.calls[0][1][0]).toBe('Program description goes here');
         expect(db.query.mock.calls[0][1][1]).toBe(100);
         expect(db.query.mock.calls[0][1][2]).toBe(0);
         expect(programs).toHaveLength(data.length);
@@ -101,10 +101,10 @@ describe('Program Model', () => {
         expect(db.query.mock.calls).toHaveLength(1);
         expect(db.query.mock.calls[0]).toHaveLength(2);
         expect(db.query.mock.calls[0][0]).toBe(
-          'SELECT * from "program" WHERE "semester"=$1 LIMIT $2 OFFSET $3;'
+          'SELECT * from "program" WHERE "program"=$1 LIMIT $2 OFFSET $3;'
         );
         expect(db.query.mock.calls[0][1]).toHaveLength(3);
-        expect(db.query.mock.calls[0][1][0]).toBe(3);
+        expect(db.query.mock.calls[0][1][0]).toBe('Program description goes here');
         expect(db.query.mock.calls[0][1][1]).toBe(5);
         expect(db.query.mock.calls[0][1][2]).toBe(0);
         expect(programs).toHaveLength(data.length);
@@ -125,7 +125,7 @@ describe('Program Model', () => {
           'SELECT * from "program" WHERE "description"=$1 LIMIT $2 OFFSET $3;'
         );
         expect(db.query.mock.calls[0][1]).toHaveLength(3);
-        expect(db.query.mock.calls[0][1][0]).toBe(3);
+        expect(db.query.mock.calls[0][1][0]).toBe('Program description goes here');
         expect(db.query.mock.calls[0][1][1]).toBe(5);
         expect(db.query.mock.calls[0][1][2]).toBe(1);
         expect(programs).toHaveLength(data.length);
