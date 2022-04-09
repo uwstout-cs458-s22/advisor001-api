@@ -69,4 +69,23 @@ module.exports = {
     };
     return Term;
   },
+  // Program mocker
+  Program: () => {
+    // do the mock
+    jest.mock('../models/Programm', () => {
+      return {
+        findOne: jest.fn(),
+        findAll: jest.fn(),
+      };
+    });
+    // add mock resetter
+    const Program = require('../models/Program');
+    Program.resetAllMocks = function () {
+      for (const mockName of ['findOne', 'findAll']) {
+        Program[mockName].mockReset();
+        Program[mockName].mockResolvedValue(null);
+      }
+    };
+    return Program;
+  },
 };
