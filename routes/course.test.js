@@ -4,9 +4,8 @@ global.jest.init_routes();
 const { Course, auth, app, request, dataForGetCourse, dataForGetUser, samplePrivilegedUser } =
   global.jest;
 
-
 /*
-Custom extensions defined in test_models
+Custom extensions defined in tests_common, tests_models
 - Course.resetAllMocks()
 - auth.loginAs(user, [dbUser - optional])
 */
@@ -319,5 +318,67 @@ describe('PUT /course', () => {
         expect(response.body).toHaveProperty(key, expectedReturn[key]);
       }
     });
+  });
+});
+
+describe('POST /course', () => {
+  // TODO double check acceptance criteria
+  beforeEach(Course.resetAllMocks);
+
+  // put helper
+  async function callPostOnCourseRoute(body) {
+    const response = await request(app).post(`/course/`).send(body);
+    return response;
+  }
+
+  test('should 500 when editor not found in DB', async () => {
+    const editor = samplePrivilegedUser();
+    auth.loginAs(editor, {}); // NO EDITOR IN DB
+
+    const course = dataForGetCourse(1)[0];
+    Course.addCourse.mockResolvedValueOnce(course);
+
+    const response = await callPostOnCourseRoute(course);
+
+    expect(Course.addCourse).not.toBeCalled();
+    expect(response.statusCode).toBe(500);
+    expect(response.body.error.message).toBe('Your account is not found in the database!');
+  });
+
+  test('should 401 when not authorized to add courses', async () => {
+    const editor = dataForGetUser(1)[0];
+    editor.enable = 'true';
+    auth.loginAs(editor); // Unprivileged editor
+
+    const course = dataForGetCourse(1)[0];
+    Course.addCourse.mockResolvedValueOnce(course);
+
+    const response = await callPostOnCourseRoute(course);
+
+    expect(Course.addCourse).not.toBeCalled();
+    expect(response.statusCode).toBe(401);
+    expect(response.body.error.message).toBe('You are not allowed to do that!');
+  });
+
+  test('should return the added course', async () => {
+    const editor = samplePrivilegedUser();
+    editor.role = 'director';
+    auth.loginAs(editor);
+
+    const course = dataForGetCourse(1)[0];
+    Course.addCourse.mockResolvedValueOnce(course);
+
+    // no ID for req body
+    delete course.id;
+    const response = await callPostOnCourseRoute(course);
+
+    expect(Course.addCourse).toBeCalled();
+    expect(response.statusCode).toBe(200);
+    // all values should be returned
+    for (const key of Object.keys(course)) {
+      expect(response.body).toHaveProperty(key, course[key]);
+    }
+    // new ID should be returned
+    expect(response.body).toHaveProperty('id', '1');
   });
 });
