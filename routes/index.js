@@ -10,10 +10,12 @@ module.exports = () => {
   const usersRoutes = require('./users')();
   const countRoutes = require('./count')();
   const termRoutes = require('./term.js')();
+  const programRoutes = require('./program.js')();
   router.use('/users', usersRoutes);
   router.use('/course', courseRoutes);
   router.use('/count', countRoutes);
   router.use('/term', termRoutes);
+  router.use('/program', programRoutes);
   router.get('/health', (req, res) => {
     const uptime = process.uptime();
     const data = {
