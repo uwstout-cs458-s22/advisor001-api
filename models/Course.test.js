@@ -216,6 +216,14 @@ describe('Course Model', () => {
       await expect(doAdd({})).rejects.toThrowError('Missing Course Parameters');
       expect(db.query).not.toBeCalled();
     });
+
+    test('Adding single course success, but no returned result', async () => {
+      const course = dataForGetCourse(1)[0];
+      db.query.mockResolvedValueOnce({ rows: [] });
+      await expect(Course.addCourse(course)).rejects.toThrowError(
+        'Unexpected DB Condition, insert sucessful with no returned record'
+      );
+    });
   });
 
   describe('Count Courses', () => {
@@ -302,5 +310,12 @@ describe('Count Courses', () => {
     expect(db.query.mock.calls[0]).toHaveLength(1);
     expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "course"`);
     expect(res).toHaveProperty('count', 1);
+  });
+  test('Unexpected condition, no return value', async () => {
+    db.query.mockResolvedValueOnce({ rows: [] });
+    expect(db.query.mock.calls).toHaveLength(1);
+    expect(db.query.mock.calls[0]).toHaveLength(1);
+    expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "course"`);
+    await expect(Course.count()).rejects.toThrowError('Some Error Occurred');
   });
 });
