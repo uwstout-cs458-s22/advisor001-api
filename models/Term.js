@@ -8,9 +8,17 @@ const validParams = {
   startyear: isNumber,
   semester: isNumber,
 };
-// if found return { ... }
-// if not found return {}
-// if db error, db.query will throw a rejected promise
+
+/**
+ * @param  {} criteria
+ *
+ * @returns {Term}
+ *
+ * if found return { ... }
+ * if not found return {}
+ * if db error, db.query will throw a rejected promise
+ *
+ */
 async function findOne(criteria) {
   if (!criteria || isEmpty(criteria)) {
     throw HttpError.BadRequest('Id is required.');
@@ -23,9 +31,18 @@ async function findOne(criteria) {
   return {};
 }
 
-// if found return [ {}, {} ... ]
-// if not found return []
-// if db error, db.query will throw a rejected promise
+/**
+ * @param  {} criteria
+ * @param  {} limit=100
+ * @param  {} offset=0
+ *
+ * @returns {Array[Term]}
+ *
+ * if found return [ {}, {} ... ]
+ * if not found return []
+ * if db error, db.query will throw a rejected promise
+ *
+ */
 async function findAll(criteria, limit = 100, offset = 0) {
   const { text, params } = whereParams(criteria);
   const n = params.length;
@@ -36,8 +53,17 @@ async function findAll(criteria, limit = 100, offset = 0) {
   );
   return res.rows;
 }
-// if found delete Term
-// if not found return a 404
+
+
+/**
+ * @param  {} id
+ * 
+ * @returns {Boolean}
+ * 
+ * if found delete Term
+ * if not found return a 404
+ * 
+ */
 async function deleteTerm(id) {
   // id is required
   if (id) {
@@ -95,6 +121,11 @@ async function addTerm(properties) {
   throw HttpError(500, 'Unexpected DB Condition, insert sucessful with no returned record');
 }
 
+/**
+ * Returns amount of terms in database
+ * 
+ * @returns {Integer}
+ */
 async function count() {
   const res = await db.query(`SELECT COUNT(*) FROM "term"`);
 

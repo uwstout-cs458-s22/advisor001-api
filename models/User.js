@@ -11,9 +11,16 @@ const rolePermissions = {
   user: 0,
 };
 
-// if found return { ... }
-// if not found return {}
-// if db error, db.query will throw a rejected promise
+/**
+ * @param  {} criteria
+ *
+ * @returns {User}
+ *
+ * if found return { ... }
+ * if not found return {}
+ * if db error, db.query will throw a rejected promise
+ *
+ */
 async function findOne(criteria) {
   const { text, params } = whereParams(criteria);
   const res = await db.query(`SELECT * from "user" ${text} LIMIT 1;`, params);
@@ -25,9 +32,18 @@ async function findOne(criteria) {
   return {};
 }
 
-// if found return [ {}, {} ... ]
-// if not found return []
-// if db error, db.query will throw a rejected promise
+/**
+ * @param  {} criteria
+ * @param  {} limit=100
+ * @param  {} offset=0
+ *
+ * @returns {Array[Term]}
+ *
+ * if found return [ {}, {} ... ]
+ * if not found return []
+ * if db error, db.query will throw a rejected promise
+ *
+ */
 async function findAll(criteria, limit = 100, offset = 0) {
   const { text, params } = whereParams(criteria);
   const n = params.length;
@@ -39,10 +55,17 @@ async function findAll(criteria, limit = 100, offset = 0) {
   return res.rows;
 }
 
-// if successful insert return inserted record {}
-// if successful, but no row inserted, throw error
-// if db error, db.query will throw a rejected promise
-// otherwise throw error
+/**
+ * @param  {} userId
+ * @param  {} email
+ *
+ * @returns {User}
+ *
+ * if successful insert return inserted record {}
+ * if successful, but no row inserted, throw error
+ * if db error, db.query will throw a rejected promise
+ *  otherwise throw error
+ */
 async function create(userId, email) {
   // userId and email are required
   if (userId && email) {
@@ -83,6 +106,16 @@ async function deleteUser(userId) {
     throw HttpError(400, 'UserId is required.');
   }
 }
+
+/**
+ * Edits the user in the database
+ *
+ * @param  {} id
+ * @param  {} newValues
+ *
+ * @returns {User}
+ *
+ */
 async function edit(userId, newValues) {
   if (userId && newValues && typeof newValues === 'object') {
     const { text, params } = updateValues(
@@ -100,6 +133,11 @@ async function edit(userId, newValues) {
   }
 }
 
+/**
+ * Returns amount of users in database
+ *
+ * @returns {Integer}
+ */
 async function count() {
   const res = await db.query(`SELECT COUNT(*) FROM "user"`);
 
@@ -110,6 +148,13 @@ async function count() {
   }
 }
 
+/**
+ * Boolean function to check if user has correct permissions
+ * @param  {} user
+ * @param  {} role
+ *
+ * @return {Boolean}
+ */
 function hasMinimumPermission(user, role) {
   return rolePermissions[user?.role] >= rolePermissions[role];
 }

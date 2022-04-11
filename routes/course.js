@@ -19,7 +19,6 @@ module.exports = () => {
     }
   });
 
-  // Get single course
   router.get('/:courseId', authorizeSession, async (req, res, next) => {
     try {
       const courseId = req.params.courseId;
