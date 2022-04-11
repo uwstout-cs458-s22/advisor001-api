@@ -63,5 +63,21 @@ module.exports = () => {
     }
   );
 
+  // Create term
+  router.post('/', authorizeSession, setClearanceLevel('director'), async (req, res, next) => {
+    try {
+      const { title, startyear, semester } = req.body;
+      const properties = { title, startyear, semester };
+      if (properties.title && properties.startyear && properties.semester) {
+        const term = await Term.addTerm(properties);
+        return res.send(term);
+      } else {
+        throw HttpError(400, 'Required Parameters Missing');
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return router;
 };
