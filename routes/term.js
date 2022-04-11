@@ -45,7 +45,7 @@ module.exports = () => {
         const term = await Term.addTerm(properties);
         return res.send(term);
       } else {
-        throw HttpError(500, 'Required Parameters Missing');
+        throw HttpError(400, 'Required Parameters Missing');
       }
     } catch (error) {
       next(error);

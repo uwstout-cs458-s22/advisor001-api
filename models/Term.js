@@ -49,16 +49,16 @@ async function findAll(criteria, limit = 100, offset = 0) {
  * if any paramters are null, throw a 500 error
  */
 async function addTerm(properties) {
-  log.warn(properties);
+  // log.warn(properties);
   if (!properties) {
-    throw HttpError(500, 'Title, Start Year, and Semester are required.');
+    throw HttpError(400, 'Title, Start Year, and Semester are required.');
   }
   for (const param in validParams) {
     if (properties?.[param] === undefined) {
-      throw HttpError(500, 'Title, Start Year, and Semester are required.');
+      throw HttpError(400, 'Title, Start Year, and Semester are required.');
     }
     if (!validParams[param](properties?.[param])) {
-      throw HttpError(500, 'Title, Start Year, and Semester are required.');
+      throw HttpError(400, 'Title, Start Year, and Semester are required.');
     }
   }
 
