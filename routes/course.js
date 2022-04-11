@@ -42,7 +42,22 @@ module.exports = () => {
       const { prefix, suffix, title, description, credits } = req.body;
       const properties = { prefix, suffix, title, description, credits };
 
-      const course = await Course.addCourse(properties);
+      if (Object.values(properties).some((value) => !value)) {
+        throw HttpError(400, 'Required Parameters Missing');
+      }
+
+      // Check that the course doesn't already exist
+      let course = await Course.findOne(properties);
+
+      // Create course
+      if (isEmpty(course)) {
+        course = await Course.addCourse(properties);
+        res.status(200);
+      } else {
+        throw HttpError(500, 'Course Already Exists');
+      }
+
+      res.setHeader('Location', `/course/${course.id}`);
 
       return res.send(course);
     } catch (error) {
