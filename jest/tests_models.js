@@ -31,6 +31,7 @@ module.exports = {
     };
     return User;
   },
+
   // Course mocker
   Course: () => {
     // mock list
@@ -48,8 +49,8 @@ module.exports = {
         ...mockList,
       };
     });
-    // add mock resetter
     const Course = require('../models/Course');
+    // add mock resetter
     Course.resetAllMocks = function () {
       for (const mockName of Object.keys(mockList)) {
         Course[mockName].mockReset();
@@ -58,6 +59,7 @@ module.exports = {
     };
     return Course;
   },
+
   // Term mocker
   Term: () => {
     // mock list
