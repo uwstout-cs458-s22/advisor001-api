@@ -393,4 +393,11 @@ describe('User Model', () => {
       expect(res).toHaveProperty('count', 1);
     });
   });
+  test('Unexpected condition, no return', async () => {
+    db.query.mockResolvedValue({ rows: [] });
+    await expect(User.count()).rejects.toThrowError('Some Error Occurred');
+    expect(db.query.mock.calls).toHaveLength(1);
+    expect(db.query.mock.calls[0]).toHaveLength(1);
+    expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "user"`);
+  });
 });

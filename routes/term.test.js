@@ -1,8 +1,10 @@
 // Must be at the top. Provided by jest/tests_common
 global.jest.init();
 global.jest.init_routes();
-const { Term, app, request, dataForGetTerm, dataForGetUser, auth, samplePrivilegedUser } =
+const { Term, app, request, samplePrivilegedUser, dataForGetUser, dataForGetTerm, auth } =
   global.jest;
+
+const { extractKeys } = require('../services/utils');
 
 /*
 Custom extensions defined in test_models
@@ -156,6 +158,211 @@ describe('GET /term', () => {
       const response = await request(app).get(`/term`);
       expect(response.statusCode).toBe(500);
       expect(response.body.error.message).toBe('Some Database Failure');
+    });
+  });
+});
+
+describe('PUT /term', () => {
+  // TODO please make sure these tests meet the user acceptance criteria
+
+  beforeEach(Term.resetAllMocks);
+
+  // put helper
+  async function callPutOnTermRoute(id, body) {
+    return request(app).put(`/term/${id}`).send(body);
+  }
+
+  describe('given an empty URL bar', () => {
+    test('should result in 400', async () => {
+      const editor = samplePrivilegedUser();
+      auth.loginAs(editor);
+
+      const term = dataForGetTerm(1)[0];
+      const desiredChanges = {
+        semester: 2,
+        startyear: 2021,
+      };
+
+      Term.edit.mockResolvedValueOnce(Object.assign(term, desiredChanges));
+
+      const response = await callPutOnTermRoute('', desiredChanges); // NO TERM ID
+      expect(Term.edit).not.toBeCalled();
+      expect(Term.findOne).not.toBeCalled();
+      expect(response.statusCode).toBe(400);
+      expect(response.body.error.message).toBe('Required Parameters Missing');
+    });
+  });
+
+  describe('when URL bar is non-empty', () => {
+    test('should 500 when editor is not found in database', async () => {
+      const editor = samplePrivilegedUser();
+      auth.loginAs(editor, {}); // NO EDITOR (2nd param is database-resolved user)
+
+      const term = dataForGetTerm(1)[0];
+      const desiredChanges = {
+        semester: 2,
+        startyear: 2021,
+      };
+
+      Term.edit.mockResolvedValueOnce(Object.assign(term, desiredChanges));
+
+      const response = await callPutOnTermRoute(term.id, desiredChanges);
+      expect(Term.edit).not.toBeCalled();
+      expect(Term.findOne).not.toBeCalled();
+      expect(response.statusCode).toBe(500);
+      expect(response.body.error.message).toBe('Your account is not found in the database!');
+    });
+
+    test('should 401 when not authorized to edit terms', async () => {
+      const editor = dataForGetUser(1, 100)[0]; // UNPRIVILEGED USER
+      editor.enable = 'true';
+      auth.loginAs(editor);
+
+      const term = dataForGetTerm(1)[0];
+      const desiredChanges = {
+        semester: 2,
+        startyear: 2021,
+      };
+
+      Term.edit.mockResolvedValueOnce(Object.assign(term, desiredChanges));
+
+      const response = await callPutOnTermRoute(term.id, desiredChanges);
+      expect(Term.edit).not.toBeCalled();
+      expect(Term.findOne).not.toBeCalled();
+      expect(response.statusCode).toBe(401);
+      expect(response.body.error.message).toBe('You are not allowed to do that!');
+    });
+
+    test('should 404 when the term is not found', async () => {
+      const editor = samplePrivilegedUser();
+      auth.loginAs(editor);
+
+      const desiredChanges = {
+        semester: 2,
+        startyear: 2021,
+      };
+
+      Term.edit.mockResolvedValueOnce({});
+
+      const response = await callPutOnTermRoute(1, desiredChanges);
+      expect(Term.edit).toBeCalled();
+      expect(Term.edit.mock.calls[0][0]).toBe('1');
+      expect(Term.edit.mock.calls[0][1]).toHaveProperty('semester', 2);
+      expect(Term.edit.mock.calls[0][1]).toHaveProperty('startyear', 2021);
+      expect(response.statusCode).toBe(404);
+      expect(response.body.error.message).toBe('Not Found');
+    });
+
+    test('should 404 when term is not found and no params specified', async () => {
+      const editor = samplePrivilegedUser();
+      auth.loginAs(editor);
+
+      Term.edit.mockResolvedValueOnce({});
+      Term.findOne.mockResolvedValueOnce({});
+
+      const response = await callPutOnTermRoute(1, {});
+      expect(Term.edit).not.toBeCalled();
+      expect(Term.findOne).toBeCalled();
+      expect(Term.findOne.mock.calls[0][0]).toHaveProperty('id', '1');
+      expect(response.statusCode).toBe(404);
+      expect(response.body.error.message).toBe('Not Found');
+    });
+
+    test('should just return found term if no editable params are specified', async () => {
+      const editor = samplePrivilegedUser();
+      auth.loginAs(editor);
+
+      const desiredChanges = {
+        foo: 'bar',
+        bar: 'foo',
+      };
+      const term = dataForGetTerm(1)[0];
+      Term.edit.mockResolvedValueOnce(term);
+      Term.findOne.mockResolvedValueOnce(term);
+
+      const response = await callPutOnTermRoute(1, desiredChanges);
+      expect(Term.edit).not.toBeCalled();
+      expect(Term.findOne).toBeCalled();
+      expect(Term.findOne.mock.calls[0][0]).toHaveProperty('id', '1');
+      expect(response.statusCode).toBe(200);
+      for (const key of Object.keys(term)) {
+        expect(response.body).toHaveProperty(key, term[key]);
+      }
+    });
+
+    test('should respond 200 and successfully return edited version of term', async () => {
+      const editor = samplePrivilegedUser();
+      auth.loginAs(editor);
+
+      const term = dataForGetTerm(1)[0];
+      const desiredChanges = {
+        semester: 2,
+        startyear: 2021,
+      };
+
+      const expectedReturn = Object.assign(term, desiredChanges);
+      Term.edit.mockResolvedValueOnce(expectedReturn);
+
+      const response = await callPutOnTermRoute(term.id, desiredChanges);
+
+      expect(response.statusCode).toBe(200);
+      for (const key of Object.keys(expectedReturn)) {
+        expect(response.body).toHaveProperty(key, expectedReturn[key]);
+      }
+    });
+
+    test('should still work even if no body parameters are specified', async () => {
+      const editor = samplePrivilegedUser();
+      auth.loginAs(editor);
+
+      const term = dataForGetTerm(1)[0];
+
+      Term.edit.mockResolvedValueOnce(term);
+      Term.findOne.mockResolvedValueOnce(term);
+      const response = await callPutOnTermRoute(term.id, {});
+
+      expect(Term.edit).not.toBeCalled();
+      expect(Term.findOne).toBeCalled();
+      expect(Term.findOne.mock.calls).toHaveLength(1);
+      expect(Term.findOne.mock.calls[0]).toHaveLength(1);
+      expect(Term.findOne.mock.calls[0][0]).toHaveProperty('id', term.id);
+      expect(response.statusCode).toBe(200);
+      for (const key of Object.keys(term)) {
+        expect(response.body).toHaveProperty(key, term[key]);
+      }
+    });
+
+    test('should work even if random parameters are thrown in', async () => {
+      const editor = samplePrivilegedUser();
+      auth.loginAs(editor);
+
+      const term = dataForGetTerm(1)[0];
+      const desiredChanges = {
+        semester: 2,
+        startyear: 2021,
+        foo: 'bar',
+        bar: 'foo',
+        title: 'lorem ipsum dolor',
+      };
+
+      const expectedReturn = Object.assign(term, extractKeys(desiredChanges, ...Term.properties));
+      Term.edit.mockResolvedValueOnce(expectedReturn);
+
+      const response = await callPutOnTermRoute(term.id, desiredChanges);
+
+      expect(Term.edit.mock.calls).toHaveLength(1);
+      expect(Term.edit.mock.calls[0]).toHaveLength(2);
+      expect(Term.edit.mock.calls[0][0]).toBe(term.id);
+      expect(Term.edit.mock.calls[0][1]).toHaveProperty('semester', 2);
+      expect(Term.edit.mock.calls[0][1]).toHaveProperty('startyear', 2021);
+      expect(Term.edit.mock.calls[0][1]).toHaveProperty('title', 'lorem ipsum dolor');
+      expect(Term.edit.mock.calls[0][1]).not.toHaveProperty('foo');
+      expect(Term.edit.mock.calls[0][1]).not.toHaveProperty('bar');
+
+      expect(response.statusCode).toBe(200);
+      for (const key of Object.keys(term)) {
+        expect(response.body).toHaveProperty(key, term[key]);
+      }
     });
   });
 });

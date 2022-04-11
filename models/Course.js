@@ -68,14 +68,14 @@ const validParams = {
  */
 async function addCourse(properties) {
   if (!properties) {
-    throw HttpError(500, 'Missing Course Parameters');
+    throw HttpError(400, 'Missing Course Parameters');
   }
   for (const param in validParams) {
     if (properties?.[param] === undefined) {
-      throw HttpError(500, 'Missing Course Parameters');
+      throw HttpError(400, 'Missing Course Parameters');
     }
     if (!validParams[param](properties?.[param])) {
-      throw HttpError(500, 'Incompatible Course Parameter Types');
+      throw HttpError(400, 'Incompatible Course Parameter Types');
     }
   }
 
