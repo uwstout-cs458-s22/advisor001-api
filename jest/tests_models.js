@@ -27,28 +27,33 @@ module.exports = {
     };
     return User;
   },
+
   // Course mocker
   Course: () => {
+    const Course = require('../models/Course');
+
     // do the mock
     jest.mock('../models/Course', () => {
       return {
         findOne: jest.fn(),
         findAll: jest.fn(),
         deleteCourse: jest.fn(),
+        addCourse: jest.fn(),
         edit: jest.fn(),
         count: jest.fn(),
       };
     });
+
     // add mock resetter
-    const Course = require('../models/Course');
     Course.resetAllMocks = function () {
-      for (const mockName of ['findOne', 'findAll', 'deleteCourse', 'edit', 'count']) {
+      for (const mockName of ['findOne', 'findAll', 'deleteCourse', 'addCourse', 'edit', 'count']) {
         Course[mockName].mockReset();
         Course[mockName].mockResolvedValue(null);
       }
     };
     return Course;
   },
+
   // Term mocker
   Term: () => {
     // do the mock

@@ -4,7 +4,6 @@ global.jest.init_routes();
 const { Course, auth, app, request, dataForGetCourse, dataForGetUser, samplePrivilegedUser } =
   global.jest;
 
-
 /*
 Custom extensions defined in test_models
 - Course.resetAllMocks()
@@ -318,6 +317,184 @@ describe('PUT /course', () => {
       for (const key of Object.keys(response.body)) {
         expect(response.body).toHaveProperty(key, expectedReturn[key]);
       }
+    });
+  });
+});
+
+describe('POST /course', () => {
+  beforeEach(Course.resetAllMocks);
+
+  describe('given course details', () => {
+    test('should call both Course.findOne and Course.create', async () => {
+      // Set-up
+      const row = dataForGetCourse(1)[0];
+      const requestParams = {
+        prefix: row.prefix,
+        suffix: row.suffix,
+        title: row.title,
+        description: row.description,
+        credits: row.credits,
+      };
+      Course.findOne.mockResolvedValueOnce({});
+      Course.addCourse.mockResolvedValueOnce(row);
+
+      // Test
+      await request(app).post('/course').send(requestParams);
+
+      // Check
+      expect(Course.findOne.mock.calls).toHaveLength(1);
+      expect(Course.findOne.mock.calls[0]).toHaveLength(1);
+      expect(Course.addCourse.mock.calls).toHaveLength(1);
+      expect(Course.addCourse.mock.calls[0]).toHaveLength(1);
+      for (const key in Object.keys(requestParams)) {
+        // Check that the values from the post are the same as from the mocked findOne and addCourse
+        expect(Course.addCourse.mock.calls[0][0]).toHaveProperty(key, requestParams[key]);
+        expect(Course.findOne.mock.calls[0][0]).toHaveProperty(key, requestParams[key]);
+      }
+    });
+
+    test('should respond with a json object containg the course details', async () => {
+      // Set-up
+      const row = dataForGetCourse(1)[0];
+      const requestParams = {
+        prefix: row.prefix,
+        suffix: row.suffix,
+        title: row.title,
+        description: row.description,
+        credits: row.credits,
+      };
+      Course.findOne.mockResolvedValueOnce({});
+      Course.addCourse.mockResolvedValueOnce(row);
+
+      // Test
+      const { body: course } = await request(app).post('/course').send(requestParams);
+
+      // Check
+      expect(course.prefix).toBe(row.prefix);
+      expect(course.suffix).toBe(row.suffix);
+      expect(course.title).toBe(row.title);
+      expect(course.description).toBe(row.description);
+      expect(course.credits).toBe(row.credits);
+    });
+
+    test('should specify json in the content type header', async () => {
+      // Set-up
+      const data = dataForGetCourse(1);
+      const row = data[0];
+      const requestParams = {
+        prefix: row.prefix,
+        suffix: row.suffix,
+        title: row.title,
+        description: row.description,
+        credits: row.credits,
+      };
+      Course.findOne.mockResolvedValueOnce({});
+      Course.addCourse.mockResolvedValueOnce(row);
+
+      // Test
+      const response = await request(app).post('/course').send(requestParams);
+
+      // Check
+      expect(response.headers['content-type']).toEqual(expect.stringContaining('json'));
+    });
+
+    test('should respond with a 200 status code when course is succesfully created', async () => {
+      // Set-up
+      const row = dataForGetCourse(1)[0];
+      const requestParams = {
+        prefix: row.prefix,
+        suffix: row.suffix,
+        title: row.title,
+        description: row.description,
+        credits: row.credits,
+      };
+      Course.findOne.mockResolvedValueOnce({});
+      Course.addCourse.mockResolvedValueOnce(row);
+
+      // Test
+      const response = await request(app).post('/course').send(requestParams);
+
+      // Check
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('should respond with a 500 status code when course already exists exist', async () => {
+      // Set-up
+      const row = dataForGetCourse(1)[0];
+      const requestParams = {
+        prefix: row.prefix,
+        suffix: row.suffix,
+        title: row.title,
+        description: row.description,
+        credits: row.credits,
+      };
+      Course.findOne.mockResolvedValueOnce(row);
+      Course.addCourse.mockResolvedValueOnce(row);
+
+      // Test
+      const response = await request(app).post('/course').send(requestParams);
+
+      // Check
+      expect(response.statusCode).toBe(500);
+    });
+
+    test('should respond with a 500 status code when an Course.create error occurs', async () => {
+      // Set-up
+      const row = dataForGetCourse(1)[0];
+      const requestParams = {
+        prefix: row.prefix,
+        suffix: row.suffix,
+        title: row.title,
+        description: row.description,
+        credits: row.credits,
+      };
+      Course.findOne.mockResolvedValueOnce({});
+      Course.addCourse.mockResolvedValueOnce(null);
+
+      // Test
+      const response = await request(app).post('/course').send(requestParams);
+
+      // Check
+      expect(response.statusCode).toBe(500);
+    });
+
+    test('should respond with a 500 status code when create database error occurs', async () => {
+      // Set-up
+      const row = dataForGetCourse(1)[0];
+      const requestParams = {
+        prefix: row.prefix,
+        suffix: row.suffix,
+        title: row.title,
+        description: row.description,
+        credits: row.credits,
+      };
+      Course.addCourse.mockRejectedValueOnce(new Error('some database error'));
+
+      // Test
+      const response = await request(app).post('/course').send(requestParams);
+
+      // Check
+      expect(response.statusCode).toBe(500);
+    });
+  });
+
+  describe('given empty dictionary', () => {
+    test('should respond with a 400 status code', async () => {
+      // Test
+      const response = await request(app).post('/course').send({});
+
+      // Check
+      expect(response.statusCode).toBe(400);
+    });
+  });
+
+  describe('given empty string', () => {
+    test('should respond with a 400 status code', async () => {
+      // Test
+      const response = await request(app).post('/course').send('');
+
+      // Check
+      expect(response.statusCode).toBe(400);
     });
   });
 });
