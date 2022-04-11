@@ -1,9 +1,9 @@
 const express = require('express');
 const log = require('loglevel');
 const HttpError = require('http-errors');
-const { isEmpty } = require('./../services/utils');
+const { isEmpty, extractKeys } = require('./../services/utils');
 const Term = require('./../models/Term');
-const { authorizeSession } = require('./../services/auth');
+const { authorizeSession, setClearanceLevel } = require('./../services/auth');
 
 module.exports = () => {
   const router = express.Router();
@@ -35,6 +35,32 @@ module.exports = () => {
       next(error);
     }
   });
+
+  // prettier-ignore
+  router.put('/:id(\\d+)?', authorizeSession, setClearanceLevel('director'), async (req, res, next) => {
+      try {
+        // i'm tired
+        const { id } = req.params;
+        if (!id || id === '') {
+          throw HttpError.BadRequest('Required Parameters Missing');
+        }
+        const newValues = extractKeys(req.body, ...Term.properties);
+        // only find one if no editable fields
+        if( isEmpty(newValues) ) {
+          const term = await Term.findOne({ id });
+          res.status(200).send(term);
+        }
+        else {
+          // try edit (might 404)
+          const term = await Term.edit(id, newValues);
+          // no errors thrown
+          res.status(200).send(term);
+        }
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
 
   return router;
 };

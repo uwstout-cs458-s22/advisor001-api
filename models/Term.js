@@ -1,8 +1,11 @@
 const HttpError = require('http-errors');
 const log = require('loglevel');
 const { db } = require('../services/database');
-const { whereParams } = require('../services/sqltools');
-const { isEmpty } = require('../services/utils');
+const { whereParams, updateValues } = require('../services/sqltools');
+const { isEmpty, isObject } = require('../services/utils');
+
+// editable field list
+const properties = ['title', 'startyear', 'semester'];
 
 // if found return { ... }
 // if not found return {}
@@ -33,6 +36,23 @@ async function findAll(criteria, limit = 100, offset = 0) {
   return res.rows;
 }
 
+// edit term
+async function edit(id, newValues) {
+  // TODO the routes should probably be doing the validation, not this
+  if (id && newValues && isObject(newValues)) {
+    const { text, params } = updateValues({ id }, newValues);
+    const res = await db.query(`UPDATE "term" ${text} RETURNING *;`, params);
+    // did it work?
+    if (res.rows.length > 0) {
+      return res.rows[0];
+    }
+    // nothing was updated
+    throw HttpError.NotFound();
+  }
+  // TODO ambiguous error
+  else throw HttpError.BadRequest('Id is required.');
+}
+
 async function count() {
   const res = await db.query(`SELECT COUNT(*) FROM "term"`);
 
@@ -47,4 +67,6 @@ module.exports = {
   findOne,
   findAll,
   count,
+  edit,
+  properties,
 };
