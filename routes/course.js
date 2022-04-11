@@ -96,5 +96,26 @@ module.exports = () => {
     }
   });
 
+  router.delete('/:id?', authorizeSession, setClearanceLevel('admin'), async (req, res, next) => {
+    try {
+      const id = req.params.id;
+      if (!id || id === '') {
+        throw HttpError(400, 'Required Parameters Missing');
+      }
+
+      let course = await Course.findOne({ id: id });
+      if (isEmpty(course)) {
+        throw new HttpError[500]();
+      }
+
+      course = await Course.deleteCourse(id);
+
+      res.status(200);
+      res.send();
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return router;
 };
