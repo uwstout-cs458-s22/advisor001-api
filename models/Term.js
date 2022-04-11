@@ -36,6 +36,23 @@ async function findAll(criteria, limit = 100, offset = 0) {
   );
   return res.rows;
 }
+// if found delete Term
+// if not found return a 404
+async function deleteTerm(id) {
+  // id is required
+  if (id) {
+    const { text, params } = whereParams({
+      id: id,
+    });
+
+    const res = await db.query(`DELETE FROM "term" ${text};`, params);
+    if (res.rows.length > 0) {
+      return true;
+    }
+  } else {
+    throw HttpError(400, 'TermId is required.');
+  }
+}
 
 /**
  * Adds term to database
@@ -91,6 +108,7 @@ async function count() {
 module.exports = {
   findOne,
   findAll,
+  deleteTerm,
   addTerm,
   count,
 };

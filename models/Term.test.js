@@ -189,4 +189,24 @@ describe('Term Model', () => {
       expect(res).toHaveProperty('count', 1);
     });
   });
+
+  describe('Delete Terms', () => {
+    test('Delete a Term', async () => {
+      const data = dataForGetTerm(1);
+      const termId = data[0].id;
+
+      db.query.mockResolvedValue({ rows: data });
+      const deleteTerm = await Term.deleteTerm(termId);
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "term" WHERE "id"=$1;');
+      expect(db.query.mock.calls[0][1]).toHaveLength(1);
+      expect(db.query.mock.calls[0][1][0]).toBe(termId);
+      expect(deleteTerm).toBe(true);
+    });
+    test('User.deleteUser with no input', async () => {
+      await expect(Term.deleteTerm()).rejects.toThrowError('TermId is required.');
+    });
+  });
 });
