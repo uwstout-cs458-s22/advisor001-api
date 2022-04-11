@@ -142,6 +142,43 @@ describe('Term Model', () => {
     });
   });
 
+  describe('Adding term', () => {
+    // helper that to do the add
+    function doAdd(newTerm) {
+      db.query.mockResolvedValueOnce({ rows: [newTerm] });
+      return Term.addTerm(newTerm);
+    }
+
+    test('Adding single term success', async () => {
+      const data = dataForGetTerm(1)[0];
+      const term = await doAdd(data);
+      for (const key of Object.keys(data)) {
+        expect(term).toHaveProperty(key, data[key]);
+      }
+    });
+
+    test('Inputting invalid value', async () => {
+      const term = dataForGetTerm(1)[0];
+      term.title = { test: "object that's not string" };
+
+      await expect(doAdd(term)).rejects.toThrowError(
+        'Title, Start Year, and Semester are required.'
+      );
+    });
+
+    test('Inputting null parameters', async () => {
+      await expect(doAdd(null)).rejects.toThrowError(
+        'Title, Start Year, and Semester are required.'
+      );
+      expect(db.query).not.toBeCalled();
+    });
+
+    test('Inputting empty object', async () => {
+      await expect(doAdd({})).rejects.toThrowError('Title, Start Year, and Semester are required.');
+      expect(db.query).not.toBeCalled();
+    });
+  });
+
   describe('Count Terms', () => {
     test('One Term in the Database', async () => {
       db.query.mockResolvedValueOnce({ rows: [{ count: 1 }] });

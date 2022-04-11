@@ -3,7 +3,7 @@ const log = require('loglevel');
 const HttpError = require('http-errors');
 const { isEmpty } = require('./../services/utils');
 const Term = require('./../models/Term');
-const { authorizeSession } = require('./../services/auth');
+const { authorizeSession, setClearanceLevel } = require('./../services/auth');
 
 module.exports = () => {
   const router = express.Router();
@@ -31,6 +31,22 @@ module.exports = () => {
       log.info(`${req.method} ${req.originalUrl} success: returning term ${termId}`);
       return res.send(term);
       // catch general errors
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Create term
+  router.post('/', authorizeSession, setClearanceLevel('director'), async (req, res, next) => {
+    try {
+      const { title, startyear, semester } = req.body;
+      const properties = { title, startyear, semester };
+      if (properties.title && properties.startyear && properties.semester) {
+        const term = await Term.addTerm(properties);
+        return res.send(term);
+      } else {
+        throw HttpError(400, 'Required Parameters Missing');
+      }
     } catch (error) {
       next(error);
     }

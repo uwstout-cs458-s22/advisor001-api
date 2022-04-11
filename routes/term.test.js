@@ -1,7 +1,7 @@
 // Must be at the top. Provided by jest/tests_common
 global.jest.init();
 global.jest.init_routes();
-const { Term, app, request, dataForGetTerm } = global.jest;
+const { Term, app, request, dataForGetTerm, auth, samplePrivilegedUser } = global.jest;
 
 /*
 Custom extensions defined in test_models
@@ -155,6 +155,93 @@ describe('GET /term', () => {
       const response = await request(app).get(`/term`);
       expect(response.statusCode).toBe(500);
       expect(response.body.error.message).toBe('Some Database Failure');
+    });
+  });
+});
+
+describe('POST /term', () => {
+  beforeEach(Term.resetAllMocks);
+
+  describe('given a title,startyear, and semester', () => {
+    test('should call both Term.findOne and Term.addTerm', async () => {
+      const data = dataForGetTerm(3);
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        const requestParms = {
+          title: row.title,
+          startyear: row.startyear,
+          semester: row.semester,
+        };
+        Term.addTerm.mockResolvedValueOnce(row);
+        auth.loginAs(samplePrivilegedUser()); // simulated authentication
+        const res = await request(app).post('/term').send(requestParms);
+        expect(res).toHaveProperty('statusCode', 200);
+
+        expect(Term.addTerm.mock.calls).toHaveLength(i + 1);
+        expect(Term.addTerm.mock.calls[0]).toHaveLength(1);
+        expect(Term.addTerm.mock.calls[0][0].semester).toBe(row.semester);
+        expect(Term.addTerm.mock.calls[0][0].startyear).toBe(row.startyear);
+        expect(Term.addTerm.mock.calls[0][0].title).toBe(row.title);
+      }
+    });
+
+    test('should specify json in the content type header', async () => {
+      auth.loginAs(samplePrivilegedUser());
+      const data = dataForGetTerm(1);
+      const row = data[0];
+      Term.findOne.mockResolvedValueOnce({});
+      Term.addTerm.mockResolvedValueOnce(row);
+      const requestParms = {
+        title: row.title,
+        startyear: row.startyear,
+        semester: row.semester,
+      };
+      const response = await request(app).post('/term').send(requestParms);
+      expect(response.headers['content-type']).toEqual(expect.stringContaining('json'));
+    });
+
+    test('should respond with a 500 status code when findOne database error occurs', async () => {
+      auth.loginAs(samplePrivilegedUser());
+      const data = dataForGetTerm(1);
+      const row = data[0];
+      const requestParms = {
+        title: row.title,
+        startyear: row.startyear,
+        semester: row.semester,
+      };
+      Term.addTerm.mockRejectedValueOnce(new Error('some database error'));
+      const response = await request(app).post('/term').send(requestParms);
+      expect(response.statusCode).toBe(500);
+    });
+
+    test('should respond with a 400 status code when missing required title', async () => {
+      auth.loginAs(samplePrivilegedUser());
+      const response = await request(app).post('/term').send({ startyear: 2009, semester: 2 });
+      expect(response.statusCode).toBe(400);
+    });
+
+    test('should respond with a 400 status code when missing required startyear', async () => {
+      auth.loginAs(samplePrivilegedUser());
+      const response = await request(app).post('/term').send({ title: 'term', semester: 2 });
+      expect(response.statusCode).toBe(400);
+    });
+
+    test('should respond with a 400 status code when missing required semester', async () => {
+      auth.loginAs(samplePrivilegedUser());
+      const response = await request(app).post('/term').send({ title: 'term', startyear: 2007 });
+      expect(response.statusCode).toBe(400);
+    });
+
+    test('should respond with a 400 status code when passing empty object', async () => {
+      auth.loginAs(samplePrivilegedUser());
+      const response = await request(app).post('/term').send({});
+      expect(response.statusCode).toBe(400);
+    });
+
+    test('should respond with a 400 status code when passing empty string', async () => {
+      auth.loginAs(samplePrivilegedUser());
+      const response = await request(app).post('/term').send('');
+      expect(response.statusCode).toBe(400);
     });
   });
 });

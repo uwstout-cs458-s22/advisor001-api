@@ -57,12 +57,13 @@ module.exports = {
         findOne: jest.fn(),
         findAll: jest.fn(),
         count: jest.fn(),
+        addTerm: jest.fn(),
       };
     });
     // add mock resetter
     const Term = require('../models/Term');
     Term.resetAllMocks = function () {
-      for (const mockName of ['findOne', 'findAll', 'count']) {
+      for (const mockName of ['findOne', 'findAll', 'count', 'addTerm']) {
         Term[mockName].mockReset();
         Term[mockName].mockResolvedValue(null);
       }
