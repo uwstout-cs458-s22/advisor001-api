@@ -1,4 +1,4 @@
-const { isEmpty, isArray, isObject } = require('./utils');
+const { isEmpty, isArray, isObject, isNumber, extractKeys } = require('./utils');
 
 describe('utils Tests', () => {
   test('isArray tests', async () => {
@@ -31,5 +31,34 @@ describe('utils Tests', () => {
     expect(isEmpty(new Date())).toBeFalsy(); // false
     expect(isEmpty({ a: 1 })).toBeFalsy(); // false
     expect(isEmpty({})).toBeTruthy(); // true
+  });
+  test('isNumber tests', async () => {
+    expect(isNumber()).toBeFalsy(); // false
+    expect(isNumber(null)).toBeFalsy(); // false
+    expect(isNumber(true)).toBeFalsy(); // false
+    expect(isNumber(1)).toBeTruthy(); // true
+    expect(isNumber('1')).toBeFalsy(); // false
+    expect(isNumber([])).toBeFalsy(); // false
+    expect(isNumber(new Date())).toBeFalsy(); // false
+    expect(isNumber({ a: 1 })).toBeFalsy(); // false
+    expect(isNumber({})).toBeFalsy(); // false
+  });
+  test('extractKeys tests', async () => {
+    const obj = {
+      foo1: 'bar1',
+      foo2: 'bar2',
+      foo3: 'bar3',
+      foo4: 'bar4',
+      foo5: 'bar5',
+    };
+    const props = ['foo2', 'foo3', 'foo5', 'foo6', 'foo7'];
+    const result = extractKeys(obj, ...props);
+    expect(result).not.toHaveProperty('foo1');
+    expect(result).toHaveProperty('foo2', obj.foo2);
+    expect(result).toHaveProperty('foo3', obj.foo3);
+    expect(result).not.toHaveProperty('foo4');
+    expect(result).toHaveProperty('foo5', obj.foo5);
+    expect(result).not.toHaveProperty('foo6');
+    expect(result).not.toHaveProperty('foo7');
   });
 });

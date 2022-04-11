@@ -1,13 +1,15 @@
 const HttpError = require('http-errors');
 const log = require('loglevel');
 const { db } = require('../services/database');
-const { whereParams, insertValues } = require('../services/sqltools');
-const { isEmpty, isString, isNumber } = require('../services/utils');
+const { whereParams, insertValues, updateValues } = require('../services/sqltools');
+const { isEmpty, isString, isObject, isNumber } = require('../services/utils');
+
 const validParams = {
   title: isString,
   startyear: isNumber,
   semester: isNumber,
 };
+
 
 /**
  * @param  {} criteria
@@ -168,4 +170,4 @@ module.exports = {
 	count,
 	edit,
 	properties: Object.keys(validParams),
-  };
+};
