@@ -9,9 +9,11 @@ module.exports = () => {
   const courseRoutes = require('./course')();
   const usersRoutes = require('./users')();
   const countRoutes = require('./count')();
+  const termRoutes = require('./term.js')();
   router.use('/users', usersRoutes);
   router.use('/course', courseRoutes);
   router.use('/count', countRoutes);
+  router.use('/term', termRoutes);
   router.get('/health', (req, res) => {
     const uptime = process.uptime();
     const data = {
