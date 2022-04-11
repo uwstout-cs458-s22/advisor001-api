@@ -1,7 +1,7 @@
 // Must be at the top. Provided by jest/tests_common
 global.jest.init();
 global.jest.init_routes();
-const { Term, app, request, dataForGetTerm } = global.jest;
+const { Term, app, request, dataForGetTerm, auth, samplePrivilegedUser } = global.jest;
 
 /*
 Custom extensions defined in test_models
@@ -173,7 +173,9 @@ describe('POST /term', () => {
           semester: row.semester,
         };
         Term.addTerm.mockResolvedValueOnce(row);
-        await request(app).post('/term').send(requestParms);
+        auth.loginAs(samplePrivilegedUser()); // simulated authentication
+        const res = await request(app).post('/term').send(requestParms);
+        expect(res).toHaveProperty('statusCode', 200);
 
         expect(Term.addTerm.mock.calls).toHaveLength(i + 1);
         expect(Term.addTerm.mock.calls[0]).toHaveLength(1);
@@ -184,6 +186,7 @@ describe('POST /term', () => {
     });
 
     test('should specify json in the content type header', async () => {
+      auth.loginAs(samplePrivilegedUser());
       const data = dataForGetTerm(1);
       const row = data[0];
       Term.findOne.mockResolvedValueOnce({});
@@ -198,6 +201,7 @@ describe('POST /term', () => {
     });
 
     test('should respond with a 500 status code when findOne database error occurs', async () => {
+      auth.loginAs(samplePrivilegedUser());
       const data = dataForGetTerm(1);
       const row = data[0];
       const requestParms = {
@@ -211,26 +215,31 @@ describe('POST /term', () => {
     });
 
     test('should respond with a 400 status code when missing required title', async () => {
+      auth.loginAs(samplePrivilegedUser());
       const response = await request(app).post('/term').send({ startyear: 2009, semester: 2 });
       expect(response.statusCode).toBe(400);
     });
 
     test('should respond with a 400 status code when missing required startyear', async () => {
+      auth.loginAs(samplePrivilegedUser());
       const response = await request(app).post('/term').send({ title: 'term', semester: 2 });
       expect(response.statusCode).toBe(400);
     });
 
     test('should respond with a 400 status code when missing required semester', async () => {
+      auth.loginAs(samplePrivilegedUser());
       const response = await request(app).post('/term').send({ title: 'term', startyear: 2007 });
       expect(response.statusCode).toBe(400);
     });
 
     test('should respond with a 400 status code when passing empty object', async () => {
+      auth.loginAs(samplePrivilegedUser());
       const response = await request(app).post('/term').send({});
       expect(response.statusCode).toBe(400);
     });
 
     test('should respond with a 400 status code when passing empty string', async () => {
+      auth.loginAs(samplePrivilegedUser());
       const response = await request(app).post('/term').send('');
       expect(response.statusCode).toBe(400);
     });

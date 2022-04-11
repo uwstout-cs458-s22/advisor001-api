@@ -3,7 +3,7 @@ const log = require('loglevel');
 const HttpError = require('http-errors');
 const { isEmpty } = require('./../services/utils');
 const Term = require('./../models/Term');
-const { authorizeSession } = require('./../services/auth');
+const { authorizeSession, setClearanceLevel } = require('./../services/auth');
 
 module.exports = () => {
   const router = express.Router();
@@ -37,7 +37,7 @@ module.exports = () => {
   });
 
   // Create term
-  router.post('/', authorizeSession, async (req, res, next) => {
+  router.post('/', authorizeSession, setClearanceLevel('director'), async (req, res, next) => {
     try {
       const { title, startyear, semester } = req.body;
       const properties = { title, startyear, semester };
