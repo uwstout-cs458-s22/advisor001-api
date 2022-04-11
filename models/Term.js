@@ -54,15 +54,14 @@ async function findAll(criteria, limit = 100, offset = 0) {
   return res.rows;
 }
 
-
 /**
  * @param  {} id
- * 
+ *
  * @returns {Boolean}
- * 
+ *
  * if found delete Term
  * if not found return a 404
- * 
+ *
  */
 async function deleteTerm(id) {
   // id is required
@@ -122,8 +121,33 @@ async function addTerm(properties) {
 }
 
 /**
+ * Edits the term in the database
+ *
+ * @param  {} id
+ * @param  {} newValues
+ *
+ * @returns {Term}
+ *
+ */
+async function edit(id, newValues) {
+  // TODO the routes should probably be doing the validation, not this
+  if (id && newValues && isObject(newValues)) {
+    const { text, params } = updateValues({ id }, newValues);
+    const res = await db.query(`UPDATE "term" ${text} RETURNING *;`, params);
+    // did it work?
+    if (res.rows.length > 0) {
+      return res.rows[0];
+    }
+    // nothing was updated
+    return {};
+  }
+  // TODO ambiguous error
+  else throw HttpError.BadRequest('Id is required.');
+}
+
+/**
  * Returns amount of terms in database
- * 
+ *
  * @returns {Integer}
  */
 async function count() {
@@ -137,9 +161,11 @@ async function count() {
 }
 
 module.exports = {
-  findOne,
-  findAll,
-  deleteTerm,
-  addTerm,
-  count,
-};
+	findOne,
+	findAll,
+	deleteTerm,
+	addTerm,
+	count,
+	edit,
+	properties: Object.keys(validParams),
+  };
