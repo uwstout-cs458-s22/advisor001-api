@@ -4,7 +4,6 @@ global.jest.init_routes();
 const { Term, app, request, samplePrivilegedUser, dataForGetUser, dataForGetTerm, auth } =
   global.jest;
 
-const HttpError = require('http-errors');
 const { extractKeys } = require('../services/utils');
 
 /*
@@ -187,7 +186,8 @@ describe('PUT /term', () => {
       Term.edit.mockResolvedValueOnce(Object.assign(term, desiredChanges));
 
       const response = await callPutOnTermRoute('', desiredChanges); // NO TERM ID
-
+      expect(Term.edit).not.toBeCalled();
+      expect(Term.findOne).not.toBeCalled();
       expect(response.statusCode).toBe(400);
       expect(response.body.error.message).toBe('Required Parameters Missing');
     });
@@ -207,7 +207,8 @@ describe('PUT /term', () => {
       Term.edit.mockResolvedValueOnce(Object.assign(term, desiredChanges));
 
       const response = await callPutOnTermRoute(term.id, desiredChanges);
-
+      expect(Term.edit).not.toBeCalled();
+      expect(Term.findOne).not.toBeCalled();
       expect(response.statusCode).toBe(500);
       expect(response.body.error.message).toBe('Your account is not found in the database!');
     });
@@ -226,7 +227,8 @@ describe('PUT /term', () => {
       Term.edit.mockResolvedValueOnce(Object.assign(term, desiredChanges));
 
       const response = await callPutOnTermRoute(term.id, desiredChanges);
-
+      expect(Term.edit).not.toBeCalled();
+      expect(Term.findOne).not.toBeCalled();
       expect(response.statusCode).toBe(401);
       expect(response.body.error.message).toBe('You are not allowed to do that!');
     });
@@ -240,13 +242,52 @@ describe('PUT /term', () => {
         startyear: 2021,
       };
 
-      Term.edit.mockImplementationOnce(async () => {
-        throw HttpError.NotFound();
-      });
+      Term.edit.mockResolvedValueOnce({});
 
       const response = await callPutOnTermRoute(1, desiredChanges);
+      expect(Term.edit).toBeCalled();
+      expect(Term.edit.mock.calls[0][0]).toBe('1');
+      expect(Term.edit.mock.calls[0][1]).toHaveProperty('semester', 2);
+      expect(Term.edit.mock.calls[0][1]).toHaveProperty('startyear', 2021);
       expect(response.statusCode).toBe(404);
       expect(response.body.error.message).toBe('Not Found');
+    });
+
+    test('should 404 when term is not found and no params specified', async () => {
+      const editor = samplePrivilegedUser();
+      auth.loginAs(editor);
+
+      Term.edit.mockResolvedValueOnce({});
+      Term.findOne.mockResolvedValueOnce({});
+
+      const response = await callPutOnTermRoute(1, {});
+      expect(Term.edit).not.toBeCalled();
+      expect(Term.findOne).toBeCalled();
+      expect(Term.findOne.mock.calls[0][0]).toHaveProperty('id', '1');
+      expect(response.statusCode).toBe(404);
+      expect(response.body.error.message).toBe('Not Found');
+    });
+
+    test('should just return found term if no editable params are specified', async () => {
+      const editor = samplePrivilegedUser();
+      auth.loginAs(editor);
+
+      const desiredChanges = {
+        foo: 'bar',
+        bar: 'foo',
+      };
+      const term = dataForGetTerm(1)[0];
+      Term.edit.mockResolvedValueOnce(term);
+      Term.findOne.mockResolvedValueOnce(term);
+
+      const response = await callPutOnTermRoute(1, desiredChanges);
+      expect(Term.edit).not.toBeCalled();
+      expect(Term.findOne).toBeCalled();
+      expect(Term.findOne.mock.calls[0][0]).toHaveProperty('id', '1');
+      expect(response.statusCode).toBe(200);
+      for (const key of Object.keys(term)) {
+        expect(response.body).toHaveProperty(key, term[key]);
+      }
     });
 
     test('should respond 200 and successfully return edited version of term', async () => {
@@ -316,6 +357,8 @@ describe('PUT /term', () => {
       expect(Term.edit.mock.calls[0][1]).toHaveProperty('semester', 2);
       expect(Term.edit.mock.calls[0][1]).toHaveProperty('startyear', 2021);
       expect(Term.edit.mock.calls[0][1]).toHaveProperty('title', 'lorem ipsum dolor');
+      expect(Term.edit.mock.calls[0][1]).not.toHaveProperty('foo');
+      expect(Term.edit.mock.calls[0][1]).not.toHaveProperty('bar');
 
       expect(response.statusCode).toBe(200);
       for (const key of Object.keys(term)) {

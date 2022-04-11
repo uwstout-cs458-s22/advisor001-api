@@ -48,11 +48,17 @@ module.exports = () => {
         // only find one if no editable fields
         if( isEmpty(newValues) ) {
           const term = await Term.findOne({ id });
+          if (isEmpty(term)) {
+            throw HttpError.NotFound();
+          }
           res.status(200).send(term);
         }
         else {
           // try edit (might 404)
           const term = await Term.edit(id, newValues);
+          if (isEmpty(term)) {
+            throw HttpError.NotFound();
+          }
           // no errors thrown
           res.status(200).send(term);
         }

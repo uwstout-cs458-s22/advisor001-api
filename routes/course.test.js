@@ -4,6 +4,9 @@ global.jest.init_routes();
 const { Course, auth, app, request, dataForGetCourse, dataForGetUser, samplePrivilegedUser } =
   global.jest;
 
+const HttpError = require('http-errors');
+const { extractKeys } = require('../services/utils');
+
 /*
 Custom extensions defined in tests_common, tests_models
 - Course.resetAllMocks()
@@ -165,9 +168,8 @@ describe('PUT /course', () => {
   beforeEach(Course.resetAllMocks);
 
   // put helper
-  async function callPutOnCourseRoute(courseId, body) {
-    const response = await request(app).put(`/course/${courseId}`).send(body);
-    return response;
+  function callPutOnCourseRoute(courseId, body) {
+    return request(app).put(`/course/${courseId}`).send(body);
   }
 
   describe('given an empty URL bar', () => {
@@ -326,9 +328,8 @@ describe('POST /course', () => {
   beforeEach(Course.resetAllMocks);
 
   // put helper
-  async function callPostOnCourseRoute(body) {
-    const response = await request(app).post(`/course/`).send(body);
-    return response;
+  function callPostOnCourseRoute(body) {
+    return request(app).post(`/course/`).send(body);
   }
 
   test('should 500 when editor not found in DB', async () => {
@@ -365,20 +366,55 @@ describe('POST /course', () => {
     editor.role = 'director';
     auth.loginAs(editor);
 
+    const expectedReturn = dataForGetCourse(1)[0];
+    Course.addCourse.mockResolvedValueOnce(expectedReturn);
+
+    // no ID for req body
+    const input = extractKeys(
+      expectedReturn,
+      'prefix',
+      'suffix',
+      'title',
+      'description',
+      'credits'
+    );
+    const response = await callPostOnCourseRoute(input);
+
+    expect(Course.addCourse).toBeCalled();
+    expect(response.statusCode).toBe(200);
+    // all values should be returned
+    for (const key of Object.keys(expectedReturn)) {
+      expect(response.body).toHaveProperty(key, expectedReturn[key]);
+    }
+    // new ID should be returned
+    expect(response.body).toHaveProperty('id', '1');
+  });
+
+  test('errors thrown by addCourse are caught', async () => {
+    const editor = samplePrivilegedUser();
+    editor.role = 'director';
+    auth.loginAs(editor);
+
     const course = dataForGetCourse(1)[0];
-    Course.addCourse.mockResolvedValueOnce(course);
+    Course.addCourse.mockImplementation(async () => {
+      throw HttpError.BadRequest('a testing model error');
+    });
 
     // no ID for req body
     delete course.id;
     const response = await callPostOnCourseRoute(course);
 
-    expect(Course.addCourse).toBeCalled();
-    expect(response.statusCode).toBe(200);
-    // all values should be returned
-    for (const key of Object.keys(course)) {
-      expect(response.body).toHaveProperty(key, course[key]);
-    }
-    // new ID should be returned
-    expect(response.body).toHaveProperty('id', '1');
+    expect(Course.addCourse).toHaveBeenCalledTimes(1);
+    expect(Course.addCourse.mock.calls[0][0]).not.toHaveProperty('id', '1');
+    expect(Course.addCourse.mock.calls[0][0]).toHaveProperty('prefix', course.prefix);
+    expect(Course.addCourse.mock.calls[0][0]).toHaveProperty('suffix', course.suffix);
+    expect(Course.addCourse.mock.calls[0][0]).toHaveProperty('title', course.title);
+    expect(Course.addCourse.mock.calls[0][0]).toHaveProperty('description', course.description);
+    expect(Course.addCourse.mock.calls[0][0]).toHaveProperty('credits', course.credits);
+
+    await expect(Course.addCourse).rejects.toThrowError('a testing model error');
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body.error.message).toBe('a testing model error');
   });
 });

@@ -4,6 +4,8 @@ const { dataForGetTerm, db } = global.jest;
 
 const Term = require('./Term');
 
+const { isEmpty } = require('../services/utils');
+
 describe('Term Model', () => {
   beforeEach(() => {
     db.query.mockReset();
@@ -227,7 +229,8 @@ describe('editing a term', () => {
 
   test('Term.edit with empty database answer', async () => {
     db.query.mockResolvedValueOnce({ rows: [] });
-    await expect(Term.edit(1, { semester: 2, startyear: 2021 })).rejects.toThrowError('Not Found');
+    const answer = await Term.edit(1, { semester: 2, startyear: 2021 });
+    expect(isEmpty(answer)).toBeTruthy(); // as long as we trust our util, we trust this test
     expect(db.query.mock.calls[0][1]).toHaveLength(3);
     expect(db.query.mock.calls[0][1][0]).toBe(1);
     expect(db.query.mock.calls[0][1][1]).toBe(2);

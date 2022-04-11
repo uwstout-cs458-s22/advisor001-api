@@ -47,7 +47,7 @@ async function edit(id, newValues) {
       return res.rows[0];
     }
     // nothing was updated
-    throw HttpError.NotFound();
+    return {};
   }
   // TODO ambiguous error
   else throw HttpError.BadRequest('Id is required.');
