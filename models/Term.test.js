@@ -221,7 +221,6 @@ describe('editing a term', () => {
     expect(db.query.mock.calls[0][0]).toBe(
       'UPDATE "term" SET "semester"=$2, "startyear"=$3 WHERE "id"=$1 RETURNING *;'
     );
-    console.log(db.query.mock.calls);
     expect(db.query.mock.calls[0][1]).toHaveLength(3);
     expect(db.query.mock.calls[0][1][0]).toBe(row.id);
     expect(db.query.mock.calls[0][1][1]).toBe(row.semester);
@@ -246,8 +245,7 @@ describe('editing a term', () => {
     expect(db.query.mock.calls[0]).toHaveLength(2);
     expect(db.query.mock.calls[0][0]).toBe(
       'UPDATE "term" SET "semester"=$2, "startyear"=$3 WHERE "id"=$1 RETURNING *;'
-    );
-    console.log(db.query.mock.calls);
+    );;
     expect(db.query.mock.calls[0][1]).toHaveLength(3);
     expect(db.query.mock.calls[0][1][0]).toBe(row.id);
     expect(db.query.mock.calls[0][1][1]).toBe(row.semester);

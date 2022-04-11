@@ -258,7 +258,6 @@ describe('editing a course', () => {
     expect(db.query.mock.calls[0][0]).toBe(
       'UPDATE "course" SET "credits"=$2, "prefix"=$3 WHERE "id"=$1 RETURNING *;'
     );
-    console.log(db.query.mock.calls);
     expect(db.query.mock.calls[0][1]).toHaveLength(3);
     expect(db.query.mock.calls[0][1][0]).toBe(row.id);
     expect(db.query.mock.calls[0][1][1]).toBe(row.credits);
@@ -284,7 +283,6 @@ describe('editing a course', () => {
     expect(db.query.mock.calls[0][0]).toBe(
       'UPDATE "course" SET "credits"=$2, "prefix"=$3 WHERE "id"=$1 RETURNING *;'
     );
-    console.log(db.query.mock.calls);
     expect(db.query.mock.calls[0][1]).toHaveLength(3);
     expect(db.query.mock.calls[0][1][0]).toBe(row.id);
     expect(db.query.mock.calls[0][1][1]).toBe(row.credits);
