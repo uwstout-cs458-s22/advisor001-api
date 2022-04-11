@@ -1,6 +1,6 @@
-# Delete User
+# Delete Term
 
-Deletes a specified user, selected by userId.
+Deletes a specified term, selected by id.
 
 - **URL**
 
@@ -12,7 +12,7 @@ Deletes a specified user, selected by userId.
 
 - **URL Params**
 
-  userId? (Optional)
+  id
 
 - **Data Params**
 
@@ -20,25 +20,24 @@ Deletes a specified user, selected by userId.
 
 - **Auth required** : YES, Bearer token in Authorization header
 
-
 ## Response
 
 - **Success Response:**
 
-  **Code:** 
-    `200`
-  
+  **Code:**
+  `200`
+
   **Content:**
-    None
-    
+  None
+
 - **Error Response:**
-  
+
   **Code:**
   `400 Requried Parameters Missing`
-  
-  If userId is empty or of invalid type.
-  
-   **Content:**
+
+  If id is empty or of invalid type.
+
+  **Content:**
 
   ```json
   {
@@ -48,13 +47,13 @@ Deletes a specified user, selected by userId.
     }
   }
   ```
-  
-     **Code:**
+
+  **Code:**
   `401 Forbidden`
-  
+
   If the user initiating the deletion lacks high enough clearance to do so.
-  
-   **Content:**
+
+  **Content:**
 
   ```json
   {
@@ -64,13 +63,13 @@ Deletes a specified user, selected by userId.
     }
   }
   ```
-  
-    **Code:**
+
+  **Code:**
   `404 Not Found`
-  
-  If no such user has a matching userId to the given parameter.
-  
-   **Content:**
+
+  If no such term has a matching id to the given parameter.
+
+  **Content:**
 
   ```json
   {
@@ -80,29 +79,19 @@ Deletes a specified user, selected by userId.
     }
   }
   ```
-  
-   **Code:**
-  `500 Internal Server Error`
-  
-  If the user initiating the deletion is not found in the database.
-  
-   **Content:**
 
-  ```json
-  {
-    "error": {
-      "status": 500,
-      "message": "Your account is not found in the database!"
-    }
-  }
-  ```
-  
-  
+  **Code:**
+  `500 Internal Server Error`
+
+  If the user initiating the deletion is not found in the database.
+
+  **Content:**
+
   ## Sample Call
-  
+
   ```javascript
   $.ajax({
-    url: '/users/user-test-16d9ba61-97a1-4ba4-9720-b03761dc50c6',
+    url: '/term/1',
     dataType: 'json',
     type: 'DELETE',
     beforeSend: function (xhr) {

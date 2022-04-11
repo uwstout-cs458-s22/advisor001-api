@@ -1,8 +1,8 @@
 const HttpError = require('http-errors');
 const log = require('loglevel');
 const { db } = require('../services/database');
-const { whereParams, updateValues } = require('../services/sqltools');
-const { isEmpty, isObject } = require('../services/utils');
+const { whereParams, insertValues, updateValues } = require('../services/sqltools');
+const { isEmpty, isObject, isString, isNumber } = require('../services/utils');
 
 // if found return { ... }
 // if not found return {}
@@ -49,12 +49,51 @@ async function deleteCourse(id) {
 }
 
 const validParams = {
-  prefix: true,
-  suffix: true,
-  title: true,
-  description: true,
-  credits: true,
+  prefix: isString,
+  suffix: isString,
+  title: isString,
+  description: isString,
+  credits: isNumber,
 };
+
+/**
+ * Adds course to database
+ *
+ * @param  {object} properties contains all required properties
+ *
+ * @returns {object} course object if successfully returned
+ *
+ * if any paramters are null, throw a 500 error 'Missing Course Paramters'
+ * if adding duplicate throws 500 error 'Course already added;'
+ */
+async function addCourse(properties) {
+  if (!properties) {
+    throw HttpError(500, 'Missing Course Parameters');
+  }
+  for (const param in validParams) {
+    if (properties?.[param] === undefined) {
+      throw HttpError(500, 'Missing Course Parameters');
+    }
+    if (!validParams[param](properties?.[param])) {
+      throw HttpError(500, 'Incompatible Course Parameter Types');
+    }
+  }
+
+  const { text, params } = insertValues(properties);
+
+  const res = await db.query(`INSERT INTO "course" ${text} RETURNING *;`, params);
+
+  // did it work?
+  if (res.rows.length > 0) {
+    log.debug(
+      `Successfully inserted ${properties.prefix} ${
+        properties.suffix
+      } into db with data: ${text}, ${JSON.stringify(params)}`
+    );
+    return res.rows[0];
+  }
+  throw HttpError(500, 'Unexpected DB Condition, insert sucessful with no returned record');
+}
 
 async function edit(id, newValues) {
   if (id && newValues && isObject(newValues)) {
@@ -92,6 +131,7 @@ async function count() {
 module.exports = {
   findOne,
   findAll,
+  addCourse,
   deleteCourse,
   edit,
   count,
