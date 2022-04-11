@@ -326,7 +326,6 @@ describe('PUT /term', () => {
       expect(Term.findOne.mock.calls).toHaveLength(1);
       expect(Term.findOne.mock.calls[0]).toHaveLength(1);
       expect(Term.findOne.mock.calls[0][0]).toHaveProperty('id', term.id);
-
       expect(response.statusCode).toBe(200);
       for (const key of Object.keys(term)) {
         expect(response.body).toHaveProperty(key, term[key]);
@@ -364,6 +363,167 @@ describe('PUT /term', () => {
       for (const key of Object.keys(term)) {
         expect(response.body).toHaveProperty(key, term[key]);
       }
+    });
+  });
+});
+
+describe('DELETE /term', () => {
+  beforeEach(Term.resetAllMocks);
+
+  async function callDeleteOnTermRoute(row, key = 'id') {
+    const id = row[key] === undefined ? '' : row[key];
+    Term.findOne.mockResolvedValueOnce(row);
+    const response = await request(app).delete(`/term/${id}`);
+    return response;
+  }
+
+  test('should respond with a 401 status code when empty string and not authorized', async () => {
+    const deleter = dataForGetUser(1, 100)[0];
+    deleter.enable = 'true';
+    auth.loginAs(deleter);
+    const response = await callDeleteOnTermRoute({});
+
+    expect(Term.findOne).not.toBeCalled();
+    expect(Term.deleteTerm).not.toBeCalled();
+
+    expect(response.statusCode).toBe(401);
+    expect(response.body.error.message).toBe('You are not allowed to do that!');
+  });
+
+  test('should respond with a 400 status code when empty string and authorized', async () => {
+    const deleter = dataForGetUser(1, 100)[0];
+    deleter.enable = 'true';
+    deleter.role = 'director';
+    auth.loginAs(deleter);
+    const response = await callDeleteOnTermRoute({});
+
+    expect(Term.findOne).not.toBeCalled();
+    expect(Term.deleteTerm).not.toBeCalled();
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body.error.message).toBe('Required Parameters Missing');
+  });
+
+  describe('when URL bar is non-empty', () => {
+    test('should respond with a 200 status code when Term exists and is deleted', async () => {
+      const term = dataForGetTerm(1, 100)[0];
+      const deleter = samplePrivilegedUser();
+      deleter.role = 'director';
+      auth.loginAs(deleter);
+
+      const response = await callDeleteOnTermRoute(term);
+
+      expect(Term.findOne.mock.calls).toHaveLength(1);
+      expect(Term.findOne.mock.calls[0]).toHaveLength(1);
+      expect(Term.findOne.mock.calls[0][0]).toHaveProperty('id', term.id);
+
+      expect(Term.deleteTerm).toBeCalled();
+      expect(Term.deleteTerm.mock.calls).toHaveLength(1);
+      expect(Term.deleteTerm.mock.calls[0]).toHaveLength(1);
+      expect(Term.deleteTerm.mock.calls[0][0]).toBe(term.id);
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('should respond with a 404 status code when term does NOT exist', async () => {
+      const deleter = samplePrivilegedUser();
+      auth.loginAs(deleter);
+
+      Term.findOne.mockResolvedValueOnce({});
+      const response = await request(app).delete(`/term/100`);
+
+      expect(Term.findOne.mock.calls).toHaveLength(1);
+      expect(Term.findOne.mock.calls[0]).toHaveLength(1);
+      expect(Term.findOne.mock.calls[0][0]).toHaveProperty('id', '100');
+      expect(Term.deleteTerm).not.toBeCalled();
+
+      expect(response.statusCode).toBe(404);
+    });
+  });
+});
+
+describe('POST /term', () => {
+  beforeEach(Term.resetAllMocks);
+
+  describe('given a title,startyear, and semester', () => {
+    test('should call both Term.findOne and Term.addTerm', async () => {
+      const data = dataForGetTerm(3);
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        const requestParms = {
+          title: row.title,
+          startyear: row.startyear,
+          semester: row.semester,
+        };
+        Term.addTerm.mockResolvedValueOnce(row);
+        auth.loginAs(samplePrivilegedUser()); // simulated authentication
+        const res = await request(app).post('/term').send(requestParms);
+        expect(res).toHaveProperty('statusCode', 200);
+
+        expect(Term.addTerm.mock.calls).toHaveLength(i + 1);
+        expect(Term.addTerm.mock.calls[0]).toHaveLength(1);
+        expect(Term.addTerm.mock.calls[0][0].semester).toBe(row.semester);
+        expect(Term.addTerm.mock.calls[0][0].startyear).toBe(row.startyear);
+        expect(Term.addTerm.mock.calls[0][0].title).toBe(row.title);
+      }
+    });
+
+    test('should specify json in the content type header', async () => {
+      auth.loginAs(samplePrivilegedUser());
+      const data = dataForGetTerm(1);
+      const row = data[0];
+      Term.findOne.mockResolvedValueOnce({});
+      Term.addTerm.mockResolvedValueOnce(row);
+      const requestParms = {
+        title: row.title,
+        startyear: row.startyear,
+        semester: row.semester,
+      };
+      const response = await request(app).post('/term').send(requestParms);
+      expect(response.headers['content-type']).toEqual(expect.stringContaining('json'));
+    });
+
+    test('should respond with a 500 status code when findOne database error occurs', async () => {
+      auth.loginAs(samplePrivilegedUser());
+      const data = dataForGetTerm(1);
+      const row = data[0];
+      const requestParms = {
+        title: row.title,
+        startyear: row.startyear,
+        semester: row.semester,
+      };
+      Term.addTerm.mockRejectedValueOnce(new Error('some database error'));
+      const response = await request(app).post('/term').send(requestParms);
+      expect(response.statusCode).toBe(500);
+    });
+
+    test('should respond with a 400 status code when missing required title', async () => {
+      auth.loginAs(samplePrivilegedUser());
+      const response = await request(app).post('/term').send({ startyear: 2009, semester: 2 });
+      expect(response.statusCode).toBe(400);
+    });
+
+    test('should respond with a 400 status code when missing required startyear', async () => {
+      auth.loginAs(samplePrivilegedUser());
+      const response = await request(app).post('/term').send({ title: 'term', semester: 2 });
+      expect(response.statusCode).toBe(400);
+    });
+
+    test('should respond with a 400 status code when missing required semester', async () => {
+      auth.loginAs(samplePrivilegedUser());
+      const response = await request(app).post('/term').send({ title: 'term', startyear: 2007 });
+      expect(response.statusCode).toBe(400);
+    });
+
+    test('should respond with a 400 status code when passing empty object', async () => {
+      auth.loginAs(samplePrivilegedUser());
+      const response = await request(app).post('/term').send({});
+      expect(response.statusCode).toBe(400);
+    });
+
+    test('should respond with a 400 status code when passing empty string', async () => {
+      auth.loginAs(samplePrivilegedUser());
+      const response = await request(app).post('/term').send('');
+      expect(response.statusCode).toBe(400);
     });
   });
 });

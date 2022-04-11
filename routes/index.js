@@ -9,7 +9,7 @@ module.exports = () => {
   const courseRoutes = require('./course')();
   const usersRoutes = require('./users')();
   const countRoutes = require('./count')();
-  const termRoutes = require('./term.js')();
+  const termRoutes = require('./term')();
   router.use('/users', usersRoutes);
   router.use('/course', courseRoutes);
   router.use('/count', countRoutes);

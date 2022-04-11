@@ -67,6 +67,48 @@ module.exports = () => {
       }
     }
   );
+  // delete a single term
+  router.delete(
+    '/:termId?',
+    authorizeSession,
+    setClearanceLevel('director'),
+    async (req, res, next) => {
+      try {
+        const termId = req.params.termId;
+        if (!termId || termId === '') {
+          throw HttpError(400, 'Required Parameters Missing');
+        }
+
+        let term = await Term.findOne({ id: termId });
+        if (isEmpty(term)) {
+          throw new HttpError.NotFound();
+        }
+
+        term = await Term.deleteTerm(termId);
+
+        res.status(200);
+        res.send();
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  // Create term
+  router.post('/', authorizeSession, setClearanceLevel('director'), async (req, res, next) => {
+    try {
+      const { title, startyear, semester } = req.body;
+      const properties = { title, startyear, semester };
+      if (properties.title && properties.startyear && properties.semester) {
+        const term = await Term.addTerm(properties);
+        return res.send(term);
+      } else {
+        throw HttpError(400, 'Required Parameters Missing');
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
 
   return router;
 };

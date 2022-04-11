@@ -14,6 +14,7 @@ Every request received by the API must also be accompanied with the Stytch sessi
 ## Endpoints
 
 ### Users
+
 [/users GET](users_get.md)
 
 [/users GET COUNT](users_count.md)
@@ -25,9 +26,13 @@ Every request received by the API must also be accompanied with the Stytch sessi
 [/users DELETE](users_delete.md)
 
 ### Courses
+
 [/course GET COUNT](courses_count.md)
+
+### Terms
+
+[/term GET](term_get.md)
 
 [/term GET COUNT](terms_count.md)
 
-### Terms
-[/term GET](term_get.md)
+[/term Delete](term_delete.md)

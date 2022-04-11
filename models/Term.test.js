@@ -144,6 +144,43 @@ describe('Term Model', () => {
     });
   });
 
+  describe('Adding term', () => {
+    // helper that to do the add
+    function doAdd(newTerm) {
+      db.query.mockResolvedValueOnce({ rows: [newTerm] });
+      return Term.addTerm(newTerm);
+    }
+
+    test('Adding single term success', async () => {
+      const data = dataForGetTerm(1)[0];
+      const term = await doAdd(data);
+      for (const key of Object.keys(data)) {
+        expect(term).toHaveProperty(key, data[key]);
+      }
+    });
+
+    test('Inputting invalid value', async () => {
+      const term = dataForGetTerm(1)[0];
+      term.title = { test: "object that's not string" };
+
+      await expect(doAdd(term)).rejects.toThrowError(
+        'Title, Start Year, and Semester are required.'
+      );
+    });
+
+    test('Inputting null parameters', async () => {
+      await expect(doAdd(null)).rejects.toThrowError(
+        'Title, Start Year, and Semester are required.'
+      );
+      expect(db.query).not.toBeCalled();
+    });
+
+    test('Inputting empty object', async () => {
+      await expect(doAdd({})).rejects.toThrowError('Title, Start Year, and Semester are required.');
+      expect(db.query).not.toBeCalled();
+    });
+  });
+
   describe('Count Terms', () => {
     test('One Term in the Database', async () => {
       db.query.mockResolvedValueOnce({ rows: [{ count: 1 }] });
@@ -235,5 +272,25 @@ describe('editing a term', () => {
     expect(db.query.mock.calls[0][1][0]).toBe(1);
     expect(db.query.mock.calls[0][1][1]).toBe(2);
     expect(db.query.mock.calls[0][1][2]).toBe(2021);
+  });
+
+  describe('Delete Terms', () => {
+    test('Delete a Term', async () => {
+      const data = dataForGetTerm(1);
+      const termId = data[0].id;
+
+      db.query.mockResolvedValue({ rows: data });
+      const deleteTerm = await Term.deleteTerm(termId);
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "term" WHERE "id"=$1;');
+      expect(db.query.mock.calls[0][1]).toHaveLength(1);
+      expect(db.query.mock.calls[0][1][0]).toBe(termId);
+      expect(deleteTerm).toBe(true);
+    });
+    test('User.deleteUser with no input', async () => {
+      await expect(Term.deleteTerm()).rejects.toThrowError('TermId is required.');
+    });
   });
 });
