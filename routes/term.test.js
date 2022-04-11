@@ -210,29 +210,29 @@ describe('POST /term', () => {
       expect(response.statusCode).toBe(500);
     });
 
-    test('should respond with a 500 status code when missing required title', async () => {
+    test('should respond with a 400 status code when missing required title', async () => {
       const response = await request(app).post('/term').send({ startyear: 2009, semester: 2 });
-      expect(response.statusCode).toBe(500);
+      expect(response.statusCode).toBe(400);
     });
 
-    test('should respond with a 500 status code when missing required startyear', async () => {
+    test('should respond with a 400 status code when missing required startyear', async () => {
       const response = await request(app).post('/term').send({ title: 'term', semester: 2 });
-      expect(response.statusCode).toBe(500);
+      expect(response.statusCode).toBe(400);
     });
 
-    test('should respond with a 500 status code when missing required semester', async () => {
+    test('should respond with a 400 status code when missing required semester', async () => {
       const response = await request(app).post('/term').send({ title: 'term', startyear: 2007 });
-      expect(response.statusCode).toBe(500);
+      expect(response.statusCode).toBe(400);
     });
 
-    test('should respond with a 500 status code when passing empty dictionary', async () => {
+    test('should respond with a 400 status code when passing empty object', async () => {
       const response = await request(app).post('/term').send({});
-      expect(response.statusCode).toBe(500);
+      expect(response.statusCode).toBe(400);
     });
 
-    test('should respond with a 500 status code when passing empty string', async () => {
+    test('should respond with a 400 status code when passing empty string', async () => {
       const response = await request(app).post('/term').send('');
-      expect(response.statusCode).toBe(500);
+      expect(response.statusCode).toBe(400);
     });
   });
 });
