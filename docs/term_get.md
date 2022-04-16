@@ -12,7 +12,7 @@ Returns json data about a single term.
 
 - **URL Params**
 
-  _Required:_ User identifier
+  _Required:_ Term identifier
 
   `id=[integer]`
 
