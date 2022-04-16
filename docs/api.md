@@ -31,7 +31,7 @@ Every request received by the API must also be accompanied with the Stytch sessi
 
 [/course GET COUNT](courses_count.md)
 
-[/course POST](course_post.md)
+[/course PUT](course_put.md)
 
 ### Terms
 
