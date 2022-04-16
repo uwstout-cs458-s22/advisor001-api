@@ -1,6 +1,6 @@
 # Edit Course
 
-Edits a specified course, selected by userId.
+Edits a specified course, selected by id.
 
 - **URL**
 
