@@ -286,7 +286,6 @@ describe('User Model', () => {
       expect(db.query.mock.calls[0][0]).toBe(
         'UPDATE "user" SET "enable"=$2, "role"=$3 WHERE "userId"=$1 RETURNING *;'
       );
-      console.log(db.query.mock.calls);
       expect(db.query.mock.calls[0][1]).toHaveLength(3);
       expect(db.query.mock.calls[0][1][0]).toBe(row.userId);
       expect(db.query.mock.calls[0][1][1]).toBe(row.enable);
@@ -393,5 +392,12 @@ describe('User Model', () => {
       expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "user"`);
       expect(res).toHaveProperty('count', 1);
     });
+  });
+  test('Unexpected condition, no return', async () => {
+    db.query.mockResolvedValue({ rows: [] });
+    await expect(User.count()).rejects.toThrowError('Some Error Occurred');
+    expect(db.query.mock.calls).toHaveLength(1);
+    expect(db.query.mock.calls[0]).toHaveLength(1);
+    expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "user"`);
   });
 });

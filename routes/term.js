@@ -1,9 +1,9 @@
 const express = require('express');
 const log = require('loglevel');
 const HttpError = require('http-errors');
-const { isEmpty } = require('./../services/utils');
+const { isEmpty, extractKeys } = require('./../services/utils');
 const Term = require('./../models/Term');
-const { authorizeSession } = require('./../services/auth');
+const { authorizeSession, setClearanceLevel } = require('./../services/auth');
 
 module.exports = () => {
   const router = express.Router();
@@ -31,6 +31,80 @@ module.exports = () => {
       log.info(`${req.method} ${req.originalUrl} success: returning term ${termId}`);
       return res.send(term);
       // catch general errors
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // prettier-ignore
+  router.put('/:id(\\d+)?', authorizeSession, setClearanceLevel('director'), async (req, res, next) => {
+      try {
+        // i'm tired
+        const { id } = req.params;
+        if (!id || id === '') {
+          throw HttpError.BadRequest('Required Parameters Missing');
+        }
+        const newValues = extractKeys(req.body, ...Term.properties);
+        // only find one if no editable fields
+        if( isEmpty(newValues) ) {
+          const term = await Term.findOne({ id });
+          if (isEmpty(term)) {
+            throw HttpError.NotFound();
+          }
+          res.status(200).send(term);
+        }
+        else {
+          // try edit (might 404)
+          const term = await Term.edit(id, newValues);
+          if (isEmpty(term)) {
+            throw HttpError.NotFound();
+          }
+          // no errors thrown
+          res.status(200).send(term);
+        }
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+  // delete a single term
+  router.delete(
+    '/:termId?',
+    authorizeSession,
+    setClearanceLevel('director'),
+    async (req, res, next) => {
+      try {
+        const termId = req.params.termId;
+        if (!termId || termId === '') {
+          throw HttpError(400, 'Required Parameters Missing');
+        }
+
+        let term = await Term.findOne({ id: termId });
+        if (isEmpty(term)) {
+          throw new HttpError.NotFound();
+        }
+
+        term = await Term.deleteTerm(termId);
+
+        res.status(200);
+        res.send();
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  // Create term
+  router.post('/', authorizeSession, setClearanceLevel('director'), async (req, res, next) => {
+    try {
+      const { title, startyear, semester } = req.body;
+      const properties = { title, startyear, semester };
+      if (properties.title && properties.startyear && properties.semester) {
+        const term = await Term.addTerm(properties);
+        return res.send(term);
+      } else {
+        throw HttpError(400, 'Required Parameters Missing');
+      }
     } catch (error) {
       next(error);
     }

@@ -47,6 +47,9 @@ global.jest = {
     // loginAs will take user data as input & set up mocks appropriately
     global.jest.auth = require('../services/auth');
     global.jest.auth.loginAs = function (user, dbUser) {
+      // reset old mocks
+      global.jest.User.findOne.mockReset();
+      // global.jest.User.findOne.mockResolvedValue(null);
       // resolve db user
       global.jest.User.findOne.mockResolvedValueOnce(dbUser !== undefined ? dbUser : user);
       // resolve stytch data
