@@ -72,7 +72,7 @@ module.exports = {
   // Program mocker
   Program: () => {
     // do the mock
-    jest.mock('../models/Programm', () => {
+    jest.mock('../models/Program', () => {
       return {
         findOne: jest.fn(),
         findAll: jest.fn(),

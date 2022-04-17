@@ -32,3 +32,6 @@ Every request received by the API must also be accompanied with the Stytch sessi
 ### Terms
 
 [/term GET](term_get.md)
+
+### Programs
+[/program GET](program_get.md)

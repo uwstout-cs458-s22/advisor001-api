@@ -1,10 +1,10 @@
-# Show Term
+# Show Program
 
-Returns json data about a single term.
+Returns json data about a single program.
 
 - **URL**
 
-  /term/:id
+  /program/:id
 
 - **Method:**
 
@@ -12,11 +12,11 @@ Returns json data about a single term.
 
 - **URL Params**
 
-  _Required:_ Term identifier
+  _Required:_ Program identifier
 
   `id=[integer]`
 
-  `/term/1234`
+  `/program/1234`
 
 - **Data Params**
 
@@ -35,9 +35,8 @@ Returns json data about a single term.
   ```json
   {
     "id": 1234,
-    "title": "FALL-2022",
-    "startyear": 2022,
-    "semester": 2,
+    "title": "Applied Mathematics & Computer Science",
+    "description": "Are you interested in using math to solve real-world problems?",
   }
   ```
 
@@ -75,7 +74,7 @@ Returns json data about a single term.
 
 ```javascript
 $.ajax({
-  url: '/term/1234',
+  url: '/program/1234',
   dataType: 'json',
   type: 'GET',
   beforeSend: function (xhr) {
@@ -87,13 +86,13 @@ $.ajax({
 });
 ```
 
-# Show a Term List
+# Show a Program List
 
-Returns a json array about all terms, based on passed criteria.
+Returns a json array about all programss, based on passed criteria.
 
 - **URL**
 
-  /term/
+  /program/
 
 - **Method:**
 
@@ -101,17 +100,17 @@ Returns a json array about all terms, based on passed criteria.
 
 - **URL Params**
 
-  _Optional:_ Limit the term records returned
+  _Optional:_ Limit the program records returned
 
   `limit=[integer]`
 
-  `/term?limit=50`
+  `/program?limit=50`
 
   _Optional:_ Offset the first record locator
 
   `offset=[integer]`
 
-  `/term?offset=12`
+  `/program?offset=12`
 
 - **Data Params**
 
@@ -130,16 +129,14 @@ Returns a json array about all terms, based on passed criteria.
   ```json
   [
     {
-    "id": 1234,
-    "title": "FALL-2022",
-    "startyear": 2022,
-    "semester": 2,
+      "id": 1234,
+      "title": "Applied Mathematics & Computer Science",
+      "description": "Are you interested in using math to solve real-world problems?",
     },
     {
-    "id": 4321,
-    "title": "SPRINT-2023",
-    "startyear": 2023,
-    "semester": 0,
+      "id": 4321,
+      "title": "Computer Science",
+      "description": "re you interested in designing and writing computer programs?",
     }
   ]
   ```
@@ -167,7 +164,7 @@ Returns a json array about all terms, based on passed criteria.
 
 ```javascript
 $.ajax({
-  url: '/term/',
+  url: '/program/',
   dataType: 'json',
   type: 'GET',
   beforeSend: function (xhr) {
