@@ -1,4 +1,4 @@
-# Show Term
+# Find One
 
 Returns json data about a single term.
 
@@ -8,15 +8,11 @@ Returns json data about a single term.
 
 - **Method:**
 
-  `GET`
+  `findOne`
 
 - **URL Params**
 
   _Required:_ Term identifier
-
-  `id=[integer]`
-
-  `/term/1234`
 
 - **Data Params**
 
@@ -43,32 +39,9 @@ Returns json data about a single term.
 
 - **Error Response:**
 
-  **Code:** `404 NOT FOUND`
-
-  **Content:**
-
-  ```json
-  {
-    "error": {
-      "status": 404,
-      "message": "Not Found"
-    }
-  }
-  ```
-
-  OR
-
-  **Code:** `500 INTERNAL ERROR`
-
-  **Content:**
-
-  ```json
-  {
-    "error": {
-      "status": 500,
-      "message": "Internal Server Error"
-    }
-  }
+  If no values were found with the specified criteria, the function returns an empty array.
+  
+  If there is a db error, db.query will throw a rejected promise.
   ```
 
 ## Sample Call:
@@ -77,7 +50,7 @@ Returns json data about a single term.
 $.ajax({
   url: '/term/1234',
   dataType: 'json',
-  type: 'GET',
+  type: 'findOne',
   beforeSend: function (xhr) {
     xhr.setRequestHeader('Authorization', 'Bearer t-7614f875-8423-4f20-a674-d7cf3096290e');
   },
@@ -87,7 +60,7 @@ $.ajax({
 });
 ```
 
-# Show a Term List
+# Find All
 
 Returns a json array about all terms, based on passed criteria.
 
@@ -97,10 +70,14 @@ Returns a json array about all terms, based on passed criteria.
 
 - **Method:**
 
-  `GET`
+  `findAll`
 
 - **URL Params**
+  
+   _Required:_ Criteria
 
+  `criteria=[string]`
+  
   _Optional:_ Limit the term records returned
 
   `limit=[integer]`
@@ -169,7 +146,7 @@ Returns a json array about all terms, based on passed criteria.
 $.ajax({
   url: '/term/',
   dataType: 'json',
-  type: 'GET',
+  type: 'findAll',
   beforeSend: function (xhr) {
     xhr.setRequestHeader('Authorization', 'Bearer t-7614f875-8423-4f20-a674-d7cf3096290e');
   },
