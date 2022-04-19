@@ -29,7 +29,7 @@ describe('Program Model', () => {
       db.query.mockResolvedValue({ rows: [row] });
       const program = await Program.findOne({ id });
 
-      for (const key in Object.keys(row)) {
+      for (const key of Object.keys(row)) {
         expect(program).toHaveProperty(key, row[key]);
       }
     });
@@ -67,7 +67,7 @@ describe('Program Model', () => {
       expect(programs).toHaveLength(data.length);
 
       for (let i = 0; i < data.length; i++) {
-        for (const key in Object.keys(data[i])) {
+        for (const key of Object.keys(data[i])) {
           expect(programs[i]).toHaveProperty(key, data[i][key]);
         }
       }
@@ -91,7 +91,7 @@ describe('Program Model', () => {
       expect(db.query.mock.calls[0][1][2]).toBe(0);
       expect(programs).toHaveLength(data.length);
       for (let i = 0; i < data.length; i++) {
-        for (const key in Object.keys(data[i])) {
+        for (const key of Object.keys(data[i])) {
           expect(programs[i]).toHaveProperty(key, data[i][key]);
         }
       }
@@ -112,7 +112,7 @@ describe('Program Model', () => {
       expect(db.query.mock.calls[0][1][2]).toBe(0);
       expect(programs).toHaveLength(data.length);
       for (let i = 0; i < data.length; i++) {
-        for (const key in Object.keys(data[i])) {
+        for (const key of Object.keys(data[i])) {
           expect(programs[i]).toHaveProperty(key, data[i][key]);
         }
       }
@@ -137,7 +137,7 @@ describe('Program Model', () => {
       expect(db.query.mock.calls[0][1][2]).toBe(1);
       expect(programs).toHaveLength(data.length);
       for (let i = 0; i < data.length; i++) {
-        for (const key in Object.keys(data[i])) {
+        for (const key of Object.keys(data[i])) {
           expect(programs[i]).toHaveProperty(key, data[i][key]);
         }
       }
