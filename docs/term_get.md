@@ -33,7 +33,7 @@ Returns json data about a single term.
     "id": 1234,
     "title": "FALL-2022",
     "startyear": 2022,
-    "semester": 2,
+    "semester": 0
   }
   ```
 
@@ -107,16 +107,16 @@ Returns a json array about all terms, based on passed criteria.
   ```json
   [
     {
-    "id": 1234,
-    "title": "FALL-2022",
-    "startyear": 2022,
-    "semester": 2,
+      "id": 1234,
+      "title": "FALL-2022",
+      "startyear": 2022,
+      "semester": 0
     },
     {
-    "id": 4321,
-    "title": "SPRINT-2023",
-    "startyear": 2023,
-    "semester": 0,
+      "id": 4321,
+      "title": "SPRING-2023",
+      "startyear": 2023,
+      "semester": 2
     }
   ]
   ```
