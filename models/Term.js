@@ -1,13 +1,15 @@
 const HttpError = require('http-errors');
 const log = require('loglevel');
 const { db } = require('../services/database');
-const { whereParams, insertValues } = require('../services/sqltools');
-const { isEmpty, isString, isNumber } = require('../services/utils');
+const { whereParams, insertValues, updateValues } = require('../services/sqltools');
+const { isEmpty, isString, isObject, isNumber } = require('../services/utils');
+
 const validParams = {
   title: isString,
   startyear: isNumber,
   semester: isNumber,
 };
+
 // if found return { ... }
 // if not found return {}
 // if db error, db.query will throw a rejected promise
@@ -95,6 +97,23 @@ async function addTerm(properties) {
   throw HttpError(500, 'Unexpected DB Condition, insert sucessful with no returned record');
 }
 
+// edit term
+async function edit(id, newValues) {
+  // TODO the routes should probably be doing the validation, not this
+  if (id && newValues && isObject(newValues)) {
+    const { text, params } = updateValues({ id }, newValues);
+    const res = await db.query(`UPDATE "term" ${text} RETURNING *;`, params);
+    // did it work?
+    if (res.rows.length > 0) {
+      return res.rows[0];
+    }
+    // nothing was updated
+    return {};
+  }
+  // TODO ambiguous error
+  else throw HttpError.BadRequest('Id is required.');
+}
+
 async function count() {
   const res = await db.query(`SELECT COUNT(*) FROM "term"`);
 
@@ -111,4 +130,6 @@ module.exports = {
   deleteTerm,
   addTerm,
   count,
+  edit,
+  properties: Object.keys(validParams),
 };

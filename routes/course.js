@@ -37,7 +37,7 @@ module.exports = () => {
   });
 
   // Create course
-  router.post('/', authorizeSession, async (req, res, next) => {
+  router.post('/', authorizeSession, setClearanceLevel('director'), async (req, res, next) => {
     try {
       const { prefix, suffix, title, description, credits } = req.body;
       const properties = { prefix, suffix, title, description, credits };

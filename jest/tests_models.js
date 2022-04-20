@@ -1,26 +1,30 @@
 module.exports = {
   // User mocker
   User: () => {
+    // mock list
+    const mockList = {
+      findOne: jest.fn().mockImplementation((criteria) => {
+        return Object.assign(criteria, global.jest.dataForGetUser(1)[0]);
+      }),
+      findAll: jest.fn(),
+      create: jest.fn(),
+      edit: jest.fn(),
+      deleteUser: jest.fn(),
+      count: jest.fn(),
+    };
     // do the mock
     jest.mock('../models/User', () => {
       const { hasMinimumPermission } = jest.requireActual('../models/User');
       return {
-        findOne: jest.fn().mockImplementation((criteria) => {
-          return Object.assign(criteria, global.jest.dataForGetUser(1)[0]);
-        }),
-        findAll: jest.fn(),
-        create: jest.fn(),
-        edit: jest.fn(),
+        ...mockList,
         hasMinimumPermission,
-        deleteUser: jest.fn(),
-        count: jest.fn(),
       };
     });
 
     // add mock resetter
     const User = require('../models/User');
     User.resetAllMocks = function () {
-      for (const mockName of ['findOne', 'findAll', 'create', 'edit', 'deleteUser', 'count']) {
+      for (const mockName of Object.keys(mockList)) {
         User[mockName].mockReset();
         User[mockName].mockResolvedValue(null);
       }
@@ -30,23 +34,25 @@ module.exports = {
 
   // Course mocker
   Course: () => {
-    const Course = require('../models/Course');
-
+    // mock list
+    const mockList = {
+      findOne: jest.fn(),
+      findAll: jest.fn(),
+      addCourse: jest.fn(),
+      deleteCourse: jest.fn(),
+      edit: jest.fn(),
+      count: jest.fn(),
+    };
     // do the mock
     jest.mock('../models/Course', () => {
       return {
-        findOne: jest.fn(),
-        findAll: jest.fn(),
-        deleteCourse: jest.fn(),
-        addCourse: jest.fn(),
-        edit: jest.fn(),
-        count: jest.fn(),
+        ...mockList,
       };
     });
-
+    const Course = require('../models/Course');
     // add mock resetter
     Course.resetAllMocks = function () {
-      for (const mockName of ['findOne', 'findAll', 'deleteCourse', 'addCourse', 'edit', 'count']) {
+      for (const mockName of Object.keys(mockList)) {
         Course[mockName].mockReset();
         Course[mockName].mockResolvedValue(null);
       }
@@ -56,20 +62,27 @@ module.exports = {
 
   // Term mocker
   Term: () => {
+    // mock list
+    const mockList = {
+      findOne: jest.fn(),
+      findAll: jest.fn(),
+      deleteTerm: jest.fn(),
+      addTerm: jest.fn(),
+      edit: jest.fn(),
+      count: jest.fn(),
+    };
     // do the mock
     jest.mock('../models/Term', () => {
+      const { properties } = jest.requireActual('../models/Term');
       return {
-        findOne: jest.fn(),
-        findAll: jest.fn(),
-        deleteTerm: jest.fn(),
-        count: jest.fn(),
-        addTerm: jest.fn(),
+        ...mockList,
+        properties,
       };
     });
     // add mock resetter
     const Term = require('../models/Term');
     Term.resetAllMocks = function () {
-      for (const mockName of ['findOne', 'findAll', 'count', 'addTerm', 'deleteTerm']) {
+      for (const mockName of Object.keys(mockList)) {
         Term[mockName].mockReset();
         Term[mockName].mockResolvedValue(null);
       }
