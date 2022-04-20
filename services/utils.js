@@ -18,6 +18,14 @@ function isNumber(a) {
   return typeof a === 'number' || a instanceof Number;
 }
 
+function isBoolean(a) {
+  return typeof a === 'boolean' || a instanceof Boolean;
+}
+
+function isNully(a) {
+  return typeof a === 'undefined' || a === null;
+}
+
 function extractKeys(object, ...keys) {
   const result = {};
   for (const key of keys) {
@@ -34,5 +42,7 @@ module.exports = {
   isObject,
   isString,
   isNumber,
+  isBoolean,
+  isNully,
   extractKeys,
 };
