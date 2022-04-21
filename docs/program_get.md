@@ -1,18 +1,22 @@
-# Find One
+# Show Program
 
-Returns json data about a single term.
+Returns json data about a single program.
 
 - **URL**
 
-  /term/:id
+  /program/:id
 
 - **Method:**
 
-  `findOne`
+  `GET`
 
 - **URL Params**
 
-  _Required:_ Term identifier
+  _Required:_ Program identifier
+
+  `id=[integer]`
+
+  `/program/1234`
 
 - **Data Params**
 
@@ -31,26 +35,48 @@ Returns json data about a single term.
   ```json
   {
     "id": 1234,
-    "title": "FALL-2022",
-    "startyear": 2022,
-    "semester": 0
+    "title": "Applied Mathematics & Computer Science",
+    "description": "Are you interested in using math to solve real-world problems?",
   }
   ```
 
 - **Error Response:**
 
-  If no values were found with the specified criteria, the function returns an empty array.
-  
-  If there is a db error, db.query will throw a rejected promise.
+  **Code:** `404 NOT FOUND`
+
+  **Content:**
+
+  ```json
+  {
+    "error": {
+      "status": 404,
+      "message": "Not Found"
+    }
+  }
+  ```
+
+  OR
+
+  **Code:** `500 INTERNAL ERROR`
+
+  **Content:**
+
+  ```json
+  {
+    "error": {
+      "status": 500,
+      "message": "Internal Server Error"
+    }
+  }
   ```
 
 ## Sample Call:
 
 ```javascript
 $.ajax({
-  url: '/term/1234',
+  url: '/program/1234',
   dataType: 'json',
-  type: 'findOne',
+  type: 'GET',
   beforeSend: function (xhr) {
     xhr.setRequestHeader('Authorization', 'Bearer t-7614f875-8423-4f20-a674-d7cf3096290e');
   },
@@ -60,35 +86,31 @@ $.ajax({
 });
 ```
 
-# Find All
+# Show a Program List
 
-Returns a json array about all terms, based on passed criteria.
+Returns a json array about all programss, based on passed criteria.
 
 - **URL**
 
-  /term/
+  /program/
 
 - **Method:**
 
-  `findAll`
+  `GET`
 
 - **URL Params**
-  
-   _Required:_ Criteria
 
-  `criteria=[string]`
-  
-  _Optional:_ Limit the term records returned
+  _Optional:_ Limit the program records returned
 
   `limit=[integer]`
 
-  `/term?limit=50`
+  `/program?limit=50`
 
   _Optional:_ Offset the first record locator
 
   `offset=[integer]`
 
-  `/term?offset=12`
+  `/program?offset=12`
 
 - **Data Params**
 
@@ -108,15 +130,13 @@ Returns a json array about all terms, based on passed criteria.
   [
     {
       "id": 1234,
-      "title": "FALL-2022",
-      "startyear": 2022,
-      "semester": 0
+      "title": "Applied Mathematics & Computer Science",
+      "description": "Are you interested in using math to solve real-world problems?",
     },
     {
       "id": 4321,
-      "title": "SPRING-2023",
-      "startyear": 2023,
-      "semester": 2
+      "title": "Computer Science",
+      "description": "re you interested in designing and writing computer programs?",
     }
   ]
   ```
@@ -144,9 +164,9 @@ Returns a json array about all terms, based on passed criteria.
 
 ```javascript
 $.ajax({
-  url: '/term/',
+  url: '/program/',
   dataType: 'json',
-  type: 'findAll',
+  type: 'GET',
   beforeSend: function (xhr) {
     xhr.setRequestHeader('Authorization', 'Bearer t-7614f875-8423-4f20-a674-d7cf3096290e');
   },
