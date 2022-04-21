@@ -42,7 +42,7 @@ async function edit(id, newValues) {
   // TODO the routes should probably be doing the validation, not this
   if (id && newValues && isObject(newValues)) {
     const { text, params } = updateValues({ id }, newValues);
-    const res = await db.query(`UPDATE "term" ${text} RETURNING *;`, params);
+    const res = await db.query(`UPDATE "program" ${text} RETURNING *;`, params);
     // did it work?
     if (res.rows.length > 0) {
       return res.rows[0];
