@@ -27,7 +27,11 @@ Every request received by the API must also be accompanied with the Stytch sessi
 
 ### Courses
 
+[/course GET](course_get.md)
+
 [/course GET COUNT](courses_count.md)
+
+[/course PUT](course_put.md)
 
 ### Terms
 
@@ -35,4 +39,9 @@ Every request received by the API must also be accompanied with the Stytch sessi
 
 [/term GET COUNT](terms_count.md)
 
+[/term PUT](term_put.md)
+
 [/term Delete](term_delete.md)
+
+### Programs
+[/program GET](program_get.md)

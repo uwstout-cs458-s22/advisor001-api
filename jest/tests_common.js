@@ -96,6 +96,19 @@ global.jest = {
     }
     return data;
   },
+  // a helper that creates an array structure for getProgramById
+  dataForGetProgram: function (rows, offset = 0) {
+    const data = [];
+    for (let i = 1; i <= rows; i++) {
+      const value = i + offset;
+      data.push({
+        id: `${value}`,
+        title: `Program-${value}`,
+        description: `Program description goes here`,
+      });
+    }
+    return data;
+  },
   // a helper that creates an array structure for getTermById
   dataForGetTerm: function (rows, offset = 0) {
     const data = [];
