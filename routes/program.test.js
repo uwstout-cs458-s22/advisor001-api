@@ -153,7 +153,7 @@ describe('GET /program', () => {
 
     // put helper
     function callPutOnProgramRoute(ProgramId, body) {
-      return request(app).put(`/Program/${ProgramId}`).send(body);
+      return request(app).put(`/program/${ProgramId}`).send(body);
     }
 
     describe('given an empty URL bar', () => {
@@ -178,9 +178,8 @@ describe('GET /program', () => {
         const Program = dataForGetProgram(1)[0];
 
         const desiredChanges = {
-          prefix: 'ANTH',
-          suffix: '220HON',
-          title: 'Cultural Anthropology',
+          description: 'This',
+          title: 'CS',
         };
 
         Program.findOne.mockResolvedValueOnce(Program);
@@ -202,9 +201,8 @@ describe('GET /program', () => {
         const Program = dataForGetProgram(1)[0];
 
         const desiredChanges = {
-          prefix: 'ANTH',
-          suffix: '220HON',
-          title: 'Cultural Anthropology',
+          description: 'This',
+          title: 'CS',
         };
 
         Program.findOne.mockResolvedValueOnce(Program);
@@ -221,11 +219,9 @@ describe('GET /program', () => {
         auth.loginAs(editor);
 
         const desiredChanges = {
-          prefix: 'ANTH',
-          suffix: '220HON',
-          title: 'Cultural Anthropology',
+          description: 'This',
+          title: 'CS',
         };
-
         Program.findOne.mockResolvedValueOnce({}); // NO Program
         Program.edit.mockResolvedValueOnce({});
 
@@ -242,11 +238,9 @@ describe('GET /program', () => {
         const Program = dataForGetProgram(1)[0];
 
         const desiredChanges = {
-          prefix: 'ANTH',
-          suffix: '220HON',
-          title: 'Cultural Anthropology',
+          description: 'This',
+          title: 'CS',
         };
-
         Program.findOne.mockResolvedValueOnce(Program);
         const expectedReturn = Object.assign(Program, desiredChanges);
         Program.edit.mockResolvedValueOnce(desiredChanges);
@@ -289,9 +283,8 @@ describe('GET /program', () => {
         const Program = dataForGetProgram(1)[0];
 
         const desiredChanges = {
-          prefix: 'ANTH',
-          suffix: '220HON',
-          title: 'Cultural Anthropology',
+          description: 'This',
+          title: 'CS',
         };
 
         Program.findOne.mockResolvedValueOnce(Program);
