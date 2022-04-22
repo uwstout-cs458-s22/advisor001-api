@@ -245,7 +245,7 @@ describe('editing a term', () => {
     expect(db.query.mock.calls[0]).toHaveLength(2);
     expect(db.query.mock.calls[0][0]).toBe(
       'UPDATE "term" SET "semester"=$2, "startyear"=$3 WHERE "id"=$1 RETURNING *;'
-    );;
+    );
     expect(db.query.mock.calls[0][1]).toHaveLength(3);
     expect(db.query.mock.calls[0][1][0]).toBe(row.id);
     expect(db.query.mock.calls[0][1][1]).toBe(row.semester);
@@ -282,10 +282,10 @@ describe('editing a term', () => {
 
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
-      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "term" WHERE "id"=$1;');
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "term" WHERE "id"=$1 RETURNING *;');
       expect(db.query.mock.calls[0][1]).toHaveLength(1);
       expect(db.query.mock.calls[0][1][0]).toBe(termId);
-      expect(deleteTerm).toBe(true);
+      expect(deleteTerm).toEqual(data[0]);
     });
     test('User.deleteUser with no input', async () => {
       await expect(Term.deleteTerm()).rejects.toThrowError('TermId is required.');

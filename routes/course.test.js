@@ -177,10 +177,8 @@ describe('PUT /course', () => {
       const editor = samplePrivilegedUser();
       auth.loginAs(editor);
 
-      Course.findOne.mockResolvedValueOnce({});
       const response = await callPutOnCourseRoute('', {}); // NO COURSE ID
 
-      expect(Course.findOne).not.toBeCalled();
       expect(response.statusCode).toBe(400);
       expect(response.body.error.message).toBe('Required Parameters Missing');
     });
@@ -199,12 +197,10 @@ describe('PUT /course', () => {
         title: 'Cultural Anthropology',
       };
 
-      Course.findOne.mockResolvedValueOnce(course);
       Course.edit.mockResolvedValueOnce(Object.assign(course, desiredChanges));
 
       const response = await callPutOnCourseRoute(course.id, desiredChanges);
 
-      expect(Course.findOne).not.toBeCalled();
       expect(Course.edit).not.toBeCalled();
       expect(response.statusCode).toBe(500);
       expect(response.body.error.message).toBe('Your account is not found in the database!');
@@ -223,7 +219,6 @@ describe('PUT /course', () => {
         title: 'Cultural Anthropology',
       };
 
-      Course.findOne.mockResolvedValueOnce(course);
       Course.edit.mockResolvedValueOnce(Object.assign(course, desiredChanges));
 
       const response = await callPutOnCourseRoute(course.id, desiredChanges);
@@ -242,12 +237,10 @@ describe('PUT /course', () => {
         title: 'Cultural Anthropology',
       };
 
-      Course.findOne.mockResolvedValueOnce({}); // NO COURSE
-      Course.edit.mockResolvedValueOnce({});
+      Course.edit.mockResolvedValueOnce({}); // NOT FOUND
 
       const response = await callPutOnCourseRoute(1, desiredChanges);
       expect(response.statusCode).toBe(404);
-      expect(Course.edit).not.toBeCalled();
       expect(response.body.error.message).toBe('Not Found');
     });
 
@@ -263,28 +256,6 @@ describe('PUT /course', () => {
         title: 'Cultural Anthropology',
       };
 
-      Course.findOne.mockResolvedValueOnce(course);
-      const expectedReturn = Object.assign(course, desiredChanges);
-      Course.edit.mockResolvedValueOnce(desiredChanges);
-
-      const response = await callPutOnCourseRoute(course.id, desiredChanges);
-
-      expect(response.statusCode).toBe(200);
-      // check all properties
-      for (const key of Object.keys(response.body)) {
-        expect(response.body).toHaveProperty(key, expectedReturn[key]);
-      }
-    });
-
-    test('should still work even if no body parameters are specified', async () => {
-      const editor = samplePrivilegedUser();
-      auth.loginAs(editor);
-
-      const course = dataForGetCourse(1)[0];
-
-      const desiredChanges = {};
-
-      Course.findOne.mockResolvedValueOnce(course);
       const expectedReturn = Object.assign(course, desiredChanges);
       Course.edit.mockResolvedValueOnce(desiredChanges);
 
@@ -310,7 +281,49 @@ describe('PUT /course', () => {
         title: 'Cultural Anthropology',
       };
 
-      Course.findOne.mockResolvedValueOnce(course);
+      const expectedReturn = Object.assign(course, desiredChanges);
+      Course.edit.mockResolvedValueOnce(desiredChanges);
+
+      const response = await callPutOnCourseRoute(course.id, desiredChanges);
+
+      expect(response.statusCode).toBe(200);
+      // check all properties
+      for (const key of Object.keys(response.body)) {
+        expect(response.body).toHaveProperty(key, expectedReturn[key]);
+      }
+    });
+
+    test('should fail if no editable params are specified', async () => {
+      const editor = samplePrivilegedUser();
+      editor.role = 'director';
+      auth.loginAs(editor);
+
+      const desiredChanges = {
+        foo: 'bar',
+        bar: 'foo',
+      };
+      const response = await callPutOnCourseRoute(123, desiredChanges);
+
+      expect(Course.edit).not.toBeCalled();
+      expect(response.statusCode).toBe(400);
+      expect(response.body.error.message).toBe('Required Parameters Missing');
+    });
+
+    test('should work even if random parameters are thrown in', async () => {
+      const editor = samplePrivilegedUser();
+      editor.role = 'director';
+      auth.loginAs(editor);
+
+      const course = dataForGetCourse(1)[0];
+
+      const desiredChanges = {
+        prefix: 'ANTH',
+        suffix: '220HON',
+        title: 'Cultural Anthropology',
+        foo: 'bar',
+        bar: 'foo',
+      };
+
       const expectedReturn = Object.assign(course, desiredChanges);
       Course.edit.mockResolvedValueOnce(desiredChanges);
 
@@ -384,7 +397,7 @@ describe('POST /course (TODO: duplicate test suite)', () => {
     const response = await callPostOnCourseRoute(input);
 
     expect(Course.addCourse).toBeCalled();
-    expect(response.statusCode).toBe(200);
+    expect(response.statusCode).toBe(201);
     // all values should be returned
     for (const key of Object.keys(expectedReturn)) {
       expect(response.body).toHaveProperty(key, expectedReturn[key]);
@@ -460,11 +473,6 @@ describe('DELETE /course', () => {
       // Execute
       const response = await callDeleteOnCourseRoute(course);
 
-      // Check course
-      expect(Course.findOne.mock.calls).toHaveLength(1);
-      expect(Course.findOne.mock.calls[0]).toHaveLength(1);
-      expect(Course.findOne.mock.calls[0][0]).toHaveProperty('id', course.id);
-
       // Check delete
       expect(Course.deleteCourse).toBeCalled();
       expect(Course.deleteCourse.mock.calls).toHaveLength(1);
@@ -473,22 +481,21 @@ describe('DELETE /course', () => {
       expect(response.statusCode).toBe(200);
     });
 
-    test('should respond with a 500 status code when course does NOT exists', async () => {
+    test('should respond with a 404 status code when course does NOT exists', async () => {
       // Set-up
       const deleter = samplePrivilegedUser();
       auth.loginAs(deleter);
-      Course.findOne.mockResolvedValueOnce({});
+
+      // mock delete
+      Course.deleteCourse.mockResolvedValueOnce({}); // EMPTY RESULT
 
       // Execute
       const response = await request(app).delete(`/course/100`);
 
-      // Check course
-      expect(Course.findOne.mock.calls[0]).toHaveLength(1);
-      expect(Course.findOne.mock.calls[0][0]).toHaveProperty('id', '100');
-
       // Check delete
-      expect(Course.deleteCourse).not.toBeCalled();
-      expect(response.statusCode).toBe(500);
+      expect(Course.deleteCourse).toBeCalled();
+      expect(Course.deleteCourse.mock.calls[0][0]).toBe('100');
+      expect(response.statusCode).toBe(404);
     });
 
     test('should respond with 500 when the deleter is not found', async () => {
@@ -537,69 +544,11 @@ describe('POST /course', () => {
   beforeEach(() => auth.loginAs(samplePrivilegedUser()));
 
   describe('given course details', () => {
-    test('should call both Course.findOne and Course.create', async () => {
-      // Set-up
-      const row = dataForGetCourse(1)[0];
-      const requestParams = {
-        prefix: row.prefix,
-        suffix: row.suffix,
-        title: row.title,
-        description: row.description,
-        credits: row.credits,
-      };
-      Course.findOne.mockResolvedValueOnce({});
-      Course.addCourse.mockResolvedValueOnce(row);
-
-      // Test
-      await request(app).post('/course').send(requestParams);
-
-      // Check
-      expect(Course.findOne.mock.calls).toHaveLength(1);
-      expect(Course.findOne.mock.calls[0]).toHaveLength(1);
-      expect(Course.addCourse.mock.calls).toHaveLength(1);
-      expect(Course.addCourse.mock.calls[0]).toHaveLength(1);
-      for (const key in Object.keys(requestParams)) {
-        // Check that the values from the post are the same as from the mocked findOne and addCourse
-        expect(Course.addCourse.mock.calls[0][0]).toHaveProperty(key, requestParams[key]);
-        expect(Course.findOne.mock.calls[0][0]).toHaveProperty(key, requestParams[key]);
-      }
-    });
-
-    test('should respond with a json object containg the course details', async () => {
-      // Set-up
-      const row = dataForGetCourse(1)[0];
-      const requestParams = {
-        prefix: row.prefix,
-        suffix: row.suffix,
-        title: row.title,
-        description: row.description,
-        credits: row.credits,
-      };
-      Course.findOne.mockResolvedValueOnce({});
-      Course.addCourse.mockResolvedValueOnce(row);
-
-      // Test
-      const { body: course } = await request(app).post('/course').send(requestParams);
-
-      // Check
-      expect(course.prefix).toBe(row.prefix);
-      expect(course.suffix).toBe(row.suffix);
-      expect(course.title).toBe(row.title);
-      expect(course.description).toBe(row.description);
-      expect(course.credits).toBe(row.credits);
-    });
-
     test('should specify json in the content type header', async () => {
       // Set-up
       const data = dataForGetCourse(1);
       const row = data[0];
-      const requestParams = {
-        prefix: row.prefix,
-        suffix: row.suffix,
-        title: row.title,
-        description: row.description,
-        credits: row.credits,
-      };
+      const requestParams = extractKeys(row, 'prefix', 'suffix', 'title', 'description', 'credits');
       Course.findOne.mockResolvedValueOnce({});
       Course.addCourse.mockResolvedValueOnce(row);
 
@@ -610,58 +559,26 @@ describe('POST /course', () => {
       expect(response.headers['content-type']).toEqual(expect.stringContaining('json'));
     });
 
-    test('should respond with a 200 status code when course is succesfully created', async () => {
+    test('should respond with a 201 status code when course is succesfully created', async () => {
       // Set-up
       const row = dataForGetCourse(1)[0];
-      const requestParams = {
-        prefix: row.prefix,
-        suffix: row.suffix,
-        title: row.title,
-        description: row.description,
-        credits: row.credits,
-      };
-      Course.findOne.mockResolvedValueOnce({});
+      const requestParams = extractKeys(row, 'prefix', 'suffix', 'title', 'description', 'credits');
       Course.addCourse.mockResolvedValueOnce(row);
 
       // Test
       const response = await request(app).post('/course').send(requestParams);
 
       // Check
-      expect(response.statusCode).toBe(200);
-    });
-
-    test('should respond with a 500 status code when course already exists exist', async () => {
-      // Set-up
-      const row = dataForGetCourse(1)[0];
-      const requestParams = {
-        prefix: row.prefix,
-        suffix: row.suffix,
-        title: row.title,
-        description: row.description,
-        credits: row.credits,
-      };
-      Course.findOne.mockResolvedValueOnce(row);
-      Course.addCourse.mockResolvedValueOnce(row);
-
-      // Test
-      const response = await request(app).post('/course').send(requestParams);
-
-      // Check
-      expect(response.statusCode).toBe(500);
+      expect(response.statusCode).toBe(201);
+      expect(Course.addCourse).toBeCalled();
+      expect(Course.addCourse.mock.calls[0][0]).toEqual(requestParams);
     });
 
     test('should respond with a 500 status code when an Course.create error occurs', async () => {
       // Set-up
       const row = dataForGetCourse(1)[0];
-      const requestParams = {
-        prefix: row.prefix,
-        suffix: row.suffix,
-        title: row.title,
-        description: row.description,
-        credits: row.credits,
-      };
-      Course.findOne.mockResolvedValueOnce({});
-      Course.addCourse.mockResolvedValueOnce(null);
+      const requestParams = extractKeys(row, 'prefix', 'suffix', 'title', 'description', 'credits');
+      Course.addCourse.mockResolvedValueOnce(undefined);
 
       // Test
       const response = await request(app).post('/course').send(requestParams);
@@ -673,13 +590,7 @@ describe('POST /course', () => {
     test('should respond with a 500 status code when create database error occurs', async () => {
       // Set-up
       const row = dataForGetCourse(1)[0];
-      const requestParams = {
-        prefix: row.prefix,
-        suffix: row.suffix,
-        title: row.title,
-        description: row.description,
-        credits: row.credits,
-      };
+      const requestParams = extractKeys(row, 'prefix', 'suffix', 'title', 'description', 'credits');
       Course.addCourse.mockRejectedValueOnce(new Error('some database error'));
 
       // Test

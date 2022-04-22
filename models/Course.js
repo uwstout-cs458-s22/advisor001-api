@@ -39,10 +39,11 @@ async function deleteCourse(id) {
   if (id) {
     const { text, params } = whereParams({ id });
 
-    const res = await db.query(`DELETE FROM "course" ${text};`, params);
+    const res = await db.query(`DELETE FROM "course" ${text} RETURNING *;`, params);
     if (res.rows.length > 0) {
-      return true;
+      return res.rows[0];
     }
+    return {};
   } else {
     throw HttpError(400, 'Id is required.');
   }

@@ -253,22 +253,7 @@ describe('PUT /term', () => {
       expect(response.body.error.message).toBe('Not Found');
     });
 
-    test('should 404 when term is not found and no params specified', async () => {
-      const editor = samplePrivilegedUser();
-      auth.loginAs(editor);
-
-      Term.edit.mockResolvedValueOnce({});
-      Term.findOne.mockResolvedValueOnce({});
-
-      const response = await callPutOnTermRoute(1, {});
-      expect(Term.edit).not.toBeCalled();
-      expect(Term.findOne).toBeCalled();
-      expect(Term.findOne.mock.calls[0][0]).toHaveProperty('id', '1');
-      expect(response.statusCode).toBe(404);
-      expect(response.body.error.message).toBe('Not Found');
-    });
-
-    test('should just return found term if no editable params are specified', async () => {
+    test('should fail if no editable params are specified', async () => {
       const editor = samplePrivilegedUser();
       auth.loginAs(editor);
 
@@ -278,16 +263,11 @@ describe('PUT /term', () => {
       };
       const term = dataForGetTerm(1)[0];
       Term.edit.mockResolvedValueOnce(term);
-      Term.findOne.mockResolvedValueOnce(term);
 
       const response = await callPutOnTermRoute(1, desiredChanges);
       expect(Term.edit).not.toBeCalled();
-      expect(Term.findOne).toBeCalled();
-      expect(Term.findOne.mock.calls[0][0]).toHaveProperty('id', '1');
-      expect(response.statusCode).toBe(200);
-      for (const key of Object.keys(term)) {
-        expect(response.body).toHaveProperty(key, term[key]);
-      }
+      expect(response.statusCode).toBe(400);
+      expect(response.body.error.message).toBe('Required Parameters Missing');
     });
 
     test('should respond 200 and successfully return edited version of term', async () => {
@@ -308,27 +288,6 @@ describe('PUT /term', () => {
       expect(response.statusCode).toBe(200);
       for (const key of Object.keys(expectedReturn)) {
         expect(response.body).toHaveProperty(key, expectedReturn[key]);
-      }
-    });
-
-    test('should still work even if no body parameters are specified', async () => {
-      const editor = samplePrivilegedUser();
-      auth.loginAs(editor);
-
-      const term = dataForGetTerm(1)[0];
-
-      Term.edit.mockResolvedValueOnce(term);
-      Term.findOne.mockResolvedValueOnce(term);
-      const response = await callPutOnTermRoute(term.id, {});
-
-      expect(Term.edit).not.toBeCalled();
-      expect(Term.findOne).toBeCalled();
-      expect(Term.findOne.mock.calls).toHaveLength(1);
-      expect(Term.findOne.mock.calls[0]).toHaveLength(1);
-      expect(Term.findOne.mock.calls[0][0]).toHaveProperty('id', term.id);
-      expect(response.statusCode).toBe(200);
-      for (const key of Object.keys(term)) {
-        expect(response.body).toHaveProperty(key, term[key]);
       }
     });
 
@@ -383,7 +342,6 @@ describe('DELETE /term', () => {
     auth.loginAs(deleter);
     const response = await callDeleteOnTermRoute({});
 
-    expect(Term.findOne).not.toBeCalled();
     expect(Term.deleteTerm).not.toBeCalled();
 
     expect(response.statusCode).toBe(401);
@@ -397,7 +355,6 @@ describe('DELETE /term', () => {
     auth.loginAs(deleter);
     const response = await callDeleteOnTermRoute({});
 
-    expect(Term.findOne).not.toBeCalled();
     expect(Term.deleteTerm).not.toBeCalled();
 
     expect(response.statusCode).toBe(400);
@@ -411,11 +368,8 @@ describe('DELETE /term', () => {
       deleter.role = 'director';
       auth.loginAs(deleter);
 
+      Term.deleteTerm.mockResolvedValueOnce(term);
       const response = await callDeleteOnTermRoute(term);
-
-      expect(Term.findOne.mock.calls).toHaveLength(1);
-      expect(Term.findOne.mock.calls[0]).toHaveLength(1);
-      expect(Term.findOne.mock.calls[0][0]).toHaveProperty('id', term.id);
 
       expect(Term.deleteTerm).toBeCalled();
       expect(Term.deleteTerm.mock.calls).toHaveLength(1);
@@ -428,13 +382,13 @@ describe('DELETE /term', () => {
       const deleter = samplePrivilegedUser();
       auth.loginAs(deleter);
 
-      Term.findOne.mockResolvedValueOnce({});
+      // mock empty return
+      Term.deleteTerm.mockResolvedValueOnce({});
+
       const response = await request(app).delete(`/term/100`);
 
-      expect(Term.findOne.mock.calls).toHaveLength(1);
-      expect(Term.findOne.mock.calls[0]).toHaveLength(1);
-      expect(Term.findOne.mock.calls[0][0]).toHaveProperty('id', '100');
-      expect(Term.deleteTerm).not.toBeCalled();
+      expect(Term.deleteTerm).toBeCalled();
+      expect(Term.deleteTerm.mock.calls[0][0]).toBe('100');
 
       expect(response.statusCode).toBe(404);
     });
@@ -457,7 +411,7 @@ describe('POST /term', () => {
         Term.addTerm.mockResolvedValueOnce(row);
         auth.loginAs(samplePrivilegedUser()); // simulated authentication
         const res = await request(app).post('/term').send(requestParms);
-        expect(res).toHaveProperty('statusCode', 200);
+        expect(res).toHaveProperty('statusCode', 201);
 
         expect(Term.addTerm.mock.calls).toHaveLength(i + 1);
         expect(Term.addTerm.mock.calls[0]).toHaveLength(1);

@@ -152,10 +152,10 @@ describe('Course Model', () => {
 
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
-      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "course" WHERE "id"=$1;');
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "course" WHERE "id"=$1 RETURNING *;');
       expect(db.query.mock.calls[0][1]).toHaveLength(1);
       expect(db.query.mock.calls[0][1][0]).toBe(id);
-      expect(deleteCourse).toBe(true);
+      expect(deleteCourse).toEqual(data[0]);
     });
 
     test('Course.deleteCourse with database error', async () => {
@@ -168,7 +168,7 @@ describe('Course Model', () => {
 
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
-      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "course" WHERE "id"=$1;');
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "course" WHERE "id"=$1 RETURNING *;');
       expect(db.query.mock.calls[0][1]).toHaveLength(1);
       expect(db.query.mock.calls[0][1][0]).toBe(id);
     });

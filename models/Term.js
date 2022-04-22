@@ -47,10 +47,11 @@ async function deleteTerm(id) {
       id: id,
     });
 
-    const res = await db.query(`DELETE FROM "term" ${text};`, params);
+    const res = await db.query(`DELETE FROM "term" ${text} RETURNING *;`, params);
     if (res.rows.length > 0) {
-      return true;
+      return res.rows[0];
     }
+    return {};
   } else {
     throw HttpError(400, 'TermId is required.');
   }
