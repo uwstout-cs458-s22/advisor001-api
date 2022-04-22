@@ -1,7 +1,7 @@
 const log = require('loglevel');
 const HttpError = require('http-errors');
 
-const { isString, isBoolean, isNully, extractKeys } = require('./utils');
+const { isString, isBoolean, isNully, extractKeys, isEmpty } = require('./utils');
 const { isInteger } = Number;
 
 const schemaGraph = {
@@ -77,31 +77,40 @@ const schemaFields = {
   },
 };
 
-// generate functions so we can validate entire objects
+// contains validators for each table
 const validate = Object.fromEntries(
+  // map a table name to its new validator function
   // this will generate [ [key, value], [key, value], ... ]
   Object.keys(schemaFields).map((tableName) => {
-    // properties of table?
+    // properties of table
     const properties = Object.keys(schemaFields[tableName]);
 
-    // validator function
-    const validator = (obj) => {
-      // make sure obj has valid properties
-      if (
-        properties.every((propName) => {
-          const isValidField = schemaFields[tableName][propName];
-          const value = obj?.[propName];
-          return isValidField(value);
-        })
-      ) {
-        // success
-        // return all valid properties
-        if (obj) return extractKeys(obj, ...properties);
-        return {};
+    // ---- BEGIN VALIDATOR ----
+    const validator = (obj, editing = false) => {
+      // extract obj properties
+      const result = obj ? extractKeys(obj, ...properties) : {};
+
+      // helper: validate one property
+      const propertyIsValid = (propName) => {
+        const isValidField = schemaFields[tableName][propName];
+        const value = result[propName];
+        return isValidField(value);
+      };
+      // IF EDITING, only check defined properties
+      if (editing) {
+        const propsBeingEdited = Object.keys(result);
+        if (propsBeingEdited.every(propertyIsValid)) {
+          return result;
+        }
+      }
+      // NOT EDITING, so check all properties
+      if (properties.every(propertyIsValid)) {
+        return result;
       }
       // the input was NOT valid
       return false;
     };
+    // ---- END VALIDATOR ----
 
     // copy all individual field validators to validator func
     properties.forEach((propName) => {
@@ -173,5 +182,117 @@ module.exports = {
       return joinBlock;
     }
     throw HttpError.InternalServerError('This tool requires at least two parameters.');
+  },
+
+  // CREATE maker
+  create: (tableName, modelFunc) => {
+    return async (req, res, next) => {
+      try {
+        // validate
+        const validated = validate[tableName](req.body, false);
+        if (!validated) {
+          throw HttpError.BadRequest('Invalid Parameters');
+        }
+        // do create
+        const result = await modelFunc(validated);
+        // result should be truthy
+        if (!result || isEmpty(result)) {
+          throw HttpError.InternalServerError();
+        }
+        // done
+        res.status(201).send(result);
+      } catch (error) {
+        next(error);
+      }
+    };
+  },
+
+  // UPDATE maker
+  update: (tableName, modelFunc) => {
+    return async (req, res, next) => {
+      try {
+        const { id } = req.params;
+        if (!id || id === '') {
+          throw HttpError.BadRequest('Required Parameters Missing');
+        }
+        // validate
+        const validated = validate[tableName](req.body, true);
+        if (!validated) {
+          throw HttpError.BadRequest('Invalid Parameter Types');
+        }
+        if (isEmpty(validated)) {
+          throw HttpError.BadRequest('Required Parameters Missing');
+        }
+        // do create
+        const result = await modelFunc(id, validated);
+        if (isEmpty(result)) {
+          throw HttpError.NotFound();
+        }
+        // success
+        log.info(`${req.method} ${req.originalUrl} success: created ${tableName} ${result.id}`);
+        return res.send(result);
+      } catch (error) {
+        next(error);
+      }
+    };
+  },
+
+  // READ maker (one)
+  readOne: (tableName, modelFunc) => {
+    return async (req, res, next) => {
+      try {
+        const { id } = req.params;
+        if (!id || id === '') {
+          throw HttpError.BadRequest('Required Parameters Missing');
+        }
+        // use params to get one
+        const result = await modelFunc({ id });
+        if (isEmpty(result)) {
+          throw HttpError.NotFound();
+        }
+        // success
+        log.info(`${req.method} ${req.originalUrl} success: returning ${tableName} ${id}`);
+        return res.send(result);
+      } catch (error) {
+        next(error);
+      }
+    };
+  },
+
+  // READ maker (many)
+  readMany: (tableName, modelFunc) => {
+    return async (req, res, next) => {
+      try {
+        const results = await modelFunc(null, req.query.limit, req.query.offset);
+        log.info(
+          `${req.method} ${req.originalUrl} success: returning ${results.length} ${tableName}(s)`
+        );
+        return res.send(results);
+      } catch (error) {
+        next(error);
+      }
+    };
+  },
+
+  // DELETE maker
+  remove: (tableName, modelFunc) => {
+    return async (req, res, next) => {
+      try {
+        const { id } = req.params;
+        if (!id || id === '') {
+          throw HttpError.BadRequest('Required Parameters Missing');
+        }
+        // try deletion
+        const result = await modelFunc(id);
+        if (isEmpty(result)) {
+          throw HttpError.NotFound();
+        }
+        // success
+        log.info(`${req.method} ${req.originalUrl} success: deleted ${tableName} ${id}`);
+        return res.send(result);
+      } catch (error) {
+        next(error);
+      }
+    };
   },
 };
