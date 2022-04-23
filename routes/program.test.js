@@ -175,17 +175,17 @@ describe('GET /program', () => {
         const editor = samplePrivilegedUser();
         auth.loginAs(editor, {}); // NO EDITOR IN DB
 
-        const Program = dataForGetProgram(1)[0];
+        const program = dataForGetProgram(1)[0];
 
         const desiredChanges = {
           description: 'This',
           title: 'CS',
         };
 
-        Program.findOne.mockResolvedValueOnce(Program);
-        Program.edit.mockResolvedValueOnce(Object.assign(Program, desiredChanges));
+        Program.findOne.mockResolvedValueOnce(program);
+        Program.edit.mockResolvedValueOnce(Object.assign(program, desiredChanges));
 
-        const response = await callPutOnProgramRoute(Program.id, desiredChanges);
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
 
         expect(Program.findOne).not.toBeCalled();
         expect(Program.edit).not.toBeCalled();
@@ -198,17 +198,17 @@ describe('GET /program', () => {
         editor.enable = 'true';
         auth.loginAs(editor); // Unprivileged editor
 
-        const Program = dataForGetProgram(1)[0];
+        const program = dataForGetProgram(1)[0];
 
         const desiredChanges = {
           description: 'This',
           title: 'CS',
         };
 
-        Program.findOne.mockResolvedValueOnce(Program);
-        Program.edit.mockResolvedValueOnce(Object.assign(Program, desiredChanges));
+        Program.findOne.mockResolvedValueOnce(program);
+        Program.edit.mockResolvedValueOnce(Object.assign(program, desiredChanges));
 
-        const response = await callPutOnProgramRoute(Program.id, desiredChanges);
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
 
         expect(response.statusCode).toBe(401);
         expect(response.body.error.message).toBe('You are not allowed to do that!');
@@ -235,17 +235,17 @@ describe('GET /program', () => {
         const editor = samplePrivilegedUser();
         auth.loginAs(editor);
 
-        const Program = dataForGetProgram(1)[0];
+        const program = dataForGetProgram(1)[0];
 
         const desiredChanges = {
           description: 'This',
           title: 'CS',
         };
-        Program.findOne.mockResolvedValueOnce(Program);
-        const expectedReturn = Object.assign(Program, desiredChanges);
+        Program.findOne.mockResolvedValueOnce(program);
+        const expectedReturn = Object.assign(program, desiredChanges);
         Program.edit.mockResolvedValueOnce(desiredChanges);
 
-        const response = await callPutOnProgramRoute(Program.id, desiredChanges);
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
 
         expect(response.statusCode).toBe(200);
         // check all properties
@@ -258,15 +258,15 @@ describe('GET /program', () => {
         const editor = samplePrivilegedUser();
         auth.loginAs(editor);
 
-        const Program = dataForGetProgram(1)[0];
+        const program = dataForGetProgram(1)[0];
 
         const desiredChanges = {};
 
-        Program.findOne.mockResolvedValueOnce(Program);
-        const expectedReturn = Object.assign(Program, desiredChanges);
+        Program.findOne.mockResolvedValueOnce(program);
+        const expectedReturn = Object.assign(program, desiredChanges);
         Program.edit.mockResolvedValueOnce(desiredChanges);
 
-        const response = await callPutOnProgramRoute(Program.id, desiredChanges);
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
 
         expect(response.statusCode).toBe(200);
         // check all properties
@@ -280,18 +280,18 @@ describe('GET /program', () => {
         editor.role = 'director';
         auth.loginAs(editor);
 
-        const Program = dataForGetProgram(1)[0];
+        const program = dataForGetProgram(1)[0];
 
         const desiredChanges = {
           description: 'This',
           title: 'CS',
         };
 
-        Program.findOne.mockResolvedValueOnce(Program);
-        const expectedReturn = Object.assign(Program, desiredChanges);
+        Program.findOne.mockResolvedValueOnce(program);
+        const expectedReturn = Object.assign(program, desiredChanges);
         Program.edit.mockResolvedValueOnce(desiredChanges);
 
-        const response = await callPutOnProgramRoute(Program.id, desiredChanges);
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
 
         expect(response.statusCode).toBe(200);
         // check all properties
