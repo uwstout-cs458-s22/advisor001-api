@@ -88,16 +88,12 @@ describe('Schema tools tests', () => {
     const tests = {
       user: {
         good: {
-          email: 'info@example.com',
           enable: true,
           role: 'admin',
-          userId: 'user-test-someguid1',
         },
         bad: {
-          email: false,
           enable: 'foo',
           role: 'bar',
-          userId: 16384,
         },
       },
       course: {
@@ -142,11 +138,11 @@ describe('Schema tools tests', () => {
         good: {
           displayname: 'John Doe',
           account: undefined,
-          program: 123,
+          program: '123', // yes, strings are allowed for foreign keys
         },
         bad: {
           displayname: undefined,
-          account: '456',
+          account: '1.25',
           program: true,
         },
       },

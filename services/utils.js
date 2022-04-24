@@ -36,6 +36,16 @@ function extractKeys(object, ...keys) {
   return result;
 }
 
+function renameKeys(object, keyMap) {
+  const result = {};
+  for (const key of Object.keys(keyMap)) {
+    if (key in keyMap && object[key] !== undefined) {
+      result[keyMap[key]] = object[key];
+    }
+  }
+  return result;
+}
+
 module.exports = {
   isEmpty,
   isArray,
@@ -45,4 +55,5 @@ module.exports = {
   isBoolean,
   isNully,
   extractKeys,
+  renameKeys,
 };

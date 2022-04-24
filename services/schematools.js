@@ -1,8 +1,9 @@
 const log = require('loglevel');
 const HttpError = require('http-errors');
 
-const { isString, isBoolean, isNully, extractKeys, isEmpty } = require('./utils');
+const { isString, isBoolean, isNully, extractKeys, renameKeys, isEmpty } = require('./utils');
 const { isInteger } = Number;
+const isForeignKey = (x) => isInteger(x) || (isString(x) && isInteger(Number(x)));
 
 const schemaGraph = {
   student: {
@@ -48,10 +49,8 @@ const middlemen = {
 // prettier-ignore
 const schemaFields = {
   user: {
-    email: (x) =>       isNully(x) || isString(x),
     enable: (x) =>      isNully(x) || isBoolean(x),
     role: (x) =>        isNully(x) || (isString(x) && ['user', 'director', 'admin'].includes(x)),
-    userId: (x) =>      isNully(x) || isString(x),
   },
   course: {
     prefix:             isString,
@@ -64,7 +63,6 @@ const schemaFields = {
     title:              isString,
     startyear: (x) =>   isInteger(x) && x > 0,
     semester: (x) =>    isInteger(x) && x >= 0 && x < 4,
-
   },
   program: {
     title:              isString,
@@ -72,9 +70,27 @@ const schemaFields = {
   },
   student: {
     displayname:        isString,
-    account: (x) =>     isNully(x) || isInteger(x),
-    program: (x) =>     isNully(x) || isInteger(x),
+    account: (x) =>     isNully(x) || isForeignKey(x), // optional foreign
+    program: (x) =>     isNully(x) || isForeignKey(x), // optional foreign
   },
+  course_prerequisite: {
+    course:             isForeignKey, // foreign key
+    requires:           isForeignKey, // foreign key
+  },
+  course_requirement: {
+    course:             isForeignKey, // foreign key
+    fulfills:           isForeignKey, // foreign key
+  },
+  program_course: {
+    program:            isForeignKey, // foreign key
+    requires:           isForeignKey, // foreign key
+  },
+  student_course: {
+    student:            isForeignKey, // foreign key
+    course:             isForeignKey, // foreign key
+    term:               isForeignKey, // foreign key
+    taken:              isBoolean,
+  }
 };
 
 // contains validators for each table
@@ -121,6 +137,12 @@ const validate = Object.fromEntries(
     return [tableName, validator];
   })
 );
+
+function createSpecificCriteria(tableList, paramList) {
+  return Object.fromEntries(
+    Object.values(paramList).map((param, index) => [tableList[index], { id: param }])
+  );
+}
 
 module.exports = {
   // Validate usage:
@@ -185,7 +207,7 @@ module.exports = {
   },
 
   // CREATE maker
-  create: (tableName, modelFunc) => {
+  create: (tableName, modelFunc, statusCode = 201) => {
     return async (req, res, next) => {
       try {
         // validate
@@ -199,8 +221,9 @@ module.exports = {
         if (!result || isEmpty(result)) {
           throw HttpError.InternalServerError();
         }
-        // done
-        res.status(201).send(result);
+        // success
+        log.info(`${req.method} ${req.originalUrl} success: created ${tableName} ${result.id}`);
+        res.status(statusCode).send(result);
       } catch (error) {
         next(error);
       }
@@ -208,17 +231,17 @@ module.exports = {
   },
 
   // UPDATE maker
-  update: (tableName, modelFunc) => {
+  update: (tableName, modelFunc, key = 'id') => {
     return async (req, res, next) => {
       try {
-        const { id } = req.params;
+        const id = req.params[key];
         if (!id || id === '') {
           throw HttpError.BadRequest('Required Parameters Missing');
         }
         // validate
         const validated = validate[tableName](req.body, true);
         if (!validated) {
-          throw HttpError.BadRequest('Invalid Parameter Types');
+          throw HttpError.BadRequest('Invalid Parameters');
         }
         if (isEmpty(validated)) {
           throw HttpError.BadRequest('Required Parameters Missing');
@@ -229,7 +252,7 @@ module.exports = {
           throw HttpError.NotFound();
         }
         // success
-        log.info(`${req.method} ${req.originalUrl} success: created ${tableName} ${result.id}`);
+        log.info(`${req.method} ${req.originalUrl} success: updated ${tableName} ${id}`);
         return res.send(result);
       } catch (error) {
         next(error);
@@ -238,15 +261,15 @@ module.exports = {
   },
 
   // READ maker (one)
-  readOne: (tableName, modelFunc) => {
+  readOne: (tableName, modelFunc, key = 'id') => {
     return async (req, res, next) => {
       try {
-        const { id } = req.params;
+        const id = req.params[key];
         if (!id || id === '') {
           throw HttpError.BadRequest('Required Parameters Missing');
         }
         // use params to get one
-        const result = await modelFunc({ id });
+        const result = await modelFunc({ [key]: id });
         if (isEmpty(result)) {
           throw HttpError.NotFound();
         }
@@ -275,15 +298,167 @@ module.exports = {
   },
 
   // DELETE maker
-  remove: (tableName, modelFunc) => {
+  remove: (tableName, modelFunc, key = 'id') => {
     return async (req, res, next) => {
       try {
-        const { id } = req.params;
+        const id = req.params[key];
         if (!id || id === '') {
           throw HttpError.BadRequest('Required Parameters Missing');
         }
         // try deletion
         const result = await modelFunc(id);
+        if (isEmpty(result)) {
+          throw HttpError.NotFound();
+        }
+        // success
+        log.info(`${req.method} ${req.originalUrl} success: deleted ${tableName} ${id}`);
+        return res.send(result);
+      } catch (error) {
+        next(error);
+      }
+    };
+  },
+
+  // --- JOINED stuff ---
+
+  // READ ONE maker, joined
+  readOneJoined: (tableName, modelFunc) => {
+    return async (req, res, next) => {
+      try {
+        const paramKeys = Object.keys(req.params);
+        // check num params, param validity
+        if (
+          paramKeys.length <= 1 ||
+          paramKeys.some((table) => !req.params[table] || req.params[table] === '')
+        ) {
+          throw HttpError.BadRequest('Required Parameters Missing');
+        }
+        // params are good
+        const specificCriteria = createSpecificCriteria(paramKeys, req.params);
+        // try reading
+        const result = await modelFunc(specificCriteria);
+        if (isEmpty(result)) {
+          throw HttpError.NotFound();
+        }
+        // success
+        log.info(
+          `${req.method} ${
+            req.originalUrl
+          } success: returning ${tableName} join result ${JSON.stringify(specificCriteria)}`
+        );
+        return res.send(result);
+      } catch (error) {
+        next(error);
+      }
+    };
+  },
+
+  // READ MANY maker, joined
+  readManyJoined: (tableName, modelFunc) => {
+    return async (req, res, next) => {
+      try {
+        // require first table's primary key
+        const paramKeys = Object.keys(req.params);
+        const id = req.params[paramKeys[0]];
+        // check first id
+        if (!id || id === '') {
+          throw HttpError.BadRequest('Required Parameters Missing');
+        }
+        const specificCriteria = createSpecificCriteria(paramKeys, req.params);
+        // try deletion
+        const result = await modelFunc(specificCriteria, req.query.limit, req.query.offset);
+        // success
+        log.info(
+          `${req.method} ${
+            req.originalUrl
+          } success: returning ${tableName} join result ${JSON.stringify(specificCriteria)}`
+        );
+        return res.send(result);
+      } catch (error) {
+        next(error);
+      }
+    };
+  },
+
+  // INSERT OR UPDATE maker
+  insertOrUpdate: (tableName, modelFunc, statusCode = 200) => {
+    // helper lists
+    const foreignKeyList = Object.values(middlemen[tableName]);
+    const schemaKeys = Object.keys(schemaFields[tableName]);
+    // remove foreign keys from key list
+    foreignKeyList.forEach((key) => {
+      const index = schemaKeys.indexOf(key);
+      if (index >= 0) schemaKeys.splice(index, 1);
+    });
+
+    log.debug(`KEY LIST FOR ${tableName}: ${JSON.stringify(schemaKeys)}`);
+    log.debug(`FK  LIST FOR ${tableName}: ${JSON.stringify(foreignKeyList)}`);
+
+    return async (req, res, next) => {
+      try {
+        // keys specified in params
+        const paramKeys = Object.keys(req.params);
+        // make sure all params valid
+        if (paramKeys.some((table) => !req.params[table] || req.params[table] === '')) {
+          throw HttpError.BadRequest('Required Parameters Missing');
+        }
+
+        // convert table names to foreign key names
+        const uniqueKeys = renameKeys(req.params, middlemen[tableName]);
+        // add any keys that might be in body
+        Object.assign(uniqueKeys, extractKeys(req.body, ...foreignKeyList));
+        // new values
+        const newValues = extractKeys(req.body, ...schemaKeys);
+        const combined = Object.assign({}, uniqueKeys, newValues);
+
+        log.debug(`COMBINED INFO: ${JSON.stringify(combined)}`);
+
+        const validated = validate[tableName](combined, false);
+        if (!validated) {
+          throw HttpError.BadRequest('Invalid Parameters');
+        }
+        // do create
+        const result = await modelFunc(uniqueKeys, newValues);
+        // result should be truthy
+        if (!result || isEmpty(result)) {
+          throw HttpError.InternalServerError();
+        }
+        // success
+        log.info(
+          `${req.method} ${req.originalUrl} success: created or updated ${tableName} ${result.id}`
+        );
+        res.status(statusCode).send(result);
+      } catch (error) {
+        next(error);
+      }
+    };
+  },
+
+  // remove connecting entry from middle-man (USE WITH CAUTION)
+  removeWithCriteria: (tableName, modelFunc) => {
+    // helper list
+    const foreignKeyList = Object.values(middlemen[tableName]);
+    return async (req, res, next) => {
+      try {
+        const paramKeys = Object.keys(req.params);
+        const id = req.params[paramKeys[0]];
+        // check num params, param validity
+        if (
+          paramKeys.length <= 1 ||
+          paramKeys.some((table) => !req.params[table] || req.params[table] === '')
+        ) {
+          throw HttpError.BadRequest('Required Parameters Missing');
+        }
+
+        // convert table names to foreign key names
+        const criteria = renameKeys(req.params, middlemen[tableName]);
+        // add any keys that might be in body
+        Object.assign(criteria, extractKeys(req.body, ...foreignKeyList));
+
+        log.debug(`CRITERIA: ${JSON.stringify(criteria)}`);
+
+        // try deletion
+        const result = await modelFunc(criteria);
         if (isEmpty(result)) {
           throw HttpError.NotFound();
         }
