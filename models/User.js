@@ -1,8 +1,10 @@
 const HttpError = require('http-errors');
 const log = require('loglevel');
 const { db } = require('../services/database');
-const { whereParams, insertValues, updateValues } = require('../services/sqltools');
+const { insertValues } = require('../services/sqltools');
 const env = require('../services/environment');
+
+const factory = require('./factory');
 
 // permission levels
 const rolePermissions = {
@@ -11,33 +13,22 @@ const rolePermissions = {
   user: 0,
 };
 
+function hasMinimumPermission(user, role) {
+  return rolePermissions[user?.role] >= rolePermissions[role];
+}
+
 // if found return { ... }
 // if not found return {}
 // if db error, db.query will throw a rejected promise
-async function findOne(criteria) {
-  const { text, params } = whereParams(criteria);
-  const res = await db.query(`SELECT * from "user" ${text} LIMIT 1;`, params);
-  if (res.rows.length > 0) {
-    log.debug(`Successfully found user from db with criteria: ${text}, ${JSON.stringify(params)}`);
-    return res.rows[0];
-  }
-  log.debug(`No users found in db with criteria: ${text}, ${JSON.stringify(params)}`);
-  return {};
-}
+const findOne = factory.findOne('user');
 
 // if found return [ {}, {} ... ]
 // if not found return []
 // if db error, db.query will throw a rejected promise
-async function findAll(criteria, limit = 100, offset = 0) {
-  const { text, params } = whereParams(criteria);
-  const n = params.length;
-  const p = params.concat([limit, offset]);
-  const res = await db.query(`SELECT * from "user" ${text} LIMIT $${n + 1} OFFSET $${n + 2};`, p);
-  log.debug(
-    `Retrieved ${res.rows.length} users from db with criteria: ${text}, ${JSON.stringify(params)}`
-  );
-  return res.rows;
-}
+const findAll = factory.findAll('user');
+
+// return { count: integer }
+const count = factory.count('user');
 
 // if successful insert return inserted record {}
 // if successful, but no row inserted, throw error
@@ -49,10 +40,10 @@ async function create(userId, email) {
     const enable = email === env.masterAdminEmail;
     const role = email === env.masterAdminEmail ? 'admin' : 'user';
     const { text, params } = insertValues({
-      userId: userId,
-      email: email,
-      enable: enable,
-      role: role,
+      userId,
+      email,
+      enable,
+      role,
     });
     const res = await db.query(`INSERT INTO "user" ${text} RETURNING *;`, params);
     if (res.rows.length > 0) {
@@ -68,51 +59,10 @@ async function create(userId, email) {
 }
 
 // if successful delete, return user was deleted
-async function deleteUser(userId) {
-  // userId is required
-  if (userId) {
-    const { text, params } = whereParams({
-      userId: userId,
-    });
+const deleteUser = factory.remove('user', 'userId');
 
-    const res = await db.query(`DELETE FROM "user" ${text};`, params);
-    if (res.rows.length > 0) {
-      return true;
-    }
-  } else {
-    throw HttpError(400, 'UserId is required.');
-  }
-}
-async function edit(userId, newValues) {
-  if (userId && newValues && typeof newValues === 'object') {
-    const { text, params } = updateValues(
-      { userId: userId },
-      { enable: newValues.enable, role: newValues.role }
-    );
-
-    const res = await db.query(`UPDATE "user" ${text} RETURNING *;`, params);
-
-    if (res.rows.length > 0) {
-      return res.rows[0];
-    }
-  } else {
-    throw HttpError(400, 'UserId and new Status and Role are required.');
-  }
-}
-
-async function count() {
-  const res = await db.query(`SELECT COUNT(*) FROM "user"`);
-
-  if (res.rows.length > 0) {
-    return res.rows[0];
-  } else {
-    throw HttpError(500, 'Some Error Occurred');
-  }
-}
-
-function hasMinimumPermission(user, role) {
-  return rolePermissions[user?.role] >= rolePermissions[role];
-}
+// edit a user
+const edit = factory.update('user', 'userId');
 
 module.exports = {
   findOne,
