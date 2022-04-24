@@ -285,7 +285,7 @@ describe('PUT /users', () => {
 
       const desiredChanges = {
         role: 'admin',
-        enable: 'true',
+        enable: true,
       };
 
       auth.loginAs(editor);
@@ -304,7 +304,7 @@ describe('PUT /users', () => {
 
       const desiredChanges = {
         role: 'admin',
-        enable: 'true',
+        enable: true,
       };
 
       auth.loginAs(editor);
@@ -320,7 +320,7 @@ describe('PUT /users', () => {
       expect(response.body).toEqual(expectedReturn);
     });
 
-    test('should still work even if no body parameters are specified', async () => {
+    test('should fail if no editable fields are specified', async () => {
       const editor = samplePrivilegedUser();
       const user = dataForGetUser(1)[0];
 
@@ -333,8 +333,8 @@ describe('PUT /users', () => {
 
       const response = await callPutOnUserRoute(user.userId, desiredChanges);
 
-      expect(response.statusCode).toBe(200);
-      expect(response.body).toEqual(user);
+      expect(response.statusCode).toBe(400);
+      expect(response.body.error.message).toBe('Required Parameters Missing');
     });
   });
 });
@@ -498,7 +498,7 @@ describe('DELETE /users', () => {
 
   async function callDeleteOnUserRoute(row, key = 'userId') {
     const id = row[key] === undefined ? '' : row[key];
-    User.findOne.mockResolvedValueOnce(row);
+    User.deleteUser.mockResolvedValueOnce(row);
     const response = await request(app).delete(`/users/${id}`);
     return response;
   }
@@ -542,11 +542,9 @@ describe('DELETE /users', () => {
       auth.loginAs(deleter);
       const response = await callDeleteOnUserRoute(user);
 
-      expect(User.findOne.mock.calls).toHaveLength(2);
+      expect(User.findOne.mock.calls).toHaveLength(1);
       expect(User.findOne.mock.calls[0]).toHaveLength(1);
       expect(User.findOne.mock.calls[0][0]).toHaveProperty('userId', deleter.userId);
-      expect(User.findOne.mock.calls[1]).toHaveLength(1);
-      expect(User.findOne.mock.calls[1][0]).toHaveProperty('userId', user.userId);
 
       expect(User.deleteUser).toBeCalled();
       expect(User.deleteUser.mock.calls).toHaveLength(1);
@@ -559,15 +557,17 @@ describe('DELETE /users', () => {
       const deleter = samplePrivilegedUser();
       auth.loginAs(deleter);
 
-      User.findOne.mockResolvedValueOnce({});
+      User.deleteUser.mockResolvedValueOnce({}); // No user
       const response = await request(app).delete(`/users/100`);
 
-      expect(User.findOne.mock.calls).toHaveLength(2);
+      expect(User.findOne.mock.calls).toHaveLength(1);
       expect(User.findOne.mock.calls[0]).toHaveLength(1);
       expect(User.findOne.mock.calls[0][0]).toHaveProperty('userId', deleter.userId);
-      expect(User.findOne.mock.calls[1]).toHaveLength(1);
-      expect(User.findOne.mock.calls[1][0]).toHaveProperty('userId', '100');
-      expect(User.deleteUser).not.toBeCalled();
+
+      expect(User.deleteUser).toBeCalled();
+      expect(User.deleteUser.mock.calls).toHaveLength(1);
+      expect(User.deleteUser.mock.calls[0]).toHaveLength(1);
+      expect(User.deleteUser.mock.calls[0][0]).toBe('100');
 
       expect(response.statusCode).toBe(404);
     });

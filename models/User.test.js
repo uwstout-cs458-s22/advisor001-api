@@ -245,10 +245,10 @@ describe('User Model', () => {
 
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
-      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "user" WHERE "userId"=$1;');
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "user" WHERE "userId"=$1 RETURNING *;');
       expect(db.query.mock.calls[0][1]).toHaveLength(1);
       expect(db.query.mock.calls[0][1][0]).toBe(userId);
-      expect(deleteUser).toBe(true);
+      expect(deleteUser).toEqual(data[0]);
     });
 
     test('User.deleteUser with database error', async () => {
@@ -261,13 +261,19 @@ describe('User Model', () => {
 
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
-      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "user" WHERE "userId"=$1;');
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "user" WHERE "userId"=$1 RETURNING *;');
       expect(db.query.mock.calls[0][1]).toHaveLength(1);
       expect(db.query.mock.calls[0][1][0]).toBe(userId);
     });
 
     test('User.deleteUser with no input', async () => {
-      await expect(User.deleteUser()).rejects.toThrowError('UserId is required.');
+      await expect(User.deleteUser()).rejects.toThrowError('Backend service received bad data!');
+    });
+
+    test('Return empty object if not found', async () => {
+      db.query.mockResolvedValueOnce({ rows: [] }); // NOT FOUND
+      const result = await User.deleteUser(123);
+      expect(result).toEqual({});
     });
   });
   describe('editing a user', () => {
@@ -321,15 +327,13 @@ describe('User Model', () => {
 
     test('User.edit with bad input', async () => {
       await expect(User.edit('userId', 'bad input')).rejects.toThrowError(
-        'UserId and new Status and Role are required.'
+        'Backend service received bad data!'
       );
       expect(db.query.mock.calls).toHaveLength(0);
     });
 
     test('User.edit with no input', async () => {
-      await expect(User.edit()).rejects.toThrowError(
-        'UserId and new Status and Role are required.'
-      );
+      await expect(User.edit()).rejects.toThrowError('Backend service received bad data!');
       expect(db.query.mock.calls).toHaveLength(0);
     });
   });
@@ -395,7 +399,9 @@ describe('User Model', () => {
   });
   test('Unexpected condition, no return', async () => {
     db.query.mockResolvedValue({ rows: [] });
-    await expect(User.count()).rejects.toThrowError('Some Error Occurred');
+    await expect(User.count()).rejects.toThrowError(
+      'Unexpected DB condition: success, but no data returned'
+    );
     expect(db.query.mock.calls).toHaveLength(1);
     expect(db.query.mock.calls[0]).toHaveLength(1);
     expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "user"`);

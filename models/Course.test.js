@@ -47,7 +47,7 @@ describe('Course Model', () => {
     });
 
     test('should throw error if no parameters', async () => {
-      await expect(Course.findOne()).rejects.toThrowError('Id is required.');
+      await expect(Course.findOne()).rejects.toThrowError('Backend service received bad data!');
     });
   });
 
@@ -174,7 +174,9 @@ describe('Course Model', () => {
     });
 
     test('Course.deleteCourse with no input', async () => {
-      await expect(Course.deleteCourse()).rejects.toThrowError('Id is required.');
+      await expect(Course.deleteCourse()).rejects.toThrowError(
+        'Backend service received bad data!'
+      );
     });
   });
 
@@ -200,20 +202,13 @@ describe('Course Model', () => {
       }
     });
 
-    test('Inputting invalid value', async () => {
-      const course = dataForGetCourse(1)[0];
-      course.description = { test: "object that's not string" };
-
-      await expect(doAdd(course)).rejects.toThrowError('Incompatible Course Parameter Types');
-    });
-
     test('Inputting null parameters', async () => {
-      await expect(doAdd(null)).rejects.toThrowError('Missing Course Parameters');
+      await expect(doAdd(null)).rejects.toThrowError('Backend service received bad data!');
       expect(db.query).not.toBeCalled();
     });
 
-    test('Inputting empty object', async () => {
-      await expect(doAdd({})).rejects.toThrowError('Missing Course Parameters');
+    test('Inputting no parameters', async () => {
+      await expect(doAdd()).rejects.toThrowError('Backend service received bad data!');
       expect(db.query).not.toBeCalled();
     });
 
@@ -221,7 +216,7 @@ describe('Course Model', () => {
       const course = dataForGetCourse(1)[0];
       db.query.mockResolvedValueOnce({ rows: [] });
       await expect(Course.addCourse(course)).rejects.toThrowError(
-        'Unexpected DB Condition, insert sucessful with no returned record'
+        'Unexpected DB condition: success, but no data returned'
       );
     });
   });
@@ -290,12 +285,14 @@ describe('editing a course', () => {
   });
 
   test('Course.edit with bad input', async () => {
-    await expect(Course.edit('id', 'bad input')).rejects.toThrowError('Id is required.');
+    await expect(Course.edit('id', 'bad input')).rejects.toThrowError(
+      'Backend service received bad data!'
+    );
     expect(db.query.mock.calls).toHaveLength(0);
   });
 
   test('Course.edit with no input', async () => {
-    await expect(Course.edit()).rejects.toThrowError('Id is required.');
+    await expect(Course.edit()).rejects.toThrowError('Backend service received bad data!');
     expect(db.query.mock.calls).toHaveLength(0);
   });
 });
@@ -314,6 +311,8 @@ describe('Count Courses', () => {
     expect(db.query.mock.calls).toHaveLength(1);
     expect(db.query.mock.calls[0]).toHaveLength(1);
     expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "course"`);
-    await expect(Course.count()).rejects.toThrowError('Some Error Occurred');
+    await expect(Course.count()).rejects.toThrowError(
+      'Unexpected DB condition: success, but no data returned'
+    );
   });
 });

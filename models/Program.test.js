@@ -47,7 +47,7 @@ describe('Program Model', () => {
     });
 
     test('should throw error if no parameters', async () => {
-      await expect(Program.findOne()).rejects.toThrowError('Id is required.');
+      await expect(Program.findOne()).rejects.toThrowError('Backend service received bad data!');
     });
   });
 

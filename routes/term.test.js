@@ -304,7 +304,10 @@ describe('PUT /term', () => {
         title: 'lorem ipsum dolor',
       };
 
-      const expectedReturn = Object.assign(term, extractKeys(desiredChanges, ...Term.properties));
+      const expectedReturn = Object.assign(
+        term,
+        extractKeys(desiredChanges, 'semester', 'startyear', 'title')
+      );
       Term.edit.mockResolvedValueOnce(expectedReturn);
 
       const response = await callPutOnTermRoute(term.id, desiredChanges);

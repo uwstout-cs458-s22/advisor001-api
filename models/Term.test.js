@@ -4,8 +4,6 @@ const { dataForGetTerm, db } = global.jest;
 
 const Term = require('./Term');
 
-const { isEmpty } = require('../services/utils');
-
 describe('Term Model', () => {
   beforeEach(() => {
     db.query.mockReset();
@@ -49,7 +47,7 @@ describe('Term Model', () => {
     });
 
     test('should throw error if no parameters', async () => {
-      await expect(Term.findOne()).rejects.toThrowError('Id is required.');
+      await expect(Term.findOne()).rejects.toThrowError('Backend service received bad data!');
     });
   });
 
@@ -151,33 +149,23 @@ describe('Term Model', () => {
       return Term.addTerm(newTerm);
     }
 
-    test('Adding single term success', async () => {
-      const data = dataForGetTerm(1)[0];
-      const term = await doAdd(data);
-      for (const key of Object.keys(data)) {
-        expect(term).toHaveProperty(key, data[key]);
-      }
-    });
-
-    test('Inputting invalid value', async () => {
-      const term = dataForGetTerm(1)[0];
-      term.title = { test: "object that's not string" };
-
-      await expect(doAdd(term)).rejects.toThrowError(
-        'Title, Start Year, and Semester are required.'
-      );
-    });
-
     test('Inputting null parameters', async () => {
-      await expect(doAdd(null)).rejects.toThrowError(
-        'Title, Start Year, and Semester are required.'
-      );
+      await expect(doAdd(null)).rejects.toThrowError('Backend service received bad data!');
       expect(db.query).not.toBeCalled();
     });
 
-    test('Inputting empty object', async () => {
-      await expect(doAdd({})).rejects.toThrowError('Title, Start Year, and Semester are required.');
+    test('Inputting undefined', async () => {
+      await expect(doAdd()).rejects.toThrowError('Backend service received bad data!');
       expect(db.query).not.toBeCalled();
+    });
+
+    test('Unexpected DB condition', async () => {
+      db.query.mockResolvedValueOnce({ rows: [] });
+      const term = dataForGetTerm(1)[0];
+      await expect(
+        Term.addTerm({ title: term.title, startyear: term.startyear, semester: term.semester })
+      ).rejects.toThrowError('Unexpected DB condition: success, but no data returned');
+      expect(db.query).toBeCalled();
     });
   });
 
@@ -192,7 +180,9 @@ describe('Term Model', () => {
     });
     test('Unexpected condition, no return', async () => {
       db.query.mockResolvedValueOnce({ rows: [] });
-      await expect(Term.count()).rejects.toThrowError('Some Error Occurred');
+      await expect(Term.count()).rejects.toThrowError(
+        'Unexpected DB condition: success, but no data returned'
+      );
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(1);
       expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "term"`);
@@ -253,19 +243,21 @@ describe('editing a term', () => {
   });
 
   test('Term.edit with bad input', async () => {
-    await expect(Term.edit('id', 'bad input')).rejects.toThrowError('Id is required.');
+    db.query.mockResolvedValueOnce({ data: [] });
+    await expect(Term.edit('id', null)).rejects.toThrowError('Backend service received bad data!');
     expect(db.query.mock.calls).toHaveLength(0);
   });
 
   test('Term.edit with no input', async () => {
-    await expect(Term.edit()).rejects.toThrowError('Id is required.');
+    await expect(Term.edit()).rejects.toThrowError('Backend service received bad data!');
     expect(db.query.mock.calls).toHaveLength(0);
   });
 
   test('Term.edit with empty database answer', async () => {
     db.query.mockResolvedValueOnce({ rows: [] });
-    const answer = await Term.edit(1, { semester: 2, startyear: 2021 });
-    expect(isEmpty(answer)).toBeTruthy(); // as long as we trust our util, we trust this test
+    await expect(Term.edit(1, { semester: 2, startyear: 2021 })).rejects.toThrowError(
+      'Unexpected DB condition: success, but no data returned'
+    );
     expect(db.query.mock.calls[0][1]).toHaveLength(3);
     expect(db.query.mock.calls[0][1][0]).toBe(1);
     expect(db.query.mock.calls[0][1][1]).toBe(2);
@@ -287,8 +279,8 @@ describe('editing a term', () => {
       expect(db.query.mock.calls[0][1][0]).toBe(termId);
       expect(deleteTerm).toEqual(data[0]);
     });
-    test('User.deleteUser with no input', async () => {
-      await expect(Term.deleteTerm()).rejects.toThrowError('TermId is required.');
+    test('Term.deleteTerm with no input', async () => {
+      await expect(Term.deleteTerm()).rejects.toThrowError('Backend service received bad data!');
     });
   });
 });
