@@ -190,22 +190,23 @@ describe('Program Model', () => {
         'Unexpected DB Condition, insert sucessful with no returned record'
       );
     });
-    
-  describe('Count Programs', () => {
-    test('One Program in the Database', async () => {
-      db.query.mockResolvedValueOnce({ rows: [{ count: 1 }] });
-      const res = await Program.count();
-      expect(db.query.mock.calls).toHaveLength(1);
-      expect(db.query.mock.calls[0]).toHaveLength(1);
-      expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "program"`);
-      expect(res).toHaveProperty('count', 1);
-    });
-    test('Unexpected condition, no return', async () => {
-      db.query.mockResolvedValueOnce({ rows: [] });
-      await expect(Program.count()).rejects.toThrowError('Some Error Occurred');
-      expect(db.query.mock.calls).toHaveLength(1);
-      expect(db.query.mock.calls[0]).toHaveLength(1);
-      expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "program"`);
+
+    describe('Count Programs', () => {
+      test('One Program in the Database', async () => {
+        db.query.mockResolvedValueOnce({ rows: [{ count: 1 }] });
+        const res = await Program.count();
+        expect(db.query.mock.calls).toHaveLength(1);
+        expect(db.query.mock.calls[0]).toHaveLength(1);
+        expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "program"`);
+        expect(res).toHaveProperty('count', 1);
+      });
+      test('Unexpected condition, no return', async () => {
+        db.query.mockResolvedValueOnce({ rows: [] });
+        await expect(Program.count()).rejects.toThrowError('Some Error Occurred');
+        expect(db.query.mock.calls).toHaveLength(1);
+        expect(db.query.mock.calls[0]).toHaveLength(1);
+        expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "program"`);
+      });
     });
   });
 });
