@@ -149,7 +149,6 @@ describe('Program Model', () => {
     });
   });
 
-
   describe('edit programs', () => {
     beforeEach(() => {
       db.query.mockReset();
@@ -213,8 +212,9 @@ describe('Program Model', () => {
       await expect(Program.edit()).rejects.toThrowError('Id is required.');
       expect(db.query.mock.calls).toHaveLength(0);
     });
-    
-     describe('Count Programs', () => {
+  });
+
+  describe('Count Programs', () => {
     test('One Program in the Database', async () => {
       db.query.mockResolvedValueOnce({ rows: [{ count: 1 }] });
       const res = await Program.count();
