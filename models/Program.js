@@ -86,6 +86,7 @@ async function count() {
   } else {
     throw HttpError(500, 'Some Error Occurred');
   }
+}
 
 module.exports = {
   findOne,
