@@ -117,7 +117,7 @@ module.exports = {
       // criteria list is for uniquely constrained foreign keys
       // new values is for other data
       const numCriteria = Object.keys(criteriaList).length;
-      if (numCriteria < 0) throw badData;
+      if (numCriteria <= 0) throw badData;
 
       const { text, params } = insertOrUpdate(criteriaList, newValues);
       // console.log(`INSERT INTO ${tableName} ${text} RETURNING *;`);
