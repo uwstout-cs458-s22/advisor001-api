@@ -1,112 +1,7 @@
 const { connect, validate } = require('./schematools.js');
 
 // good and bad for each
-const tests = {
-  user: {
-    good: {
-      enable: true,
-      role: 'admin',
-    },
-    bad: {
-      enable: 'foo',
-      role: 'bar',
-    },
-  },
-  course: {
-    good: {
-      prefix: 'CS',
-      suffix: '442',
-      title: 'Operating Systems',
-      description: null,
-      credits: 3,
-    },
-    bad: {
-      prefix: null,
-      suffix: 123,
-      title: undefined,
-      description: false,
-      credits: '3',
-    },
-  },
-  term: {
-    good: {
-      title: 'Spring 2022',
-      startyear: 2021,
-      semester: 2,
-    },
-    bad: {
-      title: undefined,
-      startyear: true,
-      semester: '2',
-    },
-  },
-  program: {
-    good: {
-      title: 'Our Program',
-      description: 'Our Description',
-    },
-    bad: {
-      title: null,
-      description: 2,
-    },
-  },
-  student: {
-    good: {
-      displayname: 'John Doe',
-      account: undefined,
-      program: '123', // param strings should work as foreign keys
-    },
-    bad: {
-      displayname: undefined,
-      account: '1.25', // not a foreign key
-      program: true,
-    },
-  },
-  course_prerequisite: {
-    good: {
-      course: 1,
-      requires: 2,
-    },
-    bad: {
-      course: null,
-      requires: undefined,
-    },
-  },
-  course_requirement: {
-    good: {
-      course: '3', // param strings should work as foreign keys
-      fulfills: 4,
-    },
-    bad: {
-      course: false,
-      fulfills: true,
-    },
-  },
-  program_course: {
-    good: {
-      program: 5,
-      requires: '6', // param strings should work as foreign keys
-    },
-    bad: {
-      program: 'Computer Science',
-      requires: 1.5,
-    },
-  },
-  student_course: {
-    good: {
-      student: '7',
-      course: '8',
-      term: 9,
-      taken: true,
-    },
-    bad: {
-      student: 'John Doe',
-      course: null,
-      term: 'foo',
-      taken: undefined,
-    },
-  },
-};
+const tests = global.jest.goodBadData;
 const allOfOurTables = Object.keys(tests);
 
 describe('Schema tools tests', () => {
@@ -235,4 +130,6 @@ describe('Schema tools tests', () => {
       }
     });
   });
+
+  describe('Middleware generator tests', () => {});
 });
