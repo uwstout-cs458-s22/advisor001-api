@@ -7,6 +7,7 @@ const {
   isBoolean,
   isNully,
   extractKeys,
+  renameKeys,
 } = require('./utils');
 
 describe('utils Tests', () => {
@@ -138,6 +139,52 @@ describe('utils Tests', () => {
       foo5: obj.foo5,
       foo6: obj.foo6,
       foo7: obj.foo7,
+    });
+  });
+
+  test('renameKeys tests', async () => {
+    const obj = {
+      foo1: 'bar1',
+      foo2: 'bar2', // IN MAP
+      foo3: 'bar3', // IN MAP
+      foo4: 'bar4',
+      foo5: 'bar5', // IN MAP
+      foo6: undefined,
+    };
+    const keyMap = {
+      foo2: 'newFoo2', // IN OBJ
+      foo3: 'newFoo3', // IN OBJ
+      foo5: 'newFoo5', // IN OBJ
+      foo6: 'newFoo6',
+      foo7: 'newFoo7',
+    };
+    const result = renameKeys(obj, keyMap);
+    // --
+    expect(result).toHaveProperty('foo1', obj.foo1);
+    // -- renamed --
+    expect(result).not.toHaveProperty('foo2');
+    expect(result).toHaveProperty('newFoo2', obj.foo2);
+    // -- renamed --
+    expect(result).not.toHaveProperty('foo3');
+    expect(result).toHaveProperty('newFoo3', obj.foo3);
+    // --
+    expect(result).toHaveProperty('foo4', obj.foo4);
+    // -- renamed --
+    expect(result).not.toHaveProperty('foo5');
+    expect(result).toHaveProperty('newFoo5', obj.foo5);
+    // -- rule exists but no matching key --
+    expect(result).not.toHaveProperty('foo6');
+    expect(result).not.toHaveProperty('newFoo6');
+    expect(result).not.toHaveProperty('foo7');
+    expect(result).not.toHaveProperty('newFoo7');
+
+    // prettier-ignore
+    expect(result).toStrictEqual({
+      foo1:     obj.foo1,
+      newFoo2:  obj.foo2, // renamed
+      newFoo3:  obj.foo3, // renamed
+      foo4:     obj.foo4,
+      newFoo5:  obj.foo5, // renamed
     });
   });
 });
