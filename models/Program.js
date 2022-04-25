@@ -38,39 +38,6 @@ async function findAll(criteria, limit = 100, offset = 0) {
   return res.rows;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * Counts programs in the database
  *
@@ -107,7 +74,6 @@ async function edit(id, newValues) {
 module.exports = {
   findOne,
   findAll,
-  addProgram,
   edit,
   count,
 };
