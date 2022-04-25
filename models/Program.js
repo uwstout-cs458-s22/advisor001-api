@@ -38,6 +38,56 @@ async function findAll(criteria, limit = 100, offset = 0) {
   return res.rows;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Counts programs in the database
+ *
+ * @returns {object} number of rows in query response
+ *
+ * if any paramters are null, throw a 500 error 'Some Error Occured'
+ */
+async function count() {
+  const res = await db.query(`SELECT COUNT(*) FROM "program"`);
+
+  if (res.rows.length > 0) {
+    return res.rows[0];
+  } else {
+    throw HttpError(500, 'Some Error Occurred');
+  }
+}
+
 async function edit(id, newValues) {
   // TODO the routes should probably be doing the validation, not this
   if (id && newValues && isObject(newValues)) {
@@ -57,5 +107,7 @@ async function edit(id, newValues) {
 module.exports = {
   findOne,
   findAll,
+  addProgram,
   edit,
+  count,
 };
