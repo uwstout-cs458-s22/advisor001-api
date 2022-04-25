@@ -46,4 +46,8 @@ Every request received by the API must also be accompanied with the Stytch sessi
 ### Programs
 
 [/program GET](program_get.md)
+
+[/program GET COUNT](programs_count.md)
+
 [/program POST](program_post.md)
+

@@ -71,8 +71,25 @@ async function addProgram(properties) {
   throw HttpError(500, 'Unexpected DB Condition, insert sucessful with no returned record');
 }
 
+/**
+ * Counts programs in the database
+ *
+ * @returns {object} number of rows in query response
+ *
+ * if any paramters are null, throw a 500 error 'Some Error Occured'
+ */
+async function count() {
+  const res = await db.query(`SELECT COUNT(*) FROM "program"`);
+
+  if (res.rows.length > 0) {
+    return res.rows[0];
+  } else {
+    throw HttpError(500, 'Some Error Occurred');
+  }
+
 module.exports = {
   findOne,
   findAll,
   addProgram,
+  count,
 };
