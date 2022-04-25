@@ -73,10 +73,8 @@ module.exports = {
     };
     // do the mock
     jest.mock('../models/Term', () => {
-      const { properties } = jest.requireActual('../models/Term');
       return {
         ...mockList,
-        properties,
       };
     });
     // add mock resetter
