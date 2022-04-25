@@ -66,7 +66,7 @@ module.exports = {
   // create generator
   create: (tableName) => {
     return async (properties) => {
-      if (!properties || !isObject(properties)) throw badData;
+      if (!isObject(properties)) throw badData;
       // the route should have validated
       const { text, params } = insertValues(properties);
       const res = await db.query(`INSERT INTO "${tableName}" ${text} RETURNING *;`, params);
@@ -83,7 +83,7 @@ module.exports = {
   // update generator
   update: (tableName, key = 'id') => {
     return async (id, newValues) => {
-      if (!id || !newValues || !isObject(newValues)) throw badData;
+      if (!id || !isObject(newValues)) throw badData;
       // the route should have validated
       const { text, params } = updateValues({ [key]: id }, newValues);
       const res = await db.query(`UPDATE "${tableName}" ${text} RETURNING *;`, params);
@@ -116,12 +116,13 @@ module.exports = {
     return async (criteriaList, newValues) => {
       // criteria list is for uniquely constrained foreign keys
       // new values is for other data
+      if (!isObject(criteriaList)) throw badData;
       const numCriteria = Object.keys(criteriaList).length;
       if (numCriteria <= 0) throw badData;
 
       const { text, params } = insertOrUpdate(criteriaList, newValues);
       // console.log(`INSERT INTO ${tableName} ${text} RETURNING *;`);
-      const res = await db.query(`INSERT INTO ${tableName} ${text} RETURNING *;`, params);
+      const res = await db.query(`INSERT INTO "${tableName}" ${text} RETURNING *;`, params);
 
       if (res.rows.length > 0) {
         return res.rows[0];
@@ -175,7 +176,11 @@ module.exports = {
   // remove with criteria (USE WITH CAUTION!);
   removeWithCriteria: (middleManName) => {
     return async (criteria) => {
-      if (!criteria || !isObject(criteria)) throw badData;
+      // disallow falsy, non-object
+      if (!isObject(criteria)) throw badData;
+      const numCriteria = Object.keys(criteria).length;
+      // must have at least 2 criteria, for safety
+      if (numCriteria <= 1) throw badData;
       // do delete
       const { text, params } = whereParams(criteria);
       const res = await db.query(`DELETE FROM "${middleManName}" ${text} RETURNING *;`, params);

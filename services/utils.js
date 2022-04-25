@@ -38,9 +38,13 @@ function extractKeys(object, ...keys) {
 
 function renameKeys(object, keyMap) {
   const result = {};
-  for (const key of Object.keys(keyMap)) {
-    if (key in keyMap && object[key] !== undefined) {
-      result[keyMap[key]] = object[key];
+  for (const key of Object.keys(object)) {
+    if (object[key] !== undefined) {
+      if (key in keyMap) {
+        result[keyMap[key]] = object[key];
+      }
+      // no rule found, just copy without renaming
+      else result[key] = object[key];
     }
   }
   return result;
