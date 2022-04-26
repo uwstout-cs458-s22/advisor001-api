@@ -3,7 +3,6 @@ global.jest.init(false);
 
 // will be needed for endpoint generator tests
 const { getMockReq, getMockRes } = require('@jest-mock/express');
-const { combinedInsertUpdate } = require('../models/factory');
 const { res, next, clearMockRes } = getMockRes({});
 
 // good and bad data for each field
@@ -20,8 +19,8 @@ const {
   // the newer, more complicated ones
   readOneJoined,
   readManyJoined,
-  insertOrUpdate,
-  removeWithCriteria,
+  //  insertOrUpdate,
+  //  removeWithCriteria,
 } = require('./../services/schematools');
 
 // grab middlemen rules
@@ -558,12 +557,14 @@ describe('Schema tools - route generators', () => {
         });
       });
 
+      // eslint-disable-next-line jest/no-commented-out-tests
       // describe(`combined insert/update generator using table ${tableName}`, () => {
-      //   const middleware = combinedInsertUpdate(tableName, modelFunc);
+      //   const middleware = insertOrUpdate(tableName, modelFunc);
       // });
 
+      // eslint-disable-next-line jest/no-commented-out-tests
       // describe(`remove WITH CRITERIA generator using table ${tableName}`, () => {
-      //   const middleware = combinedInsertUpdate(tableName, modelFunc);
+      //   const middleware = removeWithCriteria(tableName, modelFunc);
       // });
     });
   });
