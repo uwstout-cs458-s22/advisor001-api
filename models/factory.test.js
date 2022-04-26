@@ -349,22 +349,11 @@ describe('Model factory tests', () => {
       });
     });
   });
-  // yes I was lazy so copied it
-  const middlemen = {
-    student_course: {
-      term: 'term',
-      student: 'student',
-      course: 'course',
-    },
-    program_course: {
-      program: 'program',
-      course: 'requires',
-    },
-    course_requirement: {
-      course: 'course',
-      requirement: 'fulfills',
-    },
-  };
+
+  // grab middlemen rules
+  // ADDED TO JEST GLOBAL BY schematools.js
+  // BUT ONLY IF global.jest IS DEFINED
+  const { middlemen } = global.jest;
 
   Object.keys(middlemen).forEach((tableName) => {
     const adjoiningTableList = Object.keys(middlemen[tableName]);

@@ -138,10 +138,12 @@ const validate = Object.fromEntries(
   })
 );
 
-function createSpecificCriteria(tableList, paramList) {
-  return Object.fromEntries(
-    Object.values(paramList).map((param, index) => [tableList[index], { id: param }])
-  );
+function createSpecificCriteria(paramKeys, params) {
+  const retval = {};
+  paramKeys.forEach((paramName) => {
+    retval[paramName] = { id: params[paramName] };
+  });
+  return retval;
 }
 
 module.exports = {
@@ -326,7 +328,7 @@ module.exports = {
     return async (req, res, next) => {
       try {
         const paramKeys = Object.keys(req.params);
-        // check num params, param validity
+        // che-ck num params, param validity
         if (
           paramKeys.length <= 1 ||
           paramKeys.some((table) => !req.params[table] || req.params[table] === '')
@@ -471,3 +473,9 @@ module.exports = {
     };
   },
 };
+
+// JEST HELPER
+// Only export if defined
+if (global.jest) {
+  global.jest.middlemen = middlemen;
+}

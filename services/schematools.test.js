@@ -130,6 +130,4 @@ describe('Schema tools tests', () => {
       }
     });
   });
-
-  describe('Middleware generator tests', () => {});
 });
