@@ -401,7 +401,10 @@ module.exports = {
         // keys specified in params
         const paramKeys = Object.keys(req.params);
         // make sure all params valid
-        if (paramKeys.some((table) => !req.params[table] || req.params[table] === '')) {
+        if (
+          paramKeys.length <= 1 ||
+          paramKeys.some((table) => !req.params[table] || req.params[table] === '')
+        ) {
           throw HttpError.BadRequest('Required Parameters Missing');
         }
 
@@ -443,7 +446,6 @@ module.exports = {
     return async (req, res, next) => {
       try {
         const paramKeys = Object.keys(req.params);
-        const id = req.params[paramKeys[0]];
         // check num params, param validity
         if (
           paramKeys.length <= 1 ||
@@ -457,15 +459,17 @@ module.exports = {
         // add any keys that might be in body
         Object.assign(criteria, extractKeys(req.body, ...foreignKeyList));
 
-        log.debug(`CRITERIA: ${JSON.stringify(criteria)}`);
-
         // try deletion
         const result = await modelFunc(criteria);
         if (isEmpty(result)) {
           throw HttpError.NotFound();
         }
         // success
-        log.info(`${req.method} ${req.originalUrl} success: deleted ${tableName} ${id}`);
+        log.info(
+          `${req.method} ${
+            req.originalUrl
+          } success: deleted from ${tableName} where ${JSON.stringify(criteria)}`
+        );
         return res.send(result);
       } catch (error) {
         next(error);
