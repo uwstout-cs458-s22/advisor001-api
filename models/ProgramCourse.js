@@ -4,7 +4,7 @@ const { db } = require('../services/database');
 const HttpError = require('http-errors');
 const join = require('../services/joiner');
 
-const joinStr = join('program', 'program_course', 'course');
+const joinStr = join('program_course', 'program') + join('program_course', 'course');
 
 async function findOne(criteria) {
   if (!criteria || isEmpty(criteria)) throw HttpError.BadRequest('Id is required.');

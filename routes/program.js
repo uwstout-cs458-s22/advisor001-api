@@ -38,7 +38,7 @@ module.exports = () => {
     });
 
     // Get one program course
-    router.get(':program(\\d+)/course/:requires(\\d+)', authorizeSession, async (req, res, next) => {
+    router.get('/:program(\\d+)/course/:requires(\\d+)', authorizeSession, async (req, res, next) => {
       try {
         const programCourse = await ProgramCourse.findOne(req.params);
         log.info(
@@ -53,7 +53,7 @@ module.exports = () => {
     });
 
     // Get all program course
-    router.get(':program(\\d+)/course/', authorizeSession, async (req, res, next) => {
+    router.get('/:program(\\d+)/course/', authorizeSession, async (req, res, next) => {
       try {
         const programCourseList = await ProgramCourse.findAll(req.params);
         log.info(
