@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS "course"  (
     PRIMARY KEY (id)
 );
 CREATE INDEX IF NOT EXISTS "IDX_course_id" ON "course" ("id");
--- CREATE INDEX IF NOT EXISTS "IDX_course_courseId" ON "course" ("prefix", "suffix");
+-- AVOID DUPLICATES
+CREATE UNIQUE INDEX IF NOT EXISTS "IDX_course_courseId" ON "course" ("prefix", "suffix");
 
 -- term
 CREATE TABLE IF NOT EXISTS "term"  (
@@ -51,9 +52,6 @@ CREATE TABLE IF NOT EXISTS "student"  (
 );
 CREATE INDEX IF NOT EXISTS "IDX_student_id" ON "student" ("id");
 
-
--- These tables are ready, but we don't need them yet
-/* 
 -- requirement
 CREATE TABLE IF NOT EXISTS "requirement"  (
     id          serial,
@@ -64,7 +62,6 @@ CREATE TABLE IF NOT EXISTS "requirement"  (
     PRIMARY KEY (id)
 );
 
-
 -- course_prerequisite
 CREATE TABLE IF NOT EXISTS "course_prerequisite"  (
     id          serial,
@@ -74,6 +71,8 @@ CREATE TABLE IF NOT EXISTS "course_prerequisite"  (
     FOREIGN KEY (requires) REFERENCES "course",
     PRIMARY KEY (id)
 );
+-- AVOID DUPLICATES
+CREATE UNIQUE INDEX IF NOT EXISTS "IDX_course_prerequisite" ON "course_prerequisite" ("course", "requires");
 
 -- course_requirement
 CREATE TABLE IF NOT EXISTS "course_requirement"  (
@@ -84,6 +83,8 @@ CREATE TABLE IF NOT EXISTS "course_requirement"  (
     FOREIGN KEY (fulfills) REFERENCES "requirement",
     PRIMARY KEY (id)
 );
+-- AVOID DUPLICATES
+CREATE UNIQUE INDEX IF NOT EXISTS "IDX_course_requirement" ON "course_requirement" ("course", "fulfills");
 
 -- program_course
 CREATE TABLE IF NOT EXISTS "program_course"  (
@@ -94,6 +95,8 @@ CREATE TABLE IF NOT EXISTS "program_course"  (
     FOREIGN KEY (requires) REFERENCES "course",
     PRIMARY KEY (id)
 );
+-- AVOID DUPLICATES
+CREATE UNIQUE INDEX IF NOT EXISTS "IDX_program_course" ON "program_course" ("program", "requires");
 
 -- student_course
 CREATE TABLE IF NOT EXISTS "student_course"  (
@@ -106,4 +109,6 @@ CREATE TABLE IF NOT EXISTS "student_course"  (
     FOREIGN KEY (course) REFERENCES "course",
     FOREIGN KEY (term) REFERENCES "term",
     PRIMARY KEY (id)
-); */
+);
+-- AVOID DUPLICATES
+CREATE UNIQUE INDEX IF NOT EXISTS "IDX_student_course" ON "student_course" ("student", "course", "term");
