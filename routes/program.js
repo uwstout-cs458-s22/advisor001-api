@@ -36,6 +36,33 @@ module.exports = () => {
     }
   });
 
+  // delete a single program
+  router.delete(
+    '/:programId?',
+    authorizeSession,
+    setClearanceLevel('director'),
+    async (req, res, next) => {
+      try {
+        const programId = req.params.programId;
+        if (!programId || programId === '') {
+          throw HttpError(400, 'Required Parameters Missing');
+        }
+
+        let program = await Program.findOne({ id: programId });
+        if (isEmpty(program)) {
+          throw new HttpError.NotFound();
+        }
+
+        program = await Program.deleteProgram(programId);
+
+        res.status(200);
+        res.send();
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
   // Create program
   router.post('/', authorizeSession, setClearanceLevel('director'), async (req, res, next) => {
     try {
