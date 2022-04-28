@@ -1,7 +1,7 @@
 // Must be at the top. Provided by jest/tests_common
 global.jest.init();
 global.jest.init_routes();
-const { Program, app, request, dataForGetProgram } = global.jest;
+const { Program, ProgramCourse, app, request, dataForGetProgram, dataForGetCourse } = global.jest;
 
 describe('GET /program', () => {
   beforeEach(Program.resetAllMocks);
@@ -143,6 +143,98 @@ describe('GET /program', () => {
       const response = await request(app).get(`/program`);
       expect(response.statusCode).toBe(500);
       expect(response.body.error.message).toBe('Some Database Failure');
+    });
+  });
+});
+
+describe('GET /program/:id/course/...', () => {
+  describe('given a course id', () => {
+    beforeEach(ProgramCourse.resetAllMocks);
+
+    function makeCall(programId, courseId, mockReturn) {
+      ProgramCourse.findOne.mockResolvedValueOnce(mockReturn);
+      return request(app).get(`/program/${programId}/course/${courseId}`);
+    }
+
+    test('should throw 500 when a model error occurs', async () => {
+      ProgramCourse.findOne.mockRejectedValueOnce(new Error('a testing error'));
+      await expect(request(app).get(`/program/123/course/456`)).resolves.toHaveProperty('body', {
+        error: {
+          message: 'a testing error',
+          status: 500,
+        },
+      });
+    });
+
+    test('should successfully make a call to ProgramCourse.findOne', async () => {
+      const course = dataForGetCourse(1)[0];
+      const program = dataForGetProgram(1)[0];
+      const result = await makeCall(program.id, course.id, course);
+      for (const key of Object.keys(course)) {
+        expect(result.body).toHaveProperty(key, course[key]);
+      }
+      expect(result.statusCode).toBe(200);
+      expect(ProgramCourse.findOne).toHaveBeenCalledTimes(1);
+      expect(ProgramCourse.findOne.mock.calls[0]).toHaveLength(1);
+      expect(ProgramCourse.findOne.mock.calls[0][0]).toHaveProperty('program', program.id);
+      expect(ProgramCourse.findOne.mock.calls[0][0]).toHaveProperty('requires', course.id);
+    });
+
+    test('should simply return empty if nothing found', async () => {
+      const result = await makeCall(123, 456, {});
+      expect(result.statusCode).toBe(404);
+      expect(result.body.error.message).toBe('Not Found');
+      expect(ProgramCourse.findOne).toHaveBeenCalledTimes(1);
+      expect(ProgramCourse.findOne.mock.calls[0]).toHaveLength(1);
+      expect(ProgramCourse.findOne.mock.calls[0][0]).toHaveProperty('program', '123');
+      expect(ProgramCourse.findOne.mock.calls[0][0]).toHaveProperty('requires', '456');
+    });
+  });
+
+  describe('given NO course id', () => {
+    beforeEach(ProgramCourse.resetAllMocks);
+
+    function makeCall(programId, mockReturn) {
+      ProgramCourse.findAll.mockResolvedValueOnce(mockReturn);
+      return request(app).get(`/program/${programId}/course`);
+    }
+
+    test('should throw 500 when a model error occurs', async () => {
+      ProgramCourse.findAll.mockRejectedValueOnce(new Error('a testing error'));
+      await expect(request(app).get(`/program/123/course`)).resolves.toHaveProperty('body', {
+        error: {
+          message: 'a testing error',
+          status: 500,
+        },
+      });
+    });
+
+    test('should successfully make a call to ProgramCourse.findAll', async () => {
+      const program = dataForGetProgram(1)[0];
+      const courses = dataForGetCourse(3);
+      const result = await makeCall(program.id, courses);
+      expect(result.body).toHaveLength(3);
+      // make sure all courses returned
+      result.body.forEach((course, index) => {
+        const keys = Object.keys(course);
+        expect(keys.length).toBeGreaterThan(0);
+        for (const key of keys) {
+          expect(courses[index]).toHaveProperty(key, course[key]);
+        }
+      });
+      expect(result.statusCode).toBe(200);
+      expect(ProgramCourse.findAll).toHaveBeenCalledTimes(1);
+      expect(ProgramCourse.findAll.mock.calls[0]).toHaveLength(1);
+      expect(ProgramCourse.findAll.mock.calls[0][0]).toHaveProperty('program', program.id);
+    });
+
+    test('should simply return empty if nothing found', async () => {
+      const result = await makeCall(123, []);
+      expect(result.statusCode).toBe(200);
+      expect(result.body).toHaveLength(0);
+      expect(ProgramCourse.findAll).toHaveBeenCalledTimes(1);
+      expect(ProgramCourse.findAll.mock.calls[0]).toHaveLength(1);
+      expect(ProgramCourse.findAll.mock.calls[0][0]).toHaveProperty('program', '123');
     });
   });
 });
