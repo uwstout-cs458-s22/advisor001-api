@@ -18,11 +18,33 @@ function isNumber(a) {
   return typeof a === 'number' || a instanceof Number;
 }
 
+function isBoolean(a) {
+  return typeof a === 'boolean' || a instanceof Boolean;
+}
+
+function isNully(a) {
+  return typeof a === 'undefined' || a === null;
+}
+
 function extractKeys(object, ...keys) {
   const result = {};
   for (const key of keys) {
     if (key in object && object[key] !== undefined) {
       result[key] = object[key];
+    }
+  }
+  return result;
+}
+
+function renameKeys(object, keyMap) {
+  const result = {};
+  for (const key of Object.keys(object)) {
+    if (object[key] !== undefined) {
+      if (key in keyMap) {
+        result[keyMap[key]] = object[key];
+      }
+      // no rule found, just copy without renaming
+      else result[key] = object[key];
     }
   }
   return result;
@@ -34,5 +56,8 @@ module.exports = {
   isObject,
   isString,
   isNumber,
+  isBoolean,
+  isNully,
   extractKeys,
+  renameKeys,
 };
