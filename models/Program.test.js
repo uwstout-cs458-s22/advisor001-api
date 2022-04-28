@@ -209,4 +209,25 @@ describe('Program Model', () => {
       expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "program"`);
     });
   });
+
+  describe('Delete Programs', () => {
+    test('Delete a Program', async () => {
+      const data = dataForGetProgram(1);
+      const programId = data[0].id;
+
+      db.query.mockResolvedValue({ rows: data });
+      const deleteProgram = await Program.deleteProgram(programId);
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "program" WHERE "id"=$1;');
+      expect(db.query.mock.calls[0][1]).toHaveLength(1);
+      expect(db.query.mock.calls[0][1][0]).toBe(programId);
+      expect(deleteProgram).toBe(true);
+    });
+    test('User.deleteUser with no input', async () => {
+      await expect(Program.deleteProgram()).rejects.toThrowError('ProgramId is required.');
+    });
+  });
+
 });
