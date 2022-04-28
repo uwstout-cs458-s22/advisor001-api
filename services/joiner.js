@@ -26,6 +26,7 @@ const schemaGraph = {
   course: {
     course_requirement: ['id', 'course'],
     student_course: ['id', 'course'],
+    program_course: ['id', 'requires'],
     // don't support joining course_prerequisite in this direction
   },
   course_requirement: {
