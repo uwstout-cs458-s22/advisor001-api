@@ -22,10 +22,7 @@ const {
   removeWithCriteria,
 } = require('./../services/schematools');
 
-// grab middlemen rules
-// ADDED TO JEST GLOBAL BY schematools.js
-// BUT ONLY IF global.jest IS DEFINED
-const { middlemen } = global.jest;
+const { middlemen } = require('../services/schematools');
 
 describe('Schema tools - route generators', () => {
   const dummy = {

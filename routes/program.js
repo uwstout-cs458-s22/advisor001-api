@@ -5,7 +5,7 @@ const { isEmpty } = require('./../services/utils');
 const Program = require('./../models/Program');
 const ProgramCourse = require('./../models/ProgramCourse');
 const { authorizeSession, setClearanceLevel } = require('./../services/auth');
-const schematools = require('./../services/schematools');
+const schematools = require('../services/schematools');
 
 module.exports = () => {
   const router = express.Router();

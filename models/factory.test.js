@@ -3,7 +3,9 @@ global.jest.init_db();
 const { db } = global.jest;
 
 const factory = require('./factory');
-const { connect, validate } = require('./../services/schematools');
+const join = require('../services/joiner');
+const validate = require('../services/validator');
+const { middlemen } = require('../services/schematools');
 const tableList = Object.keys(validate);
 
 const badData = 'Backend service received bad data!';
@@ -350,11 +352,6 @@ describe('Model factory tests', () => {
     });
   });
 
-  // grab middlemen rules
-  // ADDED TO JEST GLOBAL BY schematools.js
-  // BUT ONLY IF global.jest IS DEFINED
-  const { middlemen } = global.jest;
-
   Object.keys(middlemen).forEach((tableName) => {
     const adjoiningTableList = Object.keys(middlemen[tableName]);
 
@@ -373,9 +370,9 @@ describe('Model factory tests', () => {
           },
         });
 
-        const joinOneSuite = (first, second) =>
+        const joinOneSuite = (first, mid, second) =>
           describe(`joined find one from table ${first} to table ${second}`, () => {
-            const modelFunc = factory.findOneJoined(first, second);
+            const modelFunc = factory.findOneJoined(first, second, join(first, mid, second));
 
             // eslint-disable-next-line jest/expect-expect
             test('disallow falsy specific criteria', falsyNotAllowed(modelFunc));
@@ -391,8 +388,9 @@ describe('Model factory tests', () => {
               expect(db.query).toHaveBeenCalledTimes(1);
               expect(db.query.mock.calls[0]).toHaveLength(2);
               expect(db.query.mock.calls[0][0]).toBe(
-                `SELECT "${second}".* FROM "${first}" ${connect(
+                `SELECT "${second}".* FROM "${first}" ${join(
                   first,
+                  mid,
                   second
                 )} WHERE "${first}"."id"=$1 AND "${second}"."id"=$2 LIMIT 1;`
               );
@@ -409,8 +407,9 @@ describe('Model factory tests', () => {
               expect(db.query).toHaveBeenCalledTimes(1);
               expect(db.query.mock.calls[0]).toHaveLength(2);
               expect(db.query.mock.calls[0][0]).toBe(
-                `SELECT "${second}".* FROM "${first}" ${connect(
+                `SELECT "${second}".* FROM "${first}" ${join(
                   first,
+                  mid,
                   second
                 )} WHERE "${first}"."id"=$1 AND "${second}"."id"=$2 LIMIT 1;`
               );
@@ -420,9 +419,9 @@ describe('Model factory tests', () => {
             });
           });
 
-        const joinAllSuite = (first, second) =>
+        const joinAllSuite = (first, mid, second) =>
           describe(`joined find all from table ${first} to table ${first}`, () => {
-            const modelFunc = factory.findAllJoined(first, second);
+            const modelFunc = factory.findAllJoined(first, second, join(first, mid, second));
 
             test('using specific criteria', async () => {
               await expect(
@@ -438,8 +437,9 @@ describe('Model factory tests', () => {
               expect(db.query).toHaveBeenCalledTimes(1);
               expect(db.query.mock.calls[0]).toHaveLength(2);
               expect(db.query.mock.calls[0][0]).toBe(
-                `SELECT "${second}".* FROM "${first}" ${connect(
+                `SELECT "${second}".* FROM "${first}" ${join(
                   first,
+                  mid,
                   second
                 )} WHERE "${first}"."id"=$1 AND "${second}"."id"=$2 LIMIT $3 OFFSET $4;`
               );
@@ -468,8 +468,9 @@ describe('Model factory tests', () => {
               expect(db.query).toHaveBeenCalledTimes(1);
               expect(db.query.mock.calls[0]).toHaveLength(2);
               expect(db.query.mock.calls[0][0]).toBe(
-                `SELECT "${second}".* FROM "${first}" ${connect(
+                `SELECT "${second}".* FROM "${first}" ${join(
                   first,
+                  mid,
                   second
                 )} WHERE "${first}"."id"=$1 AND "${second}"."id"=$2 LIMIT $3 OFFSET $4;`
               );
@@ -482,11 +483,11 @@ describe('Model factory tests', () => {
           });
 
         // test all combos
-        joinOneSuite(table1, table2);
-        joinOneSuite(table2, table1);
+        joinOneSuite(table1, tableName, table2);
+        joinOneSuite(table2, tableName, table1);
 
-        joinAllSuite(table1, table2);
-        joinAllSuite(table2, table1);
+        joinAllSuite(table1, tableName, table2);
+        joinAllSuite(table2, tableName, table1);
       }
 
     const dummyForeign = {

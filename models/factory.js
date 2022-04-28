@@ -16,8 +16,6 @@ const unexpected = HttpError.InternalServerError(
   'Unexpected DB condition: success, but no data returned'
 );
 
-const { connect } = require('../services/schematools');
-
 module.exports = {
   // find one generator
   findOne: (tableName) => {
@@ -132,16 +130,12 @@ module.exports = {
   },
 
   // find one with join
-  findOneJoined: (...tables) => {
-    const joinStr = connect(...tables);
-    const lastTable = tables.pop();
-    const firstTable = tables[0];
-
+  findOneJoined: (fromTable, selTable, joinStr = '') => {
     return async (specificCriteria) => {
       if (!specificCriteria || isEmpty(specificCriteria)) throw badData;
       const { text, params } = specificWhereParams(specificCriteria);
       const res = await db.query(
-        `SELECT "${lastTable}".* FROM "${firstTable}" ${joinStr} ${text} LIMIT 1;`,
+        `SELECT "${selTable}".* FROM "${fromTable}" ${joinStr} ${text} LIMIT 1;`,
         params
       );
       if (res.rows.length > 0) {
@@ -152,18 +146,14 @@ module.exports = {
   },
 
   // find all with join
-  findAllJoined: (...tables) => {
-    const joinStr = connect(...tables);
-    const lastTable = tables.pop();
-    const firstTable = tables[0];
-
+  findAllJoined: (fromTable, selTable, joinStr = '') => {
     return async (specificCriteria, limit = 100, offset = 0) => {
       const { text, params } = specificWhereParams(specificCriteria);
 
       const n = params.length;
       const p = params.concat([limit, offset]);
       const res = await db.query(
-        `SELECT "${lastTable}".* FROM "${firstTable}" ${joinStr} ${text} LIMIT $${n + 1} OFFSET $${
+        `SELECT "${selTable}".* FROM "${fromTable}" ${joinStr} ${text} LIMIT $${n + 1} OFFSET $${
           n + 2
         };`,
         p
@@ -174,7 +164,7 @@ module.exports = {
   },
 
   // remove with criteria (USE WITH CAUTION!);
-  removeWithCriteria: (middleManName) => {
+  removeWithCriteria: (tableName, joinStr) => {
     return async (criteria) => {
       // disallow falsy, non-object
       if (!isObject(criteria)) throw badData;
@@ -183,7 +173,12 @@ module.exports = {
       if (numCriteria <= 1) throw badData;
       // do delete
       const { text, params } = whereParams(criteria);
-      const res = await db.query(`DELETE FROM "${middleManName}" ${text} RETURNING *;`, params);
+      const res = await db.query(
+        `DELETE FROM "${tableName}" ${
+          joinStr !== undefined ? [joinStr, text].join(' ') : text
+        } RETURNING *;`,
+        params
+      );
       // did it exist?
       if (res.rows.length > 0) {
         // success
