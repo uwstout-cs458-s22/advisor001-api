@@ -34,6 +34,27 @@ async function findAll(criteria, limit = 100, offset = 0) {
   return {};
 }
 
+async function addProgramCourse(properties) {
+  if (!properties) {
+    throw HttpError(400, 'Missing Parameters');
+  }
+
+  const { text, params } = insertValues(properties);
+
+  const res = await db.query(`INSERT INTO "program_course" ${text} RETURNING *;`, params);
+
+  // did it work?
+  if (res.rows.length > 0) {
+    log.debug(
+      `Successfully inserted ${properties.prefix} ${
+        properties.suffix
+      } into db with data: ${text}, ${JSON.stringify(params)}`
+    );
+    return res.rows[0];
+  }
+  throw HttpError(500, 'Unexpected DB Condition, insert sucessful with no returned record');
+}
+
 module.exports = {
   findOne,
   findAll,
