@@ -1,7 +1,7 @@
 const factory = require('./factory');
 const join = require('../services/joiner');
 
-const joinStr = join('program', 'program_course', 'course');
+const joinStr = join('program_course', 'program') + join('program_course', 'course');
 
 module.exports = {
   addOrUpdateCourse: factory.combinedInsertUpdate('program_course'),
