@@ -5,7 +5,7 @@ const { isEmpty } = require('./../services/utils');
 const Program = require('./../models/Program');
 const ProgramCourse = require('./../models/ProgramCourse');
 const { authorizeSession, setClearanceLevel } = require('./../services/auth');
-const schematools = require('../services/schematools');
+const factory = require('./factory');
 
 module.exports = () => {
   const router = express.Router();
@@ -43,7 +43,7 @@ module.exports = () => {
     '/:program(\\d+)/course/:course(\\d+)?',
     authorizeSession,
     setClearanceLevel('director'),
-    schematools.insertOrUpdate('program_course', ProgramCourse.addOrUpdateCourse)
+    factory.insertOrUpdate('program_course', ProgramCourse.addOrUpdateCourse)
   );
 
   // Find many courses in the program
@@ -51,7 +51,7 @@ module.exports = () => {
     '/:program(\\d+)/course/',
     authorizeSession,
     setClearanceLevel('director'),
-    schematools.readManyJoined('program_course', ProgramCourse.findAllCourses)
+    factory.readManyJoined('program_course', ProgramCourse.findAllCourses)
   );
 
   // Find one course in program
@@ -59,7 +59,7 @@ module.exports = () => {
     '/:program(\\d+)/course/:course(\\d+)',
     authorizeSession,
     setClearanceLevel('director'),
-    schematools.readOneJoined('program_course', ProgramCourse.findOneCourse)
+    factory.readOneJoined('program_course', ProgramCourse.findOneCourse)
   );
 
   // Delete course from program
@@ -67,7 +67,7 @@ module.exports = () => {
     '/:program(\\d+)/course/:course(\\d+)?',
     authorizeSession,
     setClearanceLevel('director'),
-    schematools.removeWithCriteria('program_course', ProgramCourse.deleteCourse)
+    factory.removeWithCriteria('program_course', ProgramCourse.deleteCourse)
   );
 
   return router;

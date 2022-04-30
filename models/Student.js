@@ -5,5 +5,5 @@ module.exports = {
   findAll: factory.findAll('student'),
   addStudent: factory.create('student'),
   edit: factory.update('student'),
-  deleteStudent: factory.remove('student'),
+  deleteStudent: factory.removeWithKey('student'),
 };

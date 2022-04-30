@@ -3,35 +3,35 @@ const Student = require('./../models/Student');
 const StudentCourse = require('./../models/StudentCourse');
 const { authorizeSession, setClearanceLevel } = require('./../services/auth');
 
-const schematools = require('./../services/schematools');
+const factory = require('./factory');
 
 module.exports = () => {
   const router = express.Router();
 
   // Get many students
-  router.get('/', authorizeSession, schematools.readMany('student', Student.findAll));
+  router.get('/', authorizeSession, factory.readMany('student', Student.findAll));
   // Get one student
-  router.get('/:id(\\d+)', authorizeSession, schematools.readOne('student', Student.findOne));
+  router.get('/:id(\\d+)', authorizeSession, factory.readOne('student', Student.findOne));
   // Edit student
   router.put(
     '/:id(\\d+)?',
     authorizeSession,
     setClearanceLevel('director'),
-    schematools.update('student', Student.edit)
+    factory.update('student', Student.edit)
   );
   // Add student
   router.post(
     '/',
     authorizeSession,
     setClearanceLevel('director'),
-    schematools.create('student', Student.addStudent)
+    factory.create('student', Student.addStudent)
   );
   // Delete student
   router.delete(
     '/:id(\\d+)?',
     authorizeSession,
     setClearanceLevel('director'),
-    schematools.remove('student', Student.deleteStudent)
+    factory.removeWithKey('student', Student.deleteStudent)
   );
 
   // Insert or update student's courses
@@ -39,7 +39,7 @@ module.exports = () => {
     '/:student(\\d+)/course/:course(\\d+)?',
     authorizeSession,
     setClearanceLevel('director'),
-    schematools.insertOrUpdate('student_course', StudentCourse.addOrUpdateCourse)
+    factory.insertOrUpdate('student_course', StudentCourse.addOrUpdateCourse)
   );
 
   // Find many courses student taking
@@ -47,7 +47,7 @@ module.exports = () => {
     '/:student(\\d+)/course/',
     authorizeSession,
     setClearanceLevel('director'),
-    schematools.readManyJoined('student_course', StudentCourse.findAllCourses)
+    factory.readManyJoined('student_course', StudentCourse.findAllCourses)
   );
 
   // Find one course in student courses
@@ -55,7 +55,7 @@ module.exports = () => {
     '/:student(\\d+)/course/:course(\\d+)',
     authorizeSession,
     setClearanceLevel('director'),
-    schematools.readOneJoined('student_course', StudentCourse.findOneCourse)
+    factory.readOneJoined('student_course', StudentCourse.findOneCourse)
   );
 
   // Delete course from student courses
@@ -63,7 +63,7 @@ module.exports = () => {
     '/:student(\\d+)/course/:course(\\d+)?',
     authorizeSession,
     setClearanceLevel('director'),
-    schematools.removeWithCriteria('student_course', StudentCourse.deleteCourse)
+    factory.removeWithCriteria('student_course', StudentCourse.deleteCourse)
   );
 
   return router;

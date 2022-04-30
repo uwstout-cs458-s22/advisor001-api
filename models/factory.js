@@ -5,6 +5,7 @@ const {
   updateValues,
   insertOrUpdate,
   specificWhereParams,
+  selectList,
 } = require('../services/sqltools');
 
 const { isEmpty, isObject } = require('../services/utils');
@@ -18,11 +19,11 @@ const unexpected = HttpError.InternalServerError(
 
 module.exports = {
   // find one generator
-  findOne: (tableName) => {
+  findOne: (fromTable) => {
     return async (criteria) => {
       if (!criteria || isEmpty(criteria)) throw badData;
       const { text, params } = whereParams(criteria);
-      const res = await db.query(`SELECT * from "${tableName}" ${text} LIMIT 1;`, params);
+      const res = await db.query(`SELECT * from "${fromTable}" ${text} LIMIT 1;`, params);
       if (res.rows.length > 0) {
         return res.rows[0];
       }
@@ -31,13 +32,13 @@ module.exports = {
   },
 
   // find all generator
-  findAll: (tableName) => {
+  findAll: (fromTable) => {
     return async (criteria, limit = 100, offset = 0) => {
       const { text, params } = whereParams(criteria);
       const n = params.length;
       const p = params.concat([limit, offset]);
       const res = await db.query(
-        `SELECT * from "${tableName}" ${text} LIMIT $${n + 1} OFFSET $${n + 2};`,
+        `SELECT * from "${fromTable}" ${text} LIMIT $${n + 1} OFFSET $${n + 2};`,
         p
       );
       // success
@@ -46,12 +47,12 @@ module.exports = {
   },
 
   // remove generator
-  remove: (tableName, key = 'id') => {
+  removeWithKey: (fromTable, key = 'id') => {
     return async (id) => {
       if (!id || isObject(id)) throw badData;
       // do delete
       const { text, params } = whereParams({ [key]: id });
-      const res = await db.query(`DELETE FROM "${tableName}" ${text} RETURNING *;`, params);
+      const res = await db.query(`DELETE FROM "${fromTable}" ${text} RETURNING *;`, params);
       // did it exist?
       if (res.rows.length > 0) {
         // success
@@ -62,12 +63,12 @@ module.exports = {
   },
 
   // create generator
-  create: (tableName) => {
+  create: (fromTable) => {
     return async (properties) => {
       if (!isObject(properties)) throw badData;
       // the route should have validated
       const { text, params } = insertValues(properties);
-      const res = await db.query(`INSERT INTO "${tableName}" ${text} RETURNING *;`, params);
+      const res = await db.query(`INSERT INTO "${fromTable}" ${text} RETURNING *;`, params);
       // did it work?
       if (res.rows.length > 0) {
         // success
@@ -79,12 +80,12 @@ module.exports = {
   },
 
   // update generator
-  update: (tableName, key = 'id') => {
+  update: (fromTable, key = 'id') => {
     return async (id, newValues) => {
       if (!id || !isObject(newValues)) throw badData;
       // the route should have validated
       const { text, params } = updateValues({ [key]: id }, newValues);
-      const res = await db.query(`UPDATE "${tableName}" ${text} RETURNING *;`, params);
+      const res = await db.query(`UPDATE "${fromTable}" ${text} RETURNING *;`, params);
       // did it work?
       if (res.rows.length > 0) {
         // success
@@ -96,9 +97,9 @@ module.exports = {
   },
 
   // count generator
-  count: (tableName) => {
+  count: (fromTable) => {
     return async () => {
-      const res = await db.query(`SELECT COUNT(*) FROM "${tableName}"`);
+      const res = await db.query(`SELECT COUNT(*) FROM "${fromTable}"`);
 
       if (res.rows.length > 0) {
         return res.rows[0];
@@ -110,7 +111,7 @@ module.exports = {
   // --- JOIN STUFF ---
 
   // combined insert/update generator for tables with foreign keys
-  combinedInsertUpdate: (tableName) => {
+  combinedInsertUpdate: (fromTable) => {
     return async (criteriaList, newValues) => {
       // criteria list is for uniquely constrained foreign keys
       // new values is for other data
@@ -119,8 +120,8 @@ module.exports = {
       if (numCriteria <= 0) throw badData;
 
       const { text, params } = insertOrUpdate(criteriaList, newValues);
-      // console.log(`INSERT INTO ${tableName} ${text} RETURNING *;`);
-      const res = await db.query(`INSERT INTO "${tableName}" ${text} RETURNING *;`, params);
+      // console.log(`INSERT INTO ${fromTable} ${text} RETURNING *;`);
+      const res = await db.query(`INSERT INTO "${fromTable}" ${text} RETURNING *;`, params);
 
       if (res.rows.length > 0) {
         return res.rows[0];
@@ -130,12 +131,15 @@ module.exports = {
   },
 
   // find one with join
-  findOneJoined: (fromTable, selTable, joinStr = '') => {
+  findOneJoined: (selTables, fromTable, joinStr = '') => {
+    // what properties to select
+    const selStr = selectList(selTables);
+    // the model func
     return async (specificCriteria) => {
       if (!specificCriteria || isEmpty(specificCriteria)) throw badData;
       const { text, params } = specificWhereParams(specificCriteria);
       const res = await db.query(
-        `SELECT "${selTable}".* FROM "${fromTable}" ${joinStr} ${text} LIMIT 1;`,
+        `SELECT ${selStr} FROM "${fromTable}" ${joinStr} ${text} LIMIT 1;`,
         params
       );
       if (res.rows.length > 0) {
@@ -146,16 +150,16 @@ module.exports = {
   },
 
   // find all with join
-  findAllJoined: (fromTable, selTable, joinStr = '') => {
+  findAllJoined: (selTables, fromTable, joinStr = '') => {
+    // what properties to select
+    const selStr = selectList(selTables);
+    // the model func
     return async (specificCriteria, limit = 100, offset = 0) => {
       const { text, params } = specificWhereParams(specificCriteria);
-
       const n = params.length;
       const p = params.concat([limit, offset]);
       const res = await db.query(
-        `SELECT "${selTable}".* FROM "${fromTable}" ${joinStr} ${text} LIMIT $${n + 1} OFFSET $${
-          n + 2
-        };`,
+        `SELECT ${selStr} FROM "${fromTable}" ${joinStr} ${text} LIMIT $${n + 1} OFFSET $${n + 2};`,
         p
       );
       // success
@@ -164,7 +168,7 @@ module.exports = {
   },
 
   // remove with criteria (USE WITH CAUTION!);
-  removeWithCriteria: (tableName, joinStr) => {
+  removeWithCriteria: (fromTable, joinStr) => {
     return async (criteria) => {
       // disallow falsy, non-object
       if (!isObject(criteria)) throw badData;
@@ -174,7 +178,7 @@ module.exports = {
       // do delete
       const { text, params } = whereParams(criteria);
       const res = await db.query(
-        `DELETE FROM "${tableName}" ${
+        `DELETE FROM "${fromTable}" ${
           joinStr !== undefined ? [joinStr, text].join(' ') : text
         } RETURNING *;`,
         params

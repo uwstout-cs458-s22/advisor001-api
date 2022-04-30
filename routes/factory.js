@@ -1,8 +1,9 @@
+// Welcome to the route factory
 const log = require('loglevel');
 const HttpError = require('http-errors');
-const validate = require('./validator');
+const validate = require('../services/validator');
 
-const { extractKeys, renameKeys, isEmpty } = require('./utils');
+const { extractKeys, renameKeys, isEmpty } = require('../services/utils');
 
 // maps tables to their middlemen fields
 const middlemen = {
@@ -88,14 +89,20 @@ module.exports = {
 
   // READ maker (one)
   readOne: (tableName, modelFunc, key = 'id') => {
+    // helper list - all keys
+    const schemaKeys = Object.keys(validate[tableName]);
+    // return middleware
     return async (req, res, next) => {
       try {
         const id = req.params[key];
         if (!id || id === '') {
           throw HttpError.BadRequest('Required Parameters Missing');
         }
-        // use params to get one
-        const result = await modelFunc({ [key]: id });
+        // grab query stuff if present
+        const criteria = extractKeys(req.query, ...schemaKeys);
+        criteria.id = id;
+        // do query
+        const result = await modelFunc(criteria);
         if (isEmpty(result)) {
           throw HttpError.NotFound();
         }
@@ -111,8 +118,14 @@ module.exports = {
   // READ maker (many)
   readMany: (tableName, modelFunc) => {
     return async (req, res, next) => {
+      // helper list - all keys
+      const schemaKeys = Object.keys(validate[tableName]);
+      // return middleware
       try {
-        const results = await modelFunc(null, req.query.limit, req.query.offset);
+        // grab query stuff if present
+        const criteria = extractKeys(req.query, ...schemaKeys);
+        // do query
+        const results = await modelFunc(criteria, req.query.limit, req.query.offset);
         log.info(
           `${req.method} ${req.originalUrl} success: returning ${results.length} ${tableName}(s)`
         );
@@ -124,7 +137,7 @@ module.exports = {
   },
 
   // DELETE maker
-  remove: (tableName, modelFunc, key = 'id') => {
+  removeWithKey: (tableName, modelFunc, key = 'id') => {
     return async (req, res, next) => {
       try {
         const id = req.params[key];
@@ -138,6 +151,51 @@ module.exports = {
         }
         // success
         log.info(`${req.method} ${req.originalUrl} success: deleted ${tableName} ${id}`);
+        return res.send(result);
+      } catch (error) {
+        next(error);
+      }
+    };
+  },
+
+  // remove connecting entry from middle-man (USE WITH CAUTION)
+  removeWithCriteria: (tableName, modelFunc) => {
+    // helper list
+    const foreignKeyList = Object.values(middlemen[tableName]);
+    const numParams = Math.min(2, foreignKeyList.length);
+    const numBody = foreignKeyList.length - numParams;
+    const bodyRequiredForeignKeys = [...foreignKeyList].splice(numBody);
+    // return middleware
+    return async (req, res, next) => {
+      try {
+        const paramKeys = Object.keys(req.params);
+        const bodyKeys = Object.keys(req.body);
+        // check num params, param validity
+        if (
+          paramKeys.length < numParams ||
+          paramKeys.some((table) => !req.params[table] || req.params[table] === '') ||
+          bodyKeys.length < numBody ||
+          bodyRequiredForeignKeys.some((key) => !req.body[key] || req.body[key] === '')
+        ) {
+          throw HttpError.BadRequest('Required Parameters Missing');
+        }
+
+        // convert table names to foreign key names
+        const criteria = renameKeys(req.params, middlemen[tableName]);
+        // add any keys that might be in body
+        Object.assign(criteria, extractKeys(req.body, ...foreignKeyList));
+
+        // try deletion
+        const result = await modelFunc(criteria);
+        if (isEmpty(result)) {
+          throw HttpError.NotFound();
+        }
+        // success
+        log.info(
+          `${req.method} ${
+            req.originalUrl
+          } success: deleted from ${tableName} where ${JSON.stringify(criteria)}`
+        );
         return res.send(result);
       } catch (error) {
         next(error);
@@ -211,6 +269,9 @@ module.exports = {
     // helper lists
     const foreignKeyList = Object.values(middlemen[tableName]);
     const schemaKeys = Object.keys(validate[tableName]);
+    const numParams = Math.min(2, foreignKeyList.length);
+    const numBody = foreignKeyList.length - numParams;
+
     // remove foreign keys from key list
     foreignKeyList.forEach((key) => {
       const index = schemaKeys.indexOf(key);
@@ -224,10 +285,12 @@ module.exports = {
       try {
         // keys specified in params
         const paramKeys = Object.keys(req.params);
+        const bodyKeys = Object.keys(req.body);
         // make sure all params valid
         if (
-          paramKeys.length <= 1 ||
-          paramKeys.some((table) => !req.params[table] || req.params[table] === '')
+          paramKeys.length < numParams ||
+          paramKeys.some((table) => !req.params[table] || req.params[table] === '') ||
+          bodyKeys.length < numBody
         ) {
           throw HttpError.BadRequest('Required Parameters Missing');
         }
@@ -257,44 +320,6 @@ module.exports = {
           `${req.method} ${req.originalUrl} success: created or updated ${tableName} ${result.id}`
         );
         res.status(statusCode).send(result);
-      } catch (error) {
-        next(error);
-      }
-    };
-  },
-
-  // remove connecting entry from middle-man (USE WITH CAUTION)
-  removeWithCriteria: (tableName, modelFunc) => {
-    // helper list
-    const foreignKeyList = Object.values(middlemen[tableName]);
-    return async (req, res, next) => {
-      try {
-        const paramKeys = Object.keys(req.params);
-        // check num params, param validity
-        if (
-          paramKeys.length <= 1 ||
-          paramKeys.some((table) => !req.params[table] || req.params[table] === '')
-        ) {
-          throw HttpError.BadRequest('Required Parameters Missing');
-        }
-
-        // convert table names to foreign key names
-        const criteria = renameKeys(req.params, middlemen[tableName]);
-        // add any keys that might be in body
-        Object.assign(criteria, extractKeys(req.body, ...foreignKeyList));
-
-        // try deletion
-        const result = await modelFunc(criteria);
-        if (isEmpty(result)) {
-          throw HttpError.NotFound();
-        }
-        // success
-        log.info(
-          `${req.method} ${
-            req.originalUrl
-          } success: deleted from ${tableName} where ${JSON.stringify(criteria)}`
-        );
-        return res.send(result);
       } catch (error) {
         next(error);
       }

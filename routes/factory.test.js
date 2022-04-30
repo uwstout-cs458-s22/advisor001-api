@@ -14,15 +14,15 @@ const {
   update,
   readOne,
   readMany,
-  remove,
+  removeWithKey,
   // the newer, more complicated ones
   readOneJoined,
   readManyJoined,
   insertOrUpdate,
   removeWithCriteria,
-} = require('./../services/schematools');
+} = require('./factory');
 
-const { middlemen } = require('../services/schematools');
+const { middlemen } = require('./factory');
 
 describe('Schema tools - route generators', () => {
   const dummy = {
@@ -284,7 +284,7 @@ describe('Schema tools - route generators', () => {
         expect(next).not.toBeCalled();
         expect(modelFunc).toHaveBeenCalledTimes(1);
         expect(modelFunc.mock.calls[0]).toHaveLength(3);
-        expect(modelFunc.mock.calls[0][0]).toBe(null);
+        // expect(modelFunc.mock.calls[0][0]).toBe(null);
         expect(modelFunc.mock.calls[0][1]).toBe(req.query.limit);
         expect(modelFunc.mock.calls[0][2]).toBe(req.query.offset);
       });
@@ -309,7 +309,7 @@ describe('Schema tools - route generators', () => {
         expect(next).not.toBeCalled();
         expect(modelFunc).toHaveBeenCalledTimes(1);
         expect(modelFunc.mock.calls[0]).toHaveLength(3);
-        expect(modelFunc.mock.calls[0][0]).toBe(null);
+        // expect(modelFunc.mock.calls[0][0]).toBe({});
         expect(modelFunc.mock.calls[0][1]).toBe(512);
         expect(modelFunc.mock.calls[0][2]).toBe(1024);
       });
@@ -330,7 +330,7 @@ describe('Schema tools - route generators', () => {
     });
 
     describe(`remove generator using table ${tableName}`, () => {
-      const middleware = remove(tableName, modelFunc);
+      const middleware = removeWithKey(tableName, modelFunc);
 
       test('should be successful with good params', async () => {
         const req = getMockReq({
@@ -641,7 +641,7 @@ describe('Schema tools - route generators', () => {
             expect(next).toBeCalled();
             expect(next.mock.calls[0]).toHaveLength(1);
             expect(next.mock.calls[0][0].statusCode).toBe(400);
-            expect(next.mock.calls[0][0].message).toBe('Invalid Parameters');
+            expect(next.mock.calls[0][0].message).toBe('Required Parameters Missing');
           });
         }
 
@@ -661,6 +661,7 @@ describe('Schema tools - route generators', () => {
 
         if (Object.keys(badValues).length > 0) {
           const badBody = Object.assign({}, bodyParams, badValues);
+          console.log(badBody);
 
           test(`should fail if invalid body`, async () => {
             const req = getMockReq({

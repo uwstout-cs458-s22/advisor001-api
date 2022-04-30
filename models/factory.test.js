@@ -2,11 +2,11 @@ global.jest.init(false); // Init without models
 global.jest.init_db();
 const { db } = global.jest;
 
-const factory = require('./factory');
 const join = require('../services/joiner');
 const validate = require('../services/validator');
-const { middlemen } = require('../services/schematools');
 const tableList = Object.keys(validate);
+const factory = require('../models/factory');
+const { middlemen } = require('../routes/factory');
 
 const badData = 'Backend service received bad data!';
 const unexpected = 'Unexpected DB condition: success, but no data returned';
@@ -139,7 +139,7 @@ describe('Model factory tests', () => {
     });
 
     describe(`remove test for table ${tableName}`, () => {
-      const modelFunc = factory.remove(tableName);
+      const modelFunc = factory.removeWithKey(tableName);
 
       test('disallow empty primary key', async () => {
         await expect(modelFunc('')).rejects.toThrowError(badData);
@@ -249,7 +249,7 @@ describe('Model factory tests', () => {
     });
 
     describe(`remove test for table ${tableName}`, () => {
-      const modelFunc = factory.remove(tableName);
+      const modelFunc = factory.removeWithKey(tableName);
 
       test('disallow empty primary key', async () => {
         await expect(modelFunc('')).rejects.toThrowError(badData);
@@ -361,7 +361,7 @@ describe('Model factory tests', () => {
         const table1 = adjoiningTableList[i];
         const table2 = adjoiningTableList[j];
 
-        const createSpecificCriteria = (first, second) => ({
+        const addCriteriaTo = (first, second) => ({
           [first]: {
             id: 123,
           },
@@ -370,9 +370,13 @@ describe('Model factory tests', () => {
           },
         });
 
-        const joinOneSuite = (first, mid, second) =>
-          describe(`joined find one from table ${first} to table ${second}`, () => {
-            const modelFunc = factory.findOneJoined(first, second, join(first, mid, second));
+        const joinOneSuite = (fromTable, mid, selTable) =>
+          describe(`joined find one from table ${fromTable} to table ${selTable}`, () => {
+            const modelFunc = factory.findOneJoined(
+              selTable,
+              fromTable,
+              join(fromTable, mid, selTable)
+            );
 
             // eslint-disable-next-line jest/expect-expect
             test('disallow falsy specific criteria', falsyNotAllowed(modelFunc));
@@ -382,17 +386,17 @@ describe('Model factory tests', () => {
             });
 
             test('using specific criteria', async () => {
-              const specificCriteria = createSpecificCriteria(first, second);
+              const specificCriteria = addCriteriaTo(fromTable, selTable);
               await expect(modelFunc(specificCriteria)).resolves.toBe(dummy);
 
               expect(db.query).toHaveBeenCalledTimes(1);
               expect(db.query.mock.calls[0]).toHaveLength(2);
               expect(db.query.mock.calls[0][0]).toBe(
-                `SELECT "${second}".* FROM "${first}" ${join(
-                  first,
+                `SELECT "${selTable}".* FROM "${fromTable}" ${join(
+                  fromTable,
                   mid,
-                  second
-                )} WHERE "${first}"."id"=$1 AND "${second}"."id"=$2 LIMIT 1;`
+                  selTable
+                )} WHERE "${fromTable}"."id"=$1 AND "${selTable}"."id"=$2 LIMIT 1;`
               );
               expect(db.query.mock.calls[0][1]).toHaveLength(2);
               expect(db.query.mock.calls[0][1][0]).toBe(123);
@@ -401,17 +405,17 @@ describe('Model factory tests', () => {
 
             test('using specific criteria, but no results found', async () => {
               db.query.mockResolvedValueOnce({ rows: [] });
-              const specificCriteria = createSpecificCriteria(first, second);
+              const specificCriteria = addCriteriaTo(fromTable, selTable);
               await expect(modelFunc(specificCriteria)).resolves.toEqual({});
 
               expect(db.query).toHaveBeenCalledTimes(1);
               expect(db.query.mock.calls[0]).toHaveLength(2);
               expect(db.query.mock.calls[0][0]).toBe(
-                `SELECT "${second}".* FROM "${first}" ${join(
-                  first,
+                `SELECT "${selTable}".* FROM "${fromTable}" ${join(
+                  fromTable,
                   mid,
-                  second
-                )} WHERE "${first}"."id"=$1 AND "${second}"."id"=$2 LIMIT 1;`
+                  selTable
+                )} WHERE "${fromTable}"."id"=$1 AND "${selTable}"."id"=$2 LIMIT 1;`
               );
               expect(db.query.mock.calls[0][1]).toHaveLength(2);
               expect(db.query.mock.calls[0][1][0]).toBe(123);
@@ -419,17 +423,21 @@ describe('Model factory tests', () => {
             });
           });
 
-        const joinAllSuite = (first, mid, second) =>
-          describe(`joined find all from table ${first} to table ${first}`, () => {
-            const modelFunc = factory.findAllJoined(first, second, join(first, mid, second));
+        const joinAllSuite = (fromTable, mid, selTable) =>
+          describe(`joined find all from table ${fromTable} to table ${selTable}`, () => {
+            const modelFunc = factory.findAllJoined(
+              selTable,
+              fromTable,
+              join(fromTable, mid, selTable)
+            );
 
             test('using specific criteria', async () => {
               await expect(
                 modelFunc({
-                  [first]: {
+                  [fromTable]: {
                     id: 123,
                   },
-                  [second]: {
+                  [selTable]: {
                     id: 456,
                   },
                 })
@@ -437,11 +445,11 @@ describe('Model factory tests', () => {
               expect(db.query).toHaveBeenCalledTimes(1);
               expect(db.query.mock.calls[0]).toHaveLength(2);
               expect(db.query.mock.calls[0][0]).toBe(
-                `SELECT "${second}".* FROM "${first}" ${join(
-                  first,
+                `SELECT "${selTable}".* FROM "${fromTable}" ${join(
+                  fromTable,
                   mid,
-                  second
-                )} WHERE "${first}"."id"=$1 AND "${second}"."id"=$2 LIMIT $3 OFFSET $4;`
+                  selTable
+                )} WHERE "${fromTable}"."id"=$1 AND "${selTable}"."id"=$2 LIMIT $3 OFFSET $4;`
               );
               expect(db.query.mock.calls[0][1]).toHaveLength(4);
               expect(db.query.mock.calls[0][1][0]).toBe(123);
@@ -454,10 +462,10 @@ describe('Model factory tests', () => {
               await expect(
                 modelFunc(
                   {
-                    [first]: {
+                    [fromTable]: {
                       id: 123,
                     },
-                    [second]: {
+                    [selTable]: {
                       id: 456,
                     },
                   },
@@ -468,11 +476,11 @@ describe('Model factory tests', () => {
               expect(db.query).toHaveBeenCalledTimes(1);
               expect(db.query.mock.calls[0]).toHaveLength(2);
               expect(db.query.mock.calls[0][0]).toBe(
-                `SELECT "${second}".* FROM "${first}" ${join(
-                  first,
+                `SELECT "${selTable}".* FROM "${fromTable}" ${join(
+                  fromTable,
                   mid,
-                  second
-                )} WHERE "${first}"."id"=$1 AND "${second}"."id"=$2 LIMIT $3 OFFSET $4;`
+                  selTable
+                )} WHERE "${fromTable}"."id"=$1 AND "${selTable}"."id"=$2 LIMIT $3 OFFSET $4;`
               );
               expect(db.query.mock.calls[0][1]).toHaveLength(4);
               expect(db.query.mock.calls[0][1][0]).toBe(123);
