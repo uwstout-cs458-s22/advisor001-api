@@ -1,7 +1,8 @@
 // Must be at the top. Provided by jest/tests_common
 global.jest.init();
 global.jest.init_routes();
-const { Program, app, request, dataForGetProgram, samplePrivilegedUser, auth } = global.jest;
+const { Program, app, auth, request, dataForGetUser, dataForGetProgram, samplePrivilegedUser } =
+  global.jest;
 
 describe('GET /program', () => {
   beforeEach(Program.resetAllMocks);
@@ -143,6 +144,161 @@ describe('GET /program', () => {
       const response = await request(app).get(`/program`);
       expect(response.statusCode).toBe(500);
       expect(response.body.error.message).toBe('Some Database Failure');
+    });
+  });
+
+  describe('PUT /Program', () => {
+    // TODO double check acceptance criteria
+    beforeEach(Program.resetAllMocks);
+
+    // put helper
+    function callPutOnProgramRoute(ProgramId, body) {
+      return request(app).put(`/program/${ProgramId}`).send(body);
+    }
+
+    describe('given an empty URL bar', () => {
+      test('should result in 400', async () => {
+        const editor = samplePrivilegedUser();
+        auth.loginAs(editor);
+
+        Program.findOne.mockResolvedValueOnce({});
+        const response = await callPutOnProgramRoute('', {}); // NO Program ID
+
+        expect(Program.findOne).not.toBeCalled();
+        expect(response.statusCode).toBe(400);
+        expect(response.body.error.message).toBe('Required Parameters Missing');
+      });
+    });
+
+    describe('when URL bar is non-empty', () => {
+      test('should 500 when editor is not found', async () => {
+        const editor = samplePrivilegedUser();
+        auth.loginAs(editor, {}); // NO EDITOR IN DB
+
+        const program = dataForGetProgram(1)[0];
+
+        const desiredChanges = {
+          description: 'This',
+          title: 'CS',
+        };
+
+        Program.findOne.mockResolvedValueOnce(program);
+        Program.edit.mockResolvedValueOnce(Object.assign(program, desiredChanges));
+
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
+
+        expect(Program.findOne).not.toBeCalled();
+        expect(Program.edit).not.toBeCalled();
+        expect(response.statusCode).toBe(500);
+        expect(response.body.error.message).toBe('Your account is not found in the database!');
+      });
+
+      test('should 401 when not authorized to edit Programs', async () => {
+        const editor = dataForGetUser(1)[0];
+        editor.enable = 'true';
+        auth.loginAs(editor); // Unprivileged editor
+
+        const program = dataForGetProgram(1)[0];
+
+        const desiredChanges = {
+          description: 'This',
+          title: 'CS',
+        };
+
+        Program.findOne.mockResolvedValueOnce(program);
+        Program.edit.mockResolvedValueOnce(Object.assign(program, desiredChanges));
+
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
+
+        expect(response.statusCode).toBe(401);
+        expect(response.body.error.message).toBe('You are not allowed to do that!');
+      });
+
+      test('should 404 when the Program is not found', async () => {
+        const editor = samplePrivilegedUser();
+        auth.loginAs(editor);
+
+        const desiredChanges = {
+          description: 'This',
+          title: 'CS',
+        };
+        Program.findOne.mockResolvedValueOnce({}); // NO Program
+        Program.edit.mockResolvedValueOnce({});
+
+        const response = await callPutOnProgramRoute(1, desiredChanges);
+        expect(response.statusCode).toBe(404);
+        expect(Program.edit).not.toBeCalled();
+        expect(response.body.error.message).toBe('Not Found');
+      });
+
+      test('should respond 200 and successfully return edited version of Program', async () => {
+        const editor = samplePrivilegedUser();
+        auth.loginAs(editor);
+
+        const program = dataForGetProgram(1)[0];
+
+        const desiredChanges = {
+          description: 'This',
+          title: 'CS',
+        };
+        Program.findOne.mockResolvedValueOnce(program);
+        const expectedReturn = Object.assign(program, desiredChanges);
+        Program.edit.mockResolvedValueOnce(desiredChanges);
+
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
+
+        expect(response.statusCode).toBe(200);
+        // check all properties
+        for (const key of Object.keys(response.body)) {
+          expect(response.body).toHaveProperty(key, expectedReturn[key]);
+        }
+      });
+
+      test('should still work even if no body parameters are specified', async () => {
+        const editor = samplePrivilegedUser();
+        auth.loginAs(editor);
+
+        const program = dataForGetProgram(1)[0];
+
+        const desiredChanges = {};
+
+        Program.findOne.mockResolvedValueOnce(program);
+        const expectedReturn = Object.assign(program, desiredChanges);
+        Program.edit.mockResolvedValueOnce(desiredChanges);
+
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
+
+        expect(response.statusCode).toBe(200);
+        // check all properties
+        for (const key of Object.keys(response.body)) {
+          expect(response.body).toHaveProperty(key, expectedReturn[key]);
+        }
+      });
+
+      test("should still work if the user's role is Director", async () => {
+        const editor = samplePrivilegedUser();
+        editor.role = 'director';
+        auth.loginAs(editor);
+
+        const program = dataForGetProgram(1)[0];
+
+        const desiredChanges = {
+          description: 'This',
+          title: 'CS',
+        };
+
+        Program.findOne.mockResolvedValueOnce(program);
+        const expectedReturn = Object.assign(program, desiredChanges);
+        Program.edit.mockResolvedValueOnce(desiredChanges);
+
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
+
+        expect(response.statusCode).toBe(200);
+        // check all properties
+        for (const key of Object.keys(response.body)) {
+          expect(response.body).toHaveProperty(key, expectedReturn[key]);
+        }
+      });
     });
   });
 });

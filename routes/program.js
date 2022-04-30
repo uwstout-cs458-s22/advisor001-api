@@ -36,6 +36,29 @@ module.exports = () => {
     }
   });
 
+  router.put('/:id?', authorizeSession, setClearanceLevel('director'), async (req, res, next) => {
+    try {
+      const id = req.params.id;
+      if (!id || id === '') {
+        throw HttpError(400, 'Required Parameters Missing');
+      }
+
+      const program = await Program.findOne({ id });
+
+      if (isEmpty(program)) {
+        throw new HttpError.NotFound();
+      }
+
+      const editResult = await Program.edit(id, {
+        title: req.body.title || program.title,
+        description: req.body.description || program.description,
+      });
+      log.info(`${req.method} ${req.originalUrl} success: returning edited course ${editResult}`);
+      return res.send(editResult);
+    } catch (error) {
+      next(error);
+    }
+  });
   // Create program
   router.post('/', authorizeSession, setClearanceLevel('director'), async (req, res, next) => {
     try {

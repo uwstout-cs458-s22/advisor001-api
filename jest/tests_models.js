@@ -94,6 +94,7 @@ module.exports = {
     const mockList = {
       findOne: jest.fn(),
       findAll: jest.fn(),
+      edit: jest.fn(),
       addProgram: jest.fn(),
     };
     // do the mock
