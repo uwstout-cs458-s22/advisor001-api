@@ -149,69 +149,6 @@ describe('Program Model', () => {
     });
   });
 
-  describe('edit programs', () => {
-    beforeEach(() => {
-      db.query.mockReset();
-      db.query.mockResolvedValue(null);
-    });
-
-    test('Program.edit', async () => {
-      const data = dataForGetProgram(1);
-      const row = data[0];
-      row.title = 'Computer Science';
-      row.description = 'This';
-      const newValues = { title: row.title, description: row.description };
-
-      db.query.mockResolvedValue({ rows: data });
-      const course = await Program.edit(row.id, newValues);
-
-      expect(db.query.mock.calls).toHaveLength(1);
-      expect(db.query.mock.calls[0]).toHaveLength(2);
-      expect(db.query.mock.calls[0][0]).toBe(
-        'UPDATE "program" SET "title"=$2, "description"=$3 WHERE "id"=$1 RETURNING *;'
-      );
-      expect(db.query.mock.calls[0][1]).toHaveLength(3);
-      expect(db.query.mock.calls[0][1][0]).toBe(row.id);
-      expect(db.query.mock.calls[0][1][1]).toBe(row.title);
-      expect(db.query.mock.calls[0][1][2]).toBe(row.description);
-      for (const key in Object.keys(row)) {
-        expect(course).toHaveProperty(key, row[key]);
-      }
-    });
-
-    test('Program.edit with database error', async () => {
-      const data = dataForGetProgram(1);
-      const row = data[0];
-      row.title = 'Computer Science';
-      row.description = 'This';
-      const newValues = { title: row.title, description: row.description };
-
-      // error thrown during call to db query
-      db.query.mockRejectedValueOnce(new Error('a testing database error'));
-      await expect(Program.edit(row.id, newValues)).rejects.toThrowError(
-        'a testing database error'
-      );
-
-      expect(db.query.mock.calls).toHaveLength(1);
-      expect(db.query.mock.calls[0]).toHaveLength(2);
-      expect(db.query.mock.calls[0][0]).toBe(
-        'UPDATE "program" SET "title"=$2, "description"=$3 WHERE "id"=$1 RETURNING *;'
-      );
-      expect(db.query.mock.calls[0][1]).toHaveLength(3);
-      expect(db.query.mock.calls[0][1][0]).toBe(row.id);
-      expect(db.query.mock.calls[0][1][1]).toBe(row.title);
-      expect(db.query.mock.calls[0][1][2]).toBe(row.description);
-    });
-
-    test('Program.edit with bad input', async () => {
-      await expect(Program.edit('id', 'bad input')).rejects.toThrowError('Id is required.');
-      expect(db.query.mock.calls).toHaveLength(0);
-    });
-
-    test('Program.edit with no input', async () => {
-      await expect(Program.edit()).rejects.toThrowError('Id is required.');
-      expect(db.query.mock.calls).toHaveLength(0);
-
   describe('Adding Program', () => {
     // helper that runs the add
     function doAdd(newProgram) {
@@ -252,7 +189,6 @@ describe('Program Model', () => {
       await expect(Program.addProgram(program)).rejects.toThrowError(
         'Unexpected DB Condition, insert sucessful with no returned record'
       );
-
     });
   });
 

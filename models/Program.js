@@ -8,7 +8,6 @@ const validParams = {
   description: isString,
 };
 
-
 // if found return { ... }
 // if not found return {}
 // if db error, db.query will throw a rejected promise
@@ -89,26 +88,9 @@ async function count() {
   }
 }
 
-async function edit(id, newValues) {
-  // TODO the routes should probably be doing the validation, not this
-  if (id && newValues && isObject(newValues)) {
-    const { text, params } = updateValues({ id }, newValues);
-    const res = await db.query(`UPDATE "program" ${text} RETURNING *;`, params);
-    // did it work?
-    if (res.rows.length > 0) {
-      return res.rows[0];
-    }
-    // nothing was updated
-    return {};
-  }
-  // TODO ambiguous error
-  else throw HttpError.BadRequest('Id is required.');
-}
-
 module.exports = {
   findOne,
   findAll,
-  edit,
   addProgram,
   count,
 };
