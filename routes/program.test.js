@@ -302,3 +302,158 @@ describe('GET /program', () => {
     });
   });
 });
+
+describe('POST /program', () => {
+  beforeEach(Program.resetAllMocks);
+  beforeEach(() => auth.loginAs(samplePrivilegedUser()));
+
+  describe('given program details', () => {
+    test('should call both Program.findOne and Program.create', async () => {
+      // Set-up
+      const row = dataForGetProgram(1)[0];
+      const requestParams = {
+        title: row.title,
+        description: row.description,
+      };
+      Program.findOne.mockResolvedValueOnce({});
+      Program.addProgram.mockResolvedValueOnce(row);
+
+      // Test
+      await request(app).post('/program').send(requestParams);
+
+      // Check
+      expect(Program.findOne.mock.calls).toHaveLength(1);
+      expect(Program.findOne.mock.calls[0]).toHaveLength(1);
+      expect(Program.addProgram.mock.calls).toHaveLength(1);
+      expect(Program.addProgram.mock.calls[0]).toHaveLength(1);
+      for (const key in Object.keys(requestParams)) {
+        // Check that the values from the post are the same as from the mocked findOne and addProgram
+        expect(Program.addProgram.mock.calls[0][0]).toHaveProperty(key, requestParams[key]);
+        expect(Program.findOne.mock.calls[0][0]).toHaveProperty(key, requestParams[key]);
+      }
+    });
+
+    test('should respond with a json object containg the program details', async () => {
+      // Set-up
+      const row = dataForGetProgram(1)[0];
+      const requestParams = {
+        title: row.title,
+        description: row.description,
+      };
+      Program.findOne.mockResolvedValueOnce({});
+      Program.addProgram.mockResolvedValueOnce(row);
+
+      // Test
+      const { body: program } = await request(app).post('/program').send(requestParams);
+
+      // Check
+      expect(program.title).toBe(row.title);
+      expect(program.description).toBe(row.description);
+    });
+
+    test('should specify json in the content type header', async () => {
+      // Set-up
+      const data = dataForGetProgram(1);
+      const row = data[0];
+      const requestParams = {
+        title: row.title,
+        description: row.description,
+      };
+      Program.findOne.mockResolvedValueOnce({});
+      Program.addProgram.mockResolvedValueOnce(row);
+
+      // Test
+      const response = await request(app).post('/program').send(requestParams);
+
+      // Check
+      expect(response.headers['content-type']).toEqual(expect.stringContaining('json'));
+    });
+
+    test('should respond with a 200 status code when program is succesfully created', async () => {
+      // Set-up
+      const row = dataForGetProgram(1)[0];
+      const requestParams = {
+        title: row.title,
+        description: row.description,
+      };
+      Program.findOne.mockResolvedValueOnce({});
+      Program.addProgram.mockResolvedValueOnce(row);
+
+      // Test
+      const response = await request(app).post('/program').send(requestParams);
+
+      // Check
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('should respond with a 500 status code when program already exists exist', async () => {
+      // Set-up
+      const row = dataForGetProgram(1)[0];
+      const requestParams = {
+        title: row.title,
+        description: row.description,
+      };
+      Program.findOne.mockResolvedValueOnce(row);
+      Program.addProgram.mockResolvedValueOnce(row);
+
+      // Test
+      const response = await request(app).post('/program').send(requestParams);
+
+      // Check
+      expect(response.statusCode).toBe(500);
+    });
+
+    test('should respond with a 500 status code when an Program.create error occurs', async () => {
+      // Set-up
+      const row = dataForGetProgram(1)[0];
+      const requestParams = {
+        title: row.title,
+        description: row.description,
+      };
+      Program.findOne.mockResolvedValueOnce({});
+      Program.addProgram.mockResolvedValueOnce(null);
+
+      // Test
+      const response = await request(app).post('/program').send(requestParams);
+
+      // Check
+      expect(response.statusCode).toBe(500);
+    });
+
+    test('should respond with a 500 status code when create database error occurs', async () => {
+      // Set-up
+      const row = dataForGetProgram(1)[0];
+      const requestParams = {
+        title: row.title,
+        description: row.description,
+      };
+      Program.addProgram.mockRejectedValueOnce(new Error('some database error'));
+
+      // Test
+      const response = await request(app).post('/program').send(requestParams);
+
+      // Check
+      expect(response.statusCode).toBe(500);
+    });
+  });
+
+  describe('given empty dictionary', () => {
+    test('should respond with a 400 status code', async () => {
+      // Test
+      const response = await request(app).post('/program').send({});
+
+      // Check
+      expect(response.statusCode).toBe(400);
+    });
+  });
+
+  describe('given empty string', () => {
+    test('should respond with a 400 status code', async () => {
+      // Test
+      const response = await request(app).post('/program').send('');
+
+      // Check
+      expect(response.statusCode).toBe(400);
+    });
+  });
+});

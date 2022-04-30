@@ -4,9 +4,15 @@ const { db } = require('../services/database');
 const { whereParams, insertValues, updateValues } = require('../services/sqltools');
 const { isEmpty, isObject, isString, isNumber } = require('../services/utils');
 
-// if found return { ... }
-// if not found return {}
-// if db error, db.query will throw a rejected promise
+/**
+ * @param  {} criteria
+ *
+ * @returns {Course}
+ *
+ * if found return { ... }
+ * if not found return {}
+ * if db error, db.query will throw a rejected promise
+ */
 async function findOne(criteria) {
   if (!criteria || isEmpty(criteria)) {
     throw HttpError.BadRequest('Id is required.');
@@ -19,9 +25,17 @@ async function findOne(criteria) {
   return {};
 }
 
-// if found return [ {}, {} ... ]
-// if not found return []
-// if db error, db.query will throw a rejected promise
+/**
+ * @param  {} criteria
+ * @param  {} limit=100
+ * @param  {} offset=0
+ *
+ * @returns {Array}
+ *
+ * if found return [ {}, {} ... ]
+ * if not found return []
+ * if db error, db.query will throw a rejected promise
+ */
 async function findAll(criteria, limit = 100, offset = 0) {
   const { text, params } = whereParams(criteria);
   const n = params.length;
@@ -33,7 +47,13 @@ async function findAll(criteria, limit = 100, offset = 0) {
   return res.rows;
 }
 
-// if successful delete, return course was deleted
+/**
+ * @param  {} id
+ *
+ * @returns {Boolean}
+ *
+ * if successful delete, return course was deleted
+ */
 async function deleteCourse(id) {
   // check that id is not nullable
   if (id) {
@@ -95,6 +115,15 @@ async function addCourse(properties) {
   throw HttpError(500, 'Unexpected DB Condition, insert sucessful with no returned record');
 }
 
+/**
+ * Edits the course in the database
+ * 
+ * @param  {} id
+ * @param  {} newValues
+ *
+ * @returns {Course}
+ *
+ */
 async function edit(id, newValues) {
   if (id && newValues && isObject(newValues)) {
     // to be set
@@ -118,6 +147,12 @@ async function edit(id, newValues) {
   }
 }
 
+
+/**
+ * Returns amount of courses in database
+ * 
+ * @returns {Integer}
+ */
 async function count() {
   const res = await db.query(`SELECT COUNT(*) FROM "course"`);
 

@@ -95,6 +95,7 @@ module.exports = {
       findOne: jest.fn(),
       findAll: jest.fn(),
       edit: jest.fn(),
+      addProgram: jest.fn(),
     };
     // do the mock
     jest.mock('../models/Program', () => {

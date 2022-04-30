@@ -211,6 +211,48 @@ describe('Program Model', () => {
     test('Program.edit with no input', async () => {
       await expect(Program.edit()).rejects.toThrowError('Id is required.');
       expect(db.query.mock.calls).toHaveLength(0);
+
+  describe('Adding Program', () => {
+    // helper that runs the add
+    function doAdd(newProgram) {
+      db.query.mockResolvedValueOnce({ rows: [newProgram] });
+      return Program.addProgram(newProgram);
+    }
+
+    test('Adding single program success', async () => {
+      const program = dataForGetProgram(1)[0];
+      const result = await doAdd(program);
+
+      // should return property
+      for (const key of Object.keys(program)) {
+        expect(result).toHaveProperty(key, program[key]);
+      }
+    });
+
+    test('Inputting invalid value', async () => {
+      const program = dataForGetProgram(1)[0];
+      program.description = { test: "object that's not string" };
+
+      await expect(doAdd(program)).rejects.toThrowError('Incompatible Program Parameter Types');
+    });
+
+    test('Inputting null parameters', async () => {
+      await expect(doAdd(null)).rejects.toThrowError('Missing Program Parameters');
+      expect(db.query).not.toBeCalled();
+    });
+
+    test('Inputting empty object', async () => {
+      await expect(doAdd({})).rejects.toThrowError('Missing Program Parameters');
+      expect(db.query).not.toBeCalled();
+    });
+
+    test('Adding single program success, but no returned result', async () => {
+      const program = dataForGetProgram(1)[0];
+      db.query.mockResolvedValueOnce({ rows: [] });
+      await expect(Program.addProgram(program)).rejects.toThrowError(
+        'Unexpected DB Condition, insert sucessful with no returned record'
+      );
+
     });
   });
 
