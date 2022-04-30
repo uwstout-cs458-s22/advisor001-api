@@ -1,3 +1,5 @@
+const { isObject, isArray } = require('./utils');
+
 function whereParams(values) {
   if (values && Object.keys(values).length > 0) {
     const text =
@@ -60,6 +62,36 @@ function setList(values, offset = 1) {
     .join(', ');
 }
 
+/*
+{
+  table1: [prop1, prop2, prop3],
+  table2: [prop4, prop5],
+}
+*/
+function selectList(tables) {
+  if (tables && isObject(tables)) {
+    const tableList = Object.keys(tables);
+    if (tableList.length > 0) {
+      return tableList
+        .map((tableName) => {
+          // expecting an array for the table properties
+          const propList = tables[tableName];
+          if (propList && isArray(propList)) {
+            return (
+              propList
+                // example: "term"."id" AS "term_id"
+                .map((property) => `"${tableName}".${property} AS "${tableName}_${property}"`)
+                .join(', ')
+            );
+          }
+          return `"${tableName}".${propList}`;
+        })
+        .join(', ');
+    }
+  }
+  return `"${tables}".*`;
+}
+
 function insertValues(values) {
   if (values && Object.keys(values).length > 0) {
     return {
@@ -117,4 +149,5 @@ module.exports = {
   updateValues,
   insertOrUpdate,
   specificWhereParams,
+  selectList,
 };
