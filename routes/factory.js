@@ -164,7 +164,8 @@ module.exports = {
     const foreignKeyList = Object.values(middlemen[tableName]);
     const numParams = Math.min(2, foreignKeyList.length);
     const numBody = foreignKeyList.length - numParams;
-    const bodyRequiredForeignKeys = [...foreignKeyList].splice(numBody);
+    const bodyRequiredForeignKeys = [...foreignKeyList].splice(numParams);
+
     // return middleware
     return async (req, res, next) => {
       try {

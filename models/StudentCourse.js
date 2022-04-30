@@ -3,18 +3,22 @@ const join = require('../services/joiner');
 
 const fromTable = 'student_course';
 
-const joinStr = join(fromTable, 'student') + join(fromTable, 'course') + join(fromTable, 'term');
+// prettier-ignore
+const joinStr = join(fromTable, 'student')
+  + join(fromTable, 'course')
+  + join(fromTable, 'term');
 
 const selectValues = {
   term: ['id', 'startyear', 'semester'],
   course: '*',
+  student_course: ['taken'],
 };
 
 module.exports = {
-  addOrUpdateCourse: factory.combinedInsertUpdate(fromTable),
-  deleteCourse: factory.removeWithCriteria(fromTable),
-  findOneCourse: factory.findOneJoined(selectValues, fromTable, joinStr),
-  findAllCourses: factory.findAllJoined(selectValues, fromTable, joinStr),
+  addOrUpdate: factory.combinedInsertUpdate(fromTable),
+  deleteStudentCourse: factory.removeWithCriteria(fromTable),
+  findOne: factory.findOneJoined(selectValues, fromTable, joinStr),
+  findAll: factory.findAllJoined(selectValues, fromTable, joinStr),
   // select student terms
   findStudentTerms: factory.findAllJoined('term', fromTable, joinStr),
 };
