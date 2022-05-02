@@ -50,7 +50,7 @@ module.exports = () => {
 
         let program = await Program.findOne({ id: id });
         if (isEmpty(program)) {
-          throw new HttpError[500]();
+          throw new HttpError.NotFound();
         }
 
         program = await Program.deleteProgram(id);

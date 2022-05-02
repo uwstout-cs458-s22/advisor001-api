@@ -361,7 +361,7 @@ describe('DELETE /program', () => {
       expect(response.statusCode).toBe(200);
     });
 
-    test('should respond with a 500 status code when program does NOT exists', async () => {
+    test('should respond with a 404 status code when program does NOT exists', async () => {
       // Set-up
       const deleter = samplePrivilegedUser();
       auth.loginAs(deleter);
@@ -376,7 +376,7 @@ describe('DELETE /program', () => {
 
       // Check delete
       expect(Program.deleteProgram).not.toBeCalled();
-      expect(response.statusCode).toBe(500);
+      expect(response.statusCode).toBe(404);
     });
 
     test('should respond with 500 when the deleter is not found', async () => {
