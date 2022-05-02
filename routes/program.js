@@ -4,7 +4,7 @@ const HttpError = require('http-errors');
 const { isEmpty } = require('./../services/utils');
 const Program = require('./../models/Program');
 const ProgramCourse = require('./../models/ProgramCourse');
-const { authorizeSession } = require('./../services/auth');
+const { authorizeSession, setClearanceLevel } = require('./../services/auth');
 
 module.exports = () => {
   const router = express.Router();
@@ -54,6 +54,29 @@ module.exports = () => {
       next(error);
     }
   });
+  router.put('/:id?', authorizeSession, setClearanceLevel('director'), async (req, res, next) => {
+    try {
+      const id = req.params.id;
+      if (!id || id === '') {
+        throw HttpError(400, 'Required Parameters Missing');
+      }
+
+      const program = await Program.findOne({ id });
+
+      if (isEmpty(program)) {
+        throw new HttpError.NotFound();
+      }
+
+      const editResult = await Program.edit(id, {
+        title: req.body.title || program.title,
+        description: req.body.description || program.description,
+      });
+      log.info(`${req.method} ${req.originalUrl} success: returning edited course ${editResult}`);
+      return res.send(editResult);
+    } catch (error) {
+      next(error);
+    }
+  });
 
   // Get all program course
   router.get('/:program(\\d+)/course/', authorizeSession, async (req, res, next) => {
@@ -65,6 +88,34 @@ module.exports = () => {
         )}`
       );
       return res.send(programCourseList);
+    } catch (error) {
+      next(error);
+    }
+  });
+  // Create program
+  router.post('/', authorizeSession, setClearanceLevel('director'), async (req, res, next) => {
+    try {
+      const { title, description } = req.body;
+      const properties = { title, description };
+
+      if (Object.values(properties).some((value) => !value)) {
+        throw HttpError(400, 'Required Parameters Missing');
+      }
+
+      // Check that the program doesn't already exist
+      let program = await Program.findOne(properties);
+
+      // Create program
+      if (isEmpty(program)) {
+        program = await Program.addProgram(properties);
+        res.status(200);
+      } else {
+        throw HttpError(500, 'Course Already Exists');
+      }
+
+      res.setHeader('Location', `/course/${program.id}`);
+
+      return res.send(program);
     } catch (error) {
       next(error);
     }

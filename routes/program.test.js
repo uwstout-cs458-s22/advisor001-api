@@ -1,7 +1,17 @@
 // Must be at the top. Provided by jest/tests_common
 global.jest.init();
 global.jest.init_routes();
-const { Program, ProgramCourse, app, request, dataForGetProgram, dataForGetCourse } = global.jest;
+const {
+  Program,
+  ProgramCourse,
+  app,
+  auth,
+  request,
+  dataForGetUser,
+  dataForGetProgram,
+  dataForGetCourse,
+  samplePrivilegedUser,
+} = global.jest;
 
 describe('GET /program', () => {
   beforeEach(Program.resetAllMocks);
@@ -143,6 +153,316 @@ describe('GET /program', () => {
       const response = await request(app).get(`/program`);
       expect(response.statusCode).toBe(500);
       expect(response.body.error.message).toBe('Some Database Failure');
+    });
+  });
+
+  describe('PUT /Program', () => {
+    // TODO double check acceptance criteria
+    beforeEach(Program.resetAllMocks);
+
+    // put helper
+    function callPutOnProgramRoute(ProgramId, body) {
+      return request(app).put(`/program/${ProgramId}`).send(body);
+    }
+
+    describe('given an empty URL bar', () => {
+      test('should result in 400', async () => {
+        const editor = samplePrivilegedUser();
+        auth.loginAs(editor);
+
+        Program.findOne.mockResolvedValueOnce({});
+        const response = await callPutOnProgramRoute('', {}); // NO Program ID
+
+        expect(Program.findOne).not.toBeCalled();
+        expect(response.statusCode).toBe(400);
+        expect(response.body.error.message).toBe('Required Parameters Missing');
+      });
+    });
+
+    describe('when URL bar is non-empty', () => {
+      test('should 500 when editor is not found', async () => {
+        const editor = samplePrivilegedUser();
+        auth.loginAs(editor, {}); // NO EDITOR IN DB
+
+        const program = dataForGetProgram(1)[0];
+
+        const desiredChanges = {
+          description: 'This',
+          title: 'CS',
+        };
+
+        Program.findOne.mockResolvedValueOnce(program);
+        Program.edit.mockResolvedValueOnce(Object.assign(program, desiredChanges));
+
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
+
+        expect(Program.findOne).not.toBeCalled();
+        expect(Program.edit).not.toBeCalled();
+        expect(response.statusCode).toBe(500);
+        expect(response.body.error.message).toBe('Your account is not found in the database!');
+      });
+
+      test('should 401 when not authorized to edit Programs', async () => {
+        const editor = dataForGetUser(1)[0];
+        editor.enable = 'true';
+        auth.loginAs(editor); // Unprivileged editor
+
+        const program = dataForGetProgram(1)[0];
+
+        const desiredChanges = {
+          description: 'This',
+          title: 'CS',
+        };
+
+        Program.findOne.mockResolvedValueOnce(program);
+        Program.edit.mockResolvedValueOnce(Object.assign(program, desiredChanges));
+
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
+
+        expect(response.statusCode).toBe(401);
+        expect(response.body.error.message).toBe('You are not allowed to do that!');
+      });
+
+      test('should 404 when the Program is not found', async () => {
+        const editor = samplePrivilegedUser();
+        auth.loginAs(editor);
+
+        const desiredChanges = {
+          description: 'This',
+          title: 'CS',
+        };
+        Program.findOne.mockResolvedValueOnce({}); // NO Program
+        Program.edit.mockResolvedValueOnce({});
+
+        const response = await callPutOnProgramRoute(1, desiredChanges);
+        expect(response.statusCode).toBe(404);
+        expect(Program.edit).not.toBeCalled();
+        expect(response.body.error.message).toBe('Not Found');
+      });
+
+      test('should respond 200 and successfully return edited version of Program', async () => {
+        const editor = samplePrivilegedUser();
+        auth.loginAs(editor);
+
+        const program = dataForGetProgram(1)[0];
+
+        const desiredChanges = {
+          description: 'This',
+          title: 'CS',
+        };
+        Program.findOne.mockResolvedValueOnce(program);
+        const expectedReturn = Object.assign(program, desiredChanges);
+        Program.edit.mockResolvedValueOnce(desiredChanges);
+
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
+
+        expect(response.statusCode).toBe(200);
+        // check all properties
+        for (const key of Object.keys(response.body)) {
+          expect(response.body).toHaveProperty(key, expectedReturn[key]);
+        }
+      });
+
+      test('should still work even if no body parameters are specified', async () => {
+        const editor = samplePrivilegedUser();
+        auth.loginAs(editor);
+
+        const program = dataForGetProgram(1)[0];
+
+        const desiredChanges = {};
+
+        Program.findOne.mockResolvedValueOnce(program);
+        const expectedReturn = Object.assign(program, desiredChanges);
+        Program.edit.mockResolvedValueOnce(desiredChanges);
+
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
+
+        expect(response.statusCode).toBe(200);
+        // check all properties
+        for (const key of Object.keys(response.body)) {
+          expect(response.body).toHaveProperty(key, expectedReturn[key]);
+        }
+      });
+
+      test("should still work if the user's role is Director", async () => {
+        const editor = samplePrivilegedUser();
+        editor.role = 'director';
+        auth.loginAs(editor);
+
+        const program = dataForGetProgram(1)[0];
+
+        const desiredChanges = {
+          description: 'This',
+          title: 'CS',
+        };
+
+        Program.findOne.mockResolvedValueOnce(program);
+        const expectedReturn = Object.assign(program, desiredChanges);
+        Program.edit.mockResolvedValueOnce(desiredChanges);
+
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
+
+        expect(response.statusCode).toBe(200);
+        // check all properties
+        for (const key of Object.keys(response.body)) {
+          expect(response.body).toHaveProperty(key, expectedReturn[key]);
+        }
+      });
+    });
+  });
+});
+
+describe('POST /program', () => {
+  beforeEach(Program.resetAllMocks);
+  beforeEach(() => auth.loginAs(samplePrivilegedUser()));
+
+  describe('given program details', () => {
+    test('should call both Program.findOne and Program.create', async () => {
+      // Set-up
+      const row = dataForGetProgram(1)[0];
+      const requestParams = {
+        title: row.title,
+        description: row.description,
+      };
+      Program.findOne.mockResolvedValueOnce({});
+      Program.addProgram.mockResolvedValueOnce(row);
+
+      // Test
+      await request(app).post('/program').send(requestParams);
+
+      // Check
+      expect(Program.findOne.mock.calls).toHaveLength(1);
+      expect(Program.findOne.mock.calls[0]).toHaveLength(1);
+      expect(Program.addProgram.mock.calls).toHaveLength(1);
+      expect(Program.addProgram.mock.calls[0]).toHaveLength(1);
+      for (const key in Object.keys(requestParams)) {
+        // Check that the values from the post are the same as from the mocked findOne and addProgram
+        expect(Program.addProgram.mock.calls[0][0]).toHaveProperty(key, requestParams[key]);
+        expect(Program.findOne.mock.calls[0][0]).toHaveProperty(key, requestParams[key]);
+      }
+    });
+
+    test('should respond with a json object containg the program details', async () => {
+      // Set-up
+      const row = dataForGetProgram(1)[0];
+      const requestParams = {
+        title: row.title,
+        description: row.description,
+      };
+      Program.findOne.mockResolvedValueOnce({});
+      Program.addProgram.mockResolvedValueOnce(row);
+
+      // Test
+      const { body: program } = await request(app).post('/program').send(requestParams);
+
+      // Check
+      expect(program.title).toBe(row.title);
+      expect(program.description).toBe(row.description);
+    });
+
+    test('should specify json in the content type header', async () => {
+      // Set-up
+      const data = dataForGetProgram(1);
+      const row = data[0];
+      const requestParams = {
+        title: row.title,
+        description: row.description,
+      };
+      Program.findOne.mockResolvedValueOnce({});
+      Program.addProgram.mockResolvedValueOnce(row);
+
+      // Test
+      const response = await request(app).post('/program').send(requestParams);
+
+      // Check
+      expect(response.headers['content-type']).toEqual(expect.stringContaining('json'));
+    });
+
+    test('should respond with a 200 status code when program is succesfully created', async () => {
+      // Set-up
+      const row = dataForGetProgram(1)[0];
+      const requestParams = {
+        title: row.title,
+        description: row.description,
+      };
+      Program.findOne.mockResolvedValueOnce({});
+      Program.addProgram.mockResolvedValueOnce(row);
+
+      // Test
+      const response = await request(app).post('/program').send(requestParams);
+
+      // Check
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('should respond with a 500 status code when program already exists exist', async () => {
+      // Set-up
+      const row = dataForGetProgram(1)[0];
+      const requestParams = {
+        title: row.title,
+        description: row.description,
+      };
+      Program.findOne.mockResolvedValueOnce(row);
+      Program.addProgram.mockResolvedValueOnce(row);
+
+      // Test
+      const response = await request(app).post('/program').send(requestParams);
+
+      // Check
+      expect(response.statusCode).toBe(500);
+    });
+
+    test('should respond with a 500 status code when an Program.create error occurs', async () => {
+      // Set-up
+      const row = dataForGetProgram(1)[0];
+      const requestParams = {
+        title: row.title,
+        description: row.description,
+      };
+      Program.findOne.mockResolvedValueOnce({});
+      Program.addProgram.mockResolvedValueOnce(null);
+
+      // Test
+      const response = await request(app).post('/program').send(requestParams);
+
+      // Check
+      expect(response.statusCode).toBe(500);
+    });
+
+    test('should respond with a 500 status code when create database error occurs', async () => {
+      // Set-up
+      const row = dataForGetProgram(1)[0];
+      const requestParams = {
+        title: row.title,
+        description: row.description,
+      };
+      Program.addProgram.mockRejectedValueOnce(new Error('some database error'));
+
+      // Test
+      const response = await request(app).post('/program').send(requestParams);
+
+      // Check
+      expect(response.statusCode).toBe(500);
+    });
+  });
+
+  describe('given empty dictionary', () => {
+    test('should respond with a 400 status code', async () => {
+      // Test
+      const response = await request(app).post('/program').send({});
+
+      // Check
+      expect(response.statusCode).toBe(400);
+    });
+  });
+
+  describe('given empty string', () => {
+    test('should respond with a 400 status code', async () => {
+      // Test
+      const response = await request(app).post('/program').send('');
+
+      // Check
+      expect(response.statusCode).toBe(400);
     });
   });
 });

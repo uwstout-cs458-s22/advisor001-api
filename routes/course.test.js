@@ -251,7 +251,7 @@ describe('PUT /course', () => {
       expect(response.body.error.message).toBe('Not Found');
     });
 
-    test('should respond 200 and successfully return edited version of user', async () => {
+    test('should respond 200 and successfully return edited version of course', async () => {
       const editor = samplePrivilegedUser();
       auth.loginAs(editor);
 
