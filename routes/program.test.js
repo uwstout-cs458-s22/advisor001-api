@@ -3,13 +3,15 @@ global.jest.init();
 global.jest.init_routes();
 const {
   Program,
+  ProgramCourse,
   User,
   app,
-  request,
-  dataForGetProgram,
-  dataForGetUser,
-  samplePrivilegedUser,
   auth,
+  request,
+  dataForGetUser,
+  dataForGetProgram,
+  dataForGetCourse,
+  samplePrivilegedUser,
 } = global.jest;
 
 describe('GET /program', () => {
@@ -154,6 +156,161 @@ describe('GET /program', () => {
       expect(response.body.error.message).toBe('Some Database Failure');
     });
   });
+
+  describe('PUT /Program', () => {
+    // TODO double check acceptance criteria
+    beforeEach(Program.resetAllMocks);
+
+    // put helper
+    function callPutOnProgramRoute(ProgramId, body) {
+      return request(app).put(`/program/${ProgramId}`).send(body);
+    }
+
+    describe('given an empty URL bar', () => {
+      test('should result in 400', async () => {
+        const editor = samplePrivilegedUser();
+        auth.loginAs(editor);
+
+        Program.findOne.mockResolvedValueOnce({});
+        const response = await callPutOnProgramRoute('', {}); // NO Program ID
+
+        expect(Program.findOne).not.toBeCalled();
+        expect(response.statusCode).toBe(400);
+        expect(response.body.error.message).toBe('Required Parameters Missing');
+      });
+    });
+
+    describe('when URL bar is non-empty', () => {
+      test('should 500 when editor is not found', async () => {
+        const editor = samplePrivilegedUser();
+        auth.loginAs(editor, {}); // NO EDITOR IN DB
+
+        const program = dataForGetProgram(1)[0];
+
+        const desiredChanges = {
+          description: 'This',
+          title: 'CS',
+        };
+
+        Program.findOne.mockResolvedValueOnce(program);
+        Program.edit.mockResolvedValueOnce(Object.assign(program, desiredChanges));
+
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
+
+        expect(Program.findOne).not.toBeCalled();
+        expect(Program.edit).not.toBeCalled();
+        expect(response.statusCode).toBe(500);
+        expect(response.body.error.message).toBe('Your account is not found in the database!');
+      });
+
+      test('should 401 when not authorized to edit Programs', async () => {
+        const editor = dataForGetUser(1)[0];
+        editor.enable = 'true';
+        auth.loginAs(editor); // Unprivileged editor
+
+        const program = dataForGetProgram(1)[0];
+
+        const desiredChanges = {
+          description: 'This',
+          title: 'CS',
+        };
+
+        Program.findOne.mockResolvedValueOnce(program);
+        Program.edit.mockResolvedValueOnce(Object.assign(program, desiredChanges));
+
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
+
+        expect(response.statusCode).toBe(401);
+        expect(response.body.error.message).toBe('You are not allowed to do that!');
+      });
+
+      test('should 404 when the Program is not found', async () => {
+        const editor = samplePrivilegedUser();
+        auth.loginAs(editor);
+
+        const desiredChanges = {
+          description: 'This',
+          title: 'CS',
+        };
+        Program.findOne.mockResolvedValueOnce({}); // NO Program
+        Program.edit.mockResolvedValueOnce({});
+
+        const response = await callPutOnProgramRoute(1, desiredChanges);
+        expect(response.statusCode).toBe(404);
+        expect(Program.edit).not.toBeCalled();
+        expect(response.body.error.message).toBe('Not Found');
+      });
+
+      test('should respond 200 and successfully return edited version of Program', async () => {
+        const editor = samplePrivilegedUser();
+        auth.loginAs(editor);
+
+        const program = dataForGetProgram(1)[0];
+
+        const desiredChanges = {
+          description: 'This',
+          title: 'CS',
+        };
+        Program.findOne.mockResolvedValueOnce(program);
+        const expectedReturn = Object.assign(program, desiredChanges);
+        Program.edit.mockResolvedValueOnce(desiredChanges);
+
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
+
+        expect(response.statusCode).toBe(200);
+        // check all properties
+        for (const key of Object.keys(response.body)) {
+          expect(response.body).toHaveProperty(key, expectedReturn[key]);
+        }
+      });
+
+      test('should still work even if no body parameters are specified', async () => {
+        const editor = samplePrivilegedUser();
+        auth.loginAs(editor);
+
+        const program = dataForGetProgram(1)[0];
+
+        const desiredChanges = {};
+
+        Program.findOne.mockResolvedValueOnce(program);
+        const expectedReturn = Object.assign(program, desiredChanges);
+        Program.edit.mockResolvedValueOnce(desiredChanges);
+
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
+
+        expect(response.statusCode).toBe(200);
+        // check all properties
+        for (const key of Object.keys(response.body)) {
+          expect(response.body).toHaveProperty(key, expectedReturn[key]);
+        }
+      });
+
+      test("should still work if the user's role is Director", async () => {
+        const editor = samplePrivilegedUser();
+        editor.role = 'director';
+        auth.loginAs(editor);
+
+        const program = dataForGetProgram(1)[0];
+
+        const desiredChanges = {
+          description: 'This',
+          title: 'CS',
+        };
+
+        Program.findOne.mockResolvedValueOnce(program);
+        const expectedReturn = Object.assign(program, desiredChanges);
+        Program.edit.mockResolvedValueOnce(desiredChanges);
+
+        const response = await callPutOnProgramRoute(program.id, desiredChanges);
+
+        expect(response.statusCode).toBe(200);
+        // check all properties
+        for (const key of Object.keys(response.body)) {
+          expect(response.body).toHaveProperty(key, expectedReturn[key]);
+        }
+      });
+    });
+  });
 });
 
 describe('POST /program', () => {
@@ -239,7 +396,7 @@ describe('POST /program', () => {
       expect(response.statusCode).toBe(200);
     });
 
-    test('should respond with a 500 status code when program already exists exist', async () => {
+    test('should respond with 409: Conflict when program exists', async () => {
       // Set-up
       const row = dataForGetProgram(1)[0];
       const requestParams = {
@@ -253,7 +410,12 @@ describe('POST /program', () => {
       const response = await request(app).post('/program').send(requestParams);
 
       // Check
-      expect(response.statusCode).toBe(500);
+      expect(response.statusCode).toBe(409);
+      expect(Program.findOne).toBeCalled();
+      expect(Program.addProgram).not.toBeCalled();
+      expect(Program.findOne.mock.calls[0][0]).toHaveProperty('title', row.title);
+      expect(Program.findOne.mock.calls[0][0]).toHaveProperty('description', row.description);
+      expect(Program.findOne.mock.calls[0][0]).not.toHaveProperty('id');
     });
 
     test('should respond with a 500 status code when an Program.create error occurs', async () => {
@@ -280,6 +442,7 @@ describe('POST /program', () => {
         title: row.title,
         description: row.description,
       };
+      Program.findOne.mockResolvedValueOnce({});
       Program.addProgram.mockRejectedValueOnce(new Error('some database error'));
 
       // Test
@@ -416,6 +579,98 @@ describe('DELETE /program', () => {
       // Check delete
       expect(User.deleteUser).not.toBeCalled();
       expect(response.statusCode).toBe(401);
+    });
+  });
+});
+
+describe('GET /program/:id/course/...', () => {
+  describe('given a course id', () => {
+    beforeEach(ProgramCourse.resetAllMocks);
+
+    function makeCall(programId, courseId, mockReturn) {
+      ProgramCourse.findOne.mockResolvedValueOnce(mockReturn);
+      return request(app).get(`/program/${programId}/course/${courseId}`);
+    }
+
+    test('should throw 500 when a model error occurs', async () => {
+      ProgramCourse.findOne.mockRejectedValueOnce(new Error('a testing error'));
+      await expect(request(app).get(`/program/123/course/456`)).resolves.toHaveProperty('body', {
+        error: {
+          message: 'a testing error',
+          status: 500,
+        },
+      });
+    });
+
+    test('should successfully make a call to ProgramCourse.findOne', async () => {
+      const course = dataForGetCourse(1)[0];
+      const program = dataForGetProgram(1)[0];
+      const result = await makeCall(program.id, course.id, course);
+      for (const key of Object.keys(course)) {
+        expect(result.body).toHaveProperty(key, course[key]);
+      }
+      expect(result.statusCode).toBe(200);
+      expect(ProgramCourse.findOne).toHaveBeenCalledTimes(1);
+      expect(ProgramCourse.findOne.mock.calls[0]).toHaveLength(1);
+      expect(ProgramCourse.findOne.mock.calls[0][0]).toHaveProperty('program', program.id);
+      expect(ProgramCourse.findOne.mock.calls[0][0]).toHaveProperty('requires', course.id);
+    });
+
+    test('should simply return empty if nothing found', async () => {
+      const result = await makeCall(123, 456, {});
+      expect(result.statusCode).toBe(404);
+      expect(result.body.error.message).toBe('Not Found');
+      expect(ProgramCourse.findOne).toHaveBeenCalledTimes(1);
+      expect(ProgramCourse.findOne.mock.calls[0]).toHaveLength(1);
+      expect(ProgramCourse.findOne.mock.calls[0][0]).toHaveProperty('program', '123');
+      expect(ProgramCourse.findOne.mock.calls[0][0]).toHaveProperty('requires', '456');
+    });
+  });
+
+  describe('given NO course id', () => {
+    beforeEach(ProgramCourse.resetAllMocks);
+
+    function makeCall(programId, mockReturn) {
+      ProgramCourse.findAll.mockResolvedValueOnce(mockReturn);
+      return request(app).get(`/program/${programId}/course`);
+    }
+
+    test('should throw 500 when a model error occurs', async () => {
+      ProgramCourse.findAll.mockRejectedValueOnce(new Error('a testing error'));
+      await expect(request(app).get(`/program/123/course`)).resolves.toHaveProperty('body', {
+        error: {
+          message: 'a testing error',
+          status: 500,
+        },
+      });
+    });
+
+    test('should successfully make a call to ProgramCourse.findAll', async () => {
+      const program = dataForGetProgram(1)[0];
+      const courses = dataForGetCourse(3);
+      const result = await makeCall(program.id, courses);
+      expect(result.body).toHaveLength(3);
+      // make sure all courses returned
+      result.body.forEach((course, index) => {
+        const keys = Object.keys(course);
+        expect(keys.length).toBeGreaterThan(0);
+        for (const key of keys) {
+          expect(courses[index]).toHaveProperty(key, course[key]);
+        }
+      });
+      expect(result.statusCode).toBe(200);
+      expect(ProgramCourse.findAll).toHaveBeenCalledTimes(1);
+      expect(ProgramCourse.findAll.mock.calls[0]).toHaveLength(1);
+      expect(ProgramCourse.findAll.mock.calls[0][0]).toHaveProperty('program', program.id);
+    });
+
+    test('should simply return empty if nothing found', async () => {
+      const result = await makeCall(123, []);
+      expect(result.statusCode).toBe(200);
+      expect(result.body).toHaveLength(0);
+      expect(ProgramCourse.findAll).toHaveBeenCalledTimes(1);
+      expect(ProgramCourse.findAll.mock.calls[0]).toHaveLength(1);
+      expect(ProgramCourse.findAll.mock.calls[0][0]).toHaveProperty('program', '123');
     });
   });
 });

@@ -94,6 +94,7 @@ module.exports = {
     const mockList = {
       findOne: jest.fn(),
       findAll: jest.fn(),
+      edit: jest.fn(),
       addProgram: jest.fn(),
       deleteProgram: jest.fn(),
     };
@@ -112,5 +113,28 @@ module.exports = {
       }
     };
     return Program;
+  },
+  // ProgramCourse mocker
+  ProgramCourse: () => {
+    const mockList = {
+      findOne: jest.fn(),
+      findAll: jest.fn(),
+      addProgramCourse: jest.fn(),
+    };
+    // do the mock
+    jest.mock('../models/ProgramCourse', () => {
+      return {
+        ...mockList,
+      };
+    });
+    // add mock resetter
+    const ProgramCourse = require('../models/ProgramCourse');
+    ProgramCourse.resetAllMocks = function () {
+      for (const mockName of Object.keys(mockList)) {
+        ProgramCourse[mockName].mockReset();
+        ProgramCourse[mockName].mockResolvedValue(null);
+      }
+    };
+    return ProgramCourse;
   },
 };

@@ -250,7 +250,7 @@ describe('PUT /users', () => {
       auth.loginAs(editor, {}); // NO EDITOR (2nd param is database-resolved user)
 
       User.findOne.mockResolvedValueOnce(user);
-      User.edit.mockResolvedValueOnce(Object.assign(user, desiredChanges));
+      User.edit.mockResolvedValueOnce(Object.assign({}, user, desiredChanges));
 
       const response = await callPutOnUserRoute(user.userId, desiredChanges);
 
@@ -311,7 +311,7 @@ describe('PUT /users', () => {
 
       User.findOne.mockResolvedValueOnce(user);
 
-      const expectedReturn = Object.assign(user, desiredChanges);
+      const expectedReturn = Object.assign({}, user, desiredChanges);
       User.edit.mockResolvedValueOnce(expectedReturn);
 
       const response = await callPutOnUserRoute(user.userId, desiredChanges);
@@ -408,7 +408,7 @@ describe('POST /users', () => {
       expect(response.statusCode).toBe(201);
     });
 
-    test('should respond with a 200 status code when user already exists exist', async () => {
+    test('should respond with a 200 status code when user already exists', async () => {
       const data = dataForGetUser(1);
       const row = data[0];
       const requestParms = {

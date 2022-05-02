@@ -81,9 +81,17 @@ module.exports = () => {
         throw new HttpError.NotFound();
       }
 
+      // Set enable to current user value
+      let newEnable = user.enable;
+
+      // Update enable if an updated parameter was passed
+      if (req.body.enable != null && req.body.enable !== user.enable) {
+        newEnable = req.body.enable;
+      }
+
       // perform the edit
       const editResult = await User.edit(userId, {
-        enable: req.body.enable || user.enable,
+        enable: newEnable,
         role: req.body.role || user.role,
       });
 

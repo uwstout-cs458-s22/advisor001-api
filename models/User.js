@@ -98,7 +98,7 @@ async function deleteUser(userId) {
       userId: userId,
     });
 
-    const res = await db.query(`DELETE FROM "user" ${text};`, params);
+    const res = await db.query(`DELETE FROM "user" ${text} RETURNING *;`, params);
     if (res.rows.length > 0) {
       return true;
     }

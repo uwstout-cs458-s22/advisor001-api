@@ -10,7 +10,6 @@ const validParams = {
   semester: isNumber,
 };
 
-
 /**
  * @param  {} criteria
  *
@@ -72,7 +71,7 @@ async function deleteTerm(id) {
       id: id,
     });
 
-    const res = await db.query(`DELETE FROM "term" ${text};`, params);
+    const res = await db.query(`DELETE FROM "term" ${text} RETURNIG *;`, params);
     if (res.rows.length > 0) {
       return true;
     }
@@ -163,11 +162,11 @@ async function count() {
 }
 
 module.exports = {
-	findOne,
-	findAll,
-	deleteTerm,
-	addTerm,
-	count,
-	edit,
-	properties: Object.keys(validParams),
+  findOne,
+  findAll,
+  deleteTerm,
+  addTerm,
+  count,
+  edit,
+  properties: Object.keys(validParams),
 };

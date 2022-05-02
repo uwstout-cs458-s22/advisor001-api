@@ -49,7 +49,8 @@ Every request received by the API must also be accompanied with the Stytch sessi
 
 [/program GET COUNT](programs_count.md)
 
-[/program POST](program_post.md)
+[/program PUT](program_put.md)
+
 
 [/program DELETE](program_delete.md)
 
