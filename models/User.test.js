@@ -245,9 +245,10 @@ describe('User Model', () => {
 
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
-      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "user" WHERE "userId"=$1;');
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "user" WHERE "userId"=$1 RETURNING *;');
       expect(db.query.mock.calls[0][1]).toHaveLength(1);
       expect(db.query.mock.calls[0][1][0]).toBe(userId);
+      expect(deleteUser).not.toBe(undefined);
       expect(deleteUser).toBe(true);
     });
 
@@ -261,13 +262,18 @@ describe('User Model', () => {
 
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
-      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "user" WHERE "userId"=$1;');
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "user" WHERE "userId"=$1 RETURNING *;');
       expect(db.query.mock.calls[0][1]).toHaveLength(1);
       expect(db.query.mock.calls[0][1][0]).toBe(userId);
     });
 
     test('User.deleteUser with no input', async () => {
       await expect(User.deleteUser()).rejects.toThrowError('UserId is required.');
+    });
+
+    test('User.deleteUser with no DB return', async () => {
+      db.query.mockResolvedValueOnce({ rows: [] });
+      await expect(User.deleteUser(dataForGetUser(1)[0])).resolves.toBe(undefined);
     });
   });
   describe('editing a user', () => {
@@ -331,6 +337,15 @@ describe('User Model', () => {
         'UserId and new Status and Role are required.'
       );
       expect(db.query.mock.calls).toHaveLength(0);
+    });
+
+    test('User.edit with no DB return', async () => {
+      const userData = dataForGetUser(1)[0];
+      const { id } = userData;
+      delete userData.id;
+      db.query.mockResolvedValueOnce({ rows: [] });
+      await expect(User.edit(id, userData)).resolves.toBe(undefined);
+      expect(db.query).toHaveBeenCalledTimes(1);
     });
   });
   describe('checking user permissions with hasMinimumPermission', () => {

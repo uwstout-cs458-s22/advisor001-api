@@ -36,7 +36,7 @@ async function findAll(criteria, limit = 100, offset = 0) {
 }
 
 async function addProgramCourse(properties) {
-  if (!properties) {
+  if (!properties || isEmpty(properties)) {
     throw HttpError(400, 'Missing Parameters');
   }
 
@@ -47,9 +47,9 @@ async function addProgramCourse(properties) {
   // did it work?
   if (res.rows.length > 0) {
     log.debug(
-      `Successfully inserted ${properties.prefix} ${
-        properties.suffix
-      } into db with data: ${text}, ${JSON.stringify(params)}`
+      `Successfully inserted ${JSON.stringify(
+        properties
+      )} into db with data: ${text}, ${JSON.stringify(params)}`
     );
     return res.rows[0];
   }

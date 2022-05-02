@@ -250,7 +250,7 @@ describe('PUT /users', () => {
       auth.loginAs(editor, {}); // NO EDITOR (2nd param is database-resolved user)
 
       User.findOne.mockResolvedValueOnce(user);
-      User.edit.mockResolvedValueOnce(Object.assign(user, desiredChanges));
+      User.edit.mockResolvedValueOnce(Object.assign({}, user, desiredChanges));
 
       const response = await callPutOnUserRoute(user.userId, desiredChanges);
 
@@ -311,7 +311,7 @@ describe('PUT /users', () => {
 
       User.findOne.mockResolvedValueOnce(user);
 
-      const expectedReturn = Object.assign(user, desiredChanges);
+      const expectedReturn = Object.assign({}, user, desiredChanges);
       User.edit.mockResolvedValueOnce(expectedReturn);
 
       const response = await callPutOnUserRoute(user.userId, desiredChanges);

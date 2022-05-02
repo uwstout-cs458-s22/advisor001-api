@@ -118,6 +118,7 @@ module.exports = {
     const mockList = {
       findOne: jest.fn(),
       findAll: jest.fn(),
+      addProgramCourse: jest.fn(),
     };
     // do the mock
     jest.mock('../models/ProgramCourse', () => {

@@ -59,7 +59,7 @@ async function deleteCourse(id) {
   if (id) {
     const { text, params } = whereParams({ id });
 
-    const res = await db.query(`DELETE FROM "course" ${text};`, params);
+    const res = await db.query(`DELETE FROM "course" ${text} RETURNING *;`, params);
     if (res.rows.length > 0) {
       return true;
     }
@@ -117,7 +117,7 @@ async function addCourse(properties) {
 
 /**
  * Edits the course in the database
- * 
+ *
  * @param  {} id
  * @param  {} newValues
  *
@@ -147,10 +147,9 @@ async function edit(id, newValues) {
   }
 }
 
-
 /**
  * Returns amount of courses in database
- * 
+ *
  * @returns {Integer}
  */
 async function count() {
