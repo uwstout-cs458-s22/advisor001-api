@@ -41,7 +41,7 @@ Every request received by the API must also be accompanied with the Stytch sessi
 
 [/term PUT](term_put.md)
 
-[/term Delete](term_delete.md)
+[/term DELETE](term_delete.md)
 
 ### Programs
 
@@ -50,4 +50,6 @@ Every request received by the API must also be accompanied with the Stytch sessi
 [/program GET COUNT](programs_count.md)
 
 [/program POST](program_post.md)
+
+[/program DELETE](program_delete.md)
 
