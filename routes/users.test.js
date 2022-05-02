@@ -408,7 +408,7 @@ describe('POST /users', () => {
       expect(response.statusCode).toBe(201);
     });
 
-    test('should respond with a 200 status code when user already exists exist', async () => {
+    test('should respond with a 200 status code when user already exists', async () => {
       const data = dataForGetUser(1);
       const row = data[0];
       const requestParms = {

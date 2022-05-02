@@ -395,7 +395,7 @@ describe('POST /program', () => {
       expect(response.statusCode).toBe(200);
     });
 
-    test('should respond with a 500 status code when program already exists exist', async () => {
+    test('should respond with 409: Conflict when program exists', async () => {
       // Set-up
       const row = dataForGetProgram(1)[0];
       const requestParams = {
@@ -409,7 +409,12 @@ describe('POST /program', () => {
       const response = await request(app).post('/program').send(requestParams);
 
       // Check
-      expect(response.statusCode).toBe(500);
+      expect(response.statusCode).toBe(409);
+      expect(Program.findOne).toBeCalled();
+      expect(Program.addProgram).not.toBeCalled();
+      expect(Program.findOne.mock.calls[0][0]).toHaveProperty('title', row.title);
+      expect(Program.findOne.mock.calls[0][0]).toHaveProperty('description', row.description);
+      expect(Program.findOne.mock.calls[0][0]).not.toHaveProperty('id');
     });
 
     test('should respond with a 500 status code when an Program.create error occurs', async () => {
@@ -436,6 +441,7 @@ describe('POST /program', () => {
         title: row.title,
         description: row.description,
       };
+      Program.findOne.mockResolvedValueOnce({});
       Program.addProgram.mockRejectedValueOnce(new Error('some database error'));
 
       // Test
