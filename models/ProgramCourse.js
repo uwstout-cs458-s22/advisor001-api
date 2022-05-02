@@ -1,6 +1,7 @@
 const { isEmpty } = require('../services/utils');
-const { whereParams } = require('../services/sqltools');
+const { whereParams, insertValues } = require('../services/sqltools');
 const { db } = require('../services/database');
+const log = require('loglevel');
 const HttpError = require('http-errors');
 const join = require('../services/joiner');
 
@@ -58,4 +59,5 @@ async function addProgramCourse(properties) {
 module.exports = {
   findOne,
   findAll,
+  addProgramCourse,
 };
