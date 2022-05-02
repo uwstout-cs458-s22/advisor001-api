@@ -209,4 +209,40 @@ describe('Program Model', () => {
       expect(db.query.mock.calls[0][0]).toBe(`SELECT COUNT(*) FROM "program"`);
     });
   });
+
+  describe('Delete Programs', () => {
+    test('Program.deleteProgram with expected data', async () => {
+      const data = dataForGetProgram(1);
+      const id = data[0].id;
+
+      db.query.mockResolvedValueOnce({ rows: data });
+      const deleteProgram = await Program.deleteProgram(id);
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "program" WHERE "id"=$1;');
+      expect(db.query.mock.calls[0][1]).toHaveLength(1);
+      expect(db.query.mock.calls[0][1][0]).toBe(id);
+      expect(deleteProgram).toBe(true);
+    });
+
+    test('Program.deleteProgram with database error', async () => {
+      const data = dataForGetProgram(1);
+      const id = data[0].id;
+
+      // error thrown during call to db query
+      db.query.mockRejectedValueOnce(new Error('a testing database error'));
+      await expect(Program.deleteProgram(id)).rejects.toThrowError('a testing database error');
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "program" WHERE "id"=$1;');
+      expect(db.query.mock.calls[0][1]).toHaveLength(1);
+      expect(db.query.mock.calls[0][1][0]).toBe(id);
+    });
+
+    test('Program.deleteProgram with no input', async () => {
+      await expect(Program.deleteProgram()).rejects.toThrowError('ProgramId is required.');
+    });
+  });
 });

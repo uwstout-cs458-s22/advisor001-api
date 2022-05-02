@@ -37,7 +37,34 @@ module.exports = () => {
     }
   });
 
-  // Get one program course
+  // delete a single program
+  router.delete(
+    '/:id?',
+    authorizeSession,
+    setClearanceLevel('director'),
+    async (req, res, next) => {
+      try {
+        const id = req.params.id;
+        if (!id || id === '') {
+          throw HttpError(400, 'Required Parameters Missing');
+        }
+
+        let program = await Program.findOne({ id: id });
+        if (isEmpty(program)) {
+          throw new HttpError.NotFound();
+        }
+
+        program = await Program.deleteProgram(id);
+
+        res.status(200);
+        res.send();
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+    // Get one program course
   router.get('/:program(\\d+)/course/:requires(\\d+)', authorizeSession, async (req, res, next) => {
     try {
       const programCourse = await ProgramCourse.findOne(req.params);
@@ -92,6 +119,7 @@ module.exports = () => {
       next(error);
     }
   });
+
   // Create program
   router.post('/', authorizeSession, setClearanceLevel('director'), async (req, res, next) => {
     try {

@@ -72,6 +72,29 @@ async function addProgram(properties) {
 }
 
 /**
+ * @param  {} id
+ *
+ * @returns {Boolean}
+ *
+ * if found delete Program
+ * if not found return a 404
+ *
+ */
+async function deleteProgram(id) {
+  // id is required
+  if (id) {
+    const { text, params } = whereParams({ id });
+
+    const res = await db.query(`DELETE FROM "program" ${text};`, params);
+    if (res.rows.length > 0) {
+      return true;
+    }
+  } else {
+    throw HttpError(400, 'ProgramId is required.');
+  }
+}
+
+/**
  * Counts programs in the database
  *
  * @returns {object} number of rows in query response
@@ -92,5 +115,6 @@ module.exports = {
   findOne,
   findAll,
   addProgram,
+  deleteProgram,
   count,
 };
