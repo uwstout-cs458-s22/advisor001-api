@@ -146,8 +146,8 @@ describe('Term Model', () => {
 
   describe('Adding term', () => {
     // helper that to do the add
-    function doAdd(newTerm) {
-      db.query.mockResolvedValueOnce({ rows: [newTerm] });
+    function doAdd(newTerm, dbRows) {
+      db.query.mockResolvedValueOnce({ rows: dbRows || [newTerm] });
       return Term.addTerm(newTerm);
     }
 
@@ -157,6 +157,14 @@ describe('Term Model', () => {
       for (const key of Object.keys(data)) {
         expect(term).toHaveProperty(key, data[key]);
       }
+    });
+
+    test('Unexpected DB condition', async () => {
+      const data = dataForGetTerm(1)[0];
+      const term = doAdd(data, []); // No DB return
+      await expect(term).rejects.toThrowError(
+        'Unexpected DB Condition, insert sucessful with no returned record'
+      );
     });
 
     test('Inputting invalid value', async () => {
@@ -170,6 +178,13 @@ describe('Term Model', () => {
 
     test('Inputting null parameters', async () => {
       await expect(doAdd(null)).rejects.toThrowError(
+        'Title, Start Year, and Semester are required.'
+      );
+      expect(db.query).not.toBeCalled();
+    });
+
+    test('Inputting mostly good but some undefined', async () => {
+      await expect(doAdd({ title: 'foo', startyear: 2021 })).rejects.toThrowError(
         'Title, Start Year, and Semester are required.'
       );
       expect(db.query).not.toBeCalled();
@@ -245,7 +260,7 @@ describe('editing a term', () => {
     expect(db.query.mock.calls[0]).toHaveLength(2);
     expect(db.query.mock.calls[0][0]).toBe(
       'UPDATE "term" SET "semester"=$2, "startyear"=$3 WHERE "id"=$1 RETURNING *;'
-    );;
+    );
     expect(db.query.mock.calls[0][1]).toHaveLength(3);
     expect(db.query.mock.calls[0][1][0]).toBe(row.id);
     expect(db.query.mock.calls[0][1][1]).toBe(row.semester);
@@ -282,13 +297,17 @@ describe('editing a term', () => {
 
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
-      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "term" WHERE "id"=$1;');
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "term" WHERE "id"=$1 RETURNIG *;');
       expect(db.query.mock.calls[0][1]).toHaveLength(1);
       expect(db.query.mock.calls[0][1][0]).toBe(termId);
       expect(deleteTerm).toBe(true);
     });
     test('User.deleteUser with no input', async () => {
       await expect(Term.deleteTerm()).rejects.toThrowError('TermId is required.');
+    });
+    test('User.deleteUser with no DB return', async () => {
+      db.query.mockResolvedValue({ rows: [] });
+      await expect(Term.deleteTerm(dataForGetTerm(1)[0].id)).resolves.toBe(undefined);
     });
   });
 });

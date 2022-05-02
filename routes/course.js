@@ -54,7 +54,7 @@ module.exports = () => {
         course = await Course.addCourse(properties);
         res.status(200);
       } else {
-        throw HttpError(500, 'Course Already Exists');
+        throw HttpError(409, 'Course Already Exists');
       }
 
       res.setHeader('Location', `/course/${course.id}`);

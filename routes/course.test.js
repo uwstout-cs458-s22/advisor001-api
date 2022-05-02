@@ -630,7 +630,7 @@ describe('POST /course', () => {
       expect(response.statusCode).toBe(200);
     });
 
-    test('should respond with a 500 status code when course already exists exist', async () => {
+    test('should respond with 409: Conflict when course already exists', async () => {
       // Set-up
       const row = dataForGetCourse(1)[0];
       const requestParams = {
@@ -647,7 +647,13 @@ describe('POST /course', () => {
       const response = await request(app).post('/course').send(requestParams);
 
       // Check
-      expect(response.statusCode).toBe(500);
+      expect(response.statusCode).toBe(409);
+      expect(Course.findOne).toBeCalled();
+      expect(Course.addCourse).not.toBeCalled();
+      expect(Course.findOne.mock.calls[0]).toHaveLength(1);
+      for (const key of Object.keys(requestParams)) {
+        expect(Course.findOne.mock.calls[0][0]).toHaveProperty(key, requestParams[key]);
+      }
     });
 
     test('should respond with a 500 status code when an Course.create error occurs', async () => {
@@ -680,6 +686,7 @@ describe('POST /course', () => {
         description: row.description,
         credits: row.credits,
       };
+      Course.findOne.mockResolvedValueOnce({});
       Course.addCourse.mockRejectedValueOnce(new Error('some database error'));
 
       // Test

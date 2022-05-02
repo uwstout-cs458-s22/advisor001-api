@@ -152,10 +152,25 @@ describe('Course Model', () => {
 
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
-      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "course" WHERE "id"=$1;');
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "course" WHERE "id"=$1 RETURNING *;');
       expect(db.query.mock.calls[0][1]).toHaveLength(1);
       expect(db.query.mock.calls[0][1][0]).toBe(id);
       expect(deleteCourse).toBe(true);
+    });
+
+    test('Course.deleteCourse with no return value', async () => {
+      const data = dataForGetCourse(1);
+      const id = data[0].id;
+
+      db.query.mockResolvedValueOnce({ rows: [] });
+      const deleteCourse = await Course.deleteCourse(id);
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "course" WHERE "id"=$1 RETURNING *;');
+      expect(db.query.mock.calls[0][1]).toHaveLength(1);
+      expect(db.query.mock.calls[0][1][0]).toBe(id);
+      expect(deleteCourse).not.toBe(true);
     });
 
     test('Course.deleteCourse with database error', async () => {
@@ -168,7 +183,7 @@ describe('Course Model', () => {
 
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
-      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "course" WHERE "id"=$1;');
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "course" WHERE "id"=$1 RETURNING *;');
       expect(db.query.mock.calls[0][1]).toHaveLength(1);
       expect(db.query.mock.calls[0][1][0]).toBe(id);
     });
@@ -265,6 +280,33 @@ describe('editing a course', () => {
     for (const key in Object.keys(row)) {
       expect(course).toHaveProperty(key, row[key]);
     }
+  });
+
+  test('Course.edit with some values not valid', async () => {
+    const data = dataForGetCourse(1);
+    const row = data[0];
+    row.credits = 1;
+    row.prefix = 'CS';
+    const newValues = {
+      credits: row.credits,
+      prefix: row.prefix,
+      foo: 'bar',
+      bar: 'foo',
+      not_valid: 'more_not_valid_stuff',
+    };
+
+    db.query.mockResolvedValue({ rows: [] });
+    await expect(Course.edit(row.id, newValues)).resolves.toBe(undefined);
+
+    expect(db.query.mock.calls).toHaveLength(1);
+    expect(db.query.mock.calls[0]).toHaveLength(2);
+    expect(db.query.mock.calls[0][0]).toBe(
+      'UPDATE "course" SET "credits"=$2, "prefix"=$3 WHERE "id"=$1 RETURNING *;'
+    );
+    expect(db.query.mock.calls[0][1]).toHaveLength(3);
+    expect(db.query.mock.calls[0][1][0]).toBe(row.id);
+    expect(db.query.mock.calls[0][1][1]).toBe(row.credits);
+    expect(db.query.mock.calls[0][1][2]).toBe(row.prefix);
   });
 
   test('Course.edit with database error', async () => {
