@@ -56,8 +56,6 @@ async function addProgram(properties) {
     }
   }
 
- 
-
   const { text, params } = insertValues(properties);
 
   const res = await db.query(`INSERT INTO "program" ${text} RETURNING *;`, params);
@@ -73,8 +71,7 @@ async function addProgram(properties) {
   throw HttpError(500, 'Unexpected DB Condition, insert sucessful with no returned record');
 }
 
-
- /**
+/**
  * @param  {} id
  *
  * @returns {Boolean}
@@ -83,21 +80,19 @@ async function addProgram(properties) {
  * if not found return a 404
  *
  */
-  async function deleteProgram(id) {
-    // id is required
-    if (id) {
-      const { text, params } = whereParams({
-        id: id,
-      });
-  
-      const res = await db.query(`DELETE FROM "program" ${text};`, params);
-      if (res.rows.length > 0) {
-        return true;
-      }
-    } else {
-      throw HttpError(400, 'ProgramId is required.');
+async function deleteProgram(id) {
+  // id is required
+  if (id) {
+    const { text, params } = whereParams({ id });
+
+    const res = await db.query(`DELETE FROM "program" ${text};`, params);
+    if (res.rows.length > 0) {
+      return true;
     }
+  } else {
+    throw HttpError(400, 'ProgramId is required.');
   }
+}
 
 /**
  * Counts programs in the database

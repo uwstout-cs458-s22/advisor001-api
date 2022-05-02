@@ -38,22 +38,22 @@ module.exports = () => {
 
   // delete a single program
   router.delete(
-    '/:programId?',
+    '/:id?',
     authorizeSession,
     setClearanceLevel('director'),
     async (req, res, next) => {
       try {
-        const programId = req.params.programId;
-        if (!programId || programId === '') {
+        const id = req.params.id;
+        if (!id || id === '') {
           throw HttpError(400, 'Required Parameters Missing');
         }
 
-        let program = await Program.findOne({ id: programId });
+        let program = await Program.findOne({ id: id });
         if (isEmpty(program)) {
-          throw new HttpError.NotFound();
+          throw new HttpError[500]();
         }
 
-        program = await Program.deleteProgram(programId);
+        program = await Program.deleteProgram(id);
 
         res.status(200);
         res.send();

@@ -1,7 +1,16 @@
 // Must be at the top. Provided by jest/tests_common
 global.jest.init();
 global.jest.init_routes();
-const { Program, app, request, dataForGetProgram, samplePrivilegedUser, auth } = global.jest;
+const {
+  Program,
+  User,
+  app,
+  request,
+  dataForGetProgram,
+  dataForGetUser,
+  samplePrivilegedUser,
+  auth,
+} = global.jest;
 
 describe('GET /program', () => {
   beforeEach(Program.resetAllMocks);
@@ -298,6 +307,115 @@ describe('POST /program', () => {
 
       // Check
       expect(response.statusCode).toBe(400);
+    });
+  });
+});
+
+describe('DELETE /program', () => {
+  beforeEach(Program.resetAllMocks);
+  beforeEach(User.resetAllMocks);
+
+  // Calls the delete program function
+  async function callDeleteOnProgramRoute(row, key = 'id') {
+    const id = row[key] === undefined ? '' : row[key];
+    Program.findOne.mockResolvedValueOnce(row);
+    const response = await request(app).delete(`/program/${id}`);
+    return response;
+  }
+
+  describe('given an empty URL bar', () => {
+    test('should respond with a 400 status code when passing empty string', async () => {
+      // Set-up
+      const deleter = samplePrivilegedUser();
+      auth.loginAs(deleter);
+
+      // Execute
+      const response = await callDeleteOnProgramRoute({});
+
+      // Check
+      expect(Program.deleteProgram).not.toBeCalled();
+      expect(response.statusCode).toBe(400);
+    });
+  });
+
+  describe('when URL bar is non-empty', () => {
+    test('should respond with a 200 status code when program exists and is deleted', async () => {
+      // Set-up
+      const program = dataForGetProgram(1, 100)[0];
+      const deleter = samplePrivilegedUser();
+      auth.loginAs(deleter);
+
+      // Execute
+      const response = await callDeleteOnProgramRoute(program);
+
+      // Check program
+      expect(Program.findOne.mock.calls).toHaveLength(1);
+      expect(Program.findOne.mock.calls[0]).toHaveLength(1);
+      expect(Program.findOne.mock.calls[0][0]).toHaveProperty('id', program.id);
+
+      // Check delete
+      expect(Program.deleteProgram).toBeCalled();
+      expect(Program.deleteProgram.mock.calls).toHaveLength(1);
+      expect(Program.deleteProgram.mock.calls[0]).toHaveLength(1);
+      expect(Program.deleteProgram.mock.calls[0][0]).toBe(program.id);
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('should respond with a 500 status code when program does NOT exists', async () => {
+      // Set-up
+      const deleter = samplePrivilegedUser();
+      auth.loginAs(deleter);
+      Program.findOne.mockResolvedValueOnce({});
+
+      // Execute
+      const response = await request(app).delete(`/program/100`);
+
+      // Check program
+      expect(Program.findOne.mock.calls[0]).toHaveLength(1);
+      expect(Program.findOne.mock.calls[0][0]).toHaveProperty('id', '100');
+
+      // Check delete
+      expect(Program.deleteProgram).not.toBeCalled();
+      expect(response.statusCode).toBe(500);
+    });
+
+    test('should respond with 500 when the deleter is not found', async () => {
+      // Set-up
+      const deleter = samplePrivilegedUser();
+      auth.loginAs(deleter, {}); // NO EDITOR (2nd param is database-resolved user)
+      const program = dataForGetProgram(1, 100)[0];
+
+      // Execute
+      const response = await callDeleteOnProgramRoute(program);
+
+      // Check deleter
+      expect(User.findOne.mock.calls).toHaveLength(1);
+      expect(User.findOne.mock.calls[0]).toHaveLength(1);
+      expect(User.findOne.mock.calls[0][0]).toHaveProperty('userId', deleter.userId);
+
+      // Check delete
+      expect(Program.deleteProgram).not.toBeCalled();
+      expect(response.statusCode).toBe(500);
+    });
+
+    test('should respond with 401 when the editor is not authorized', async () => {
+      // Set-up
+      const deleter = dataForGetUser(1, 100)[0];
+      deleter.enable = 'true';
+      auth.loginAs(deleter);
+      const program = dataForGetProgram(1, 100)[0];
+
+      // Execute
+      const response = await callDeleteOnProgramRoute(program);
+
+      // Check deleter
+      expect(User.findOne.mock.calls).toHaveLength(1);
+      expect(User.findOne.mock.calls[0]).toHaveLength(1);
+      expect(User.findOne.mock.calls[0][0]).toHaveProperty('userId', deleter.userId);
+
+      // Check delete
+      expect(User.deleteUser).not.toBeCalled();
+      expect(response.statusCode).toBe(401);
     });
   });
 });
