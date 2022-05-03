@@ -2,7 +2,7 @@ global.jest.init(false); // Init without models
 global.jest.init_db();
 
 const { db, dataForGetCourse } = global.jest;
-const { findOne, findAll, addProgramCourse } = require('./ProgramCourse');
+const { findOne, findAll, addProgramCourse, deleteProgramCourse } = require('./ProgramCourse');
 
 describe('Tests for programs course', () => {
   const dummy = dataForGetCourse(1)[0];
