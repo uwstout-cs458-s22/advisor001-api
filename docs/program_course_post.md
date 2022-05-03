@@ -1,22 +1,29 @@
-# Add Course
+# Add Course_Program
 
-Adds a course with specified properties.
+Adds a program with specified properties.
 
 - **URL**
 
-  /course/
+  /program/:id/course/:id
 
 - **Method**
 
-  `ADD`
+  `POST`
 
 - **URL Params**
 
-  properties
+  None
 
 - **Data Params**
 
-  None
+  _Required_: title and description
+
+  ```json
+  {
+    "title": "CS 101",
+    "description": "Basic Coding"
+  }
+  ```
 
 - **Auth required** : YES, Bearer token in Authorization header
 
@@ -28,12 +35,12 @@ Adds a course with specified properties.
   `200`
 
   **Content:**
-  Returns the course that was successfully created.
+  Returns the program that was successfully created.
 
 - **Error Response:**
 
   **Code:**
-  `400 Missing Course Parameters`
+  `400 Missing Program Parameters`
 
   If any parameters are missing.
 
@@ -43,7 +50,7 @@ Adds a course with specified properties.
   {
     "error": {
       "status": 400,
-      "message": "Missing Course Parameters"
+      "message": "Missing Program Parameters"
     }
   }
   ```
@@ -51,4 +58,4 @@ Adds a course with specified properties.
   **Code:**
   `500 Unexpected DB Condition, insert sucessful with no returned record`
 
-  If the course is added but cannot be returned
+  If the program_course is added but cannot be returned
