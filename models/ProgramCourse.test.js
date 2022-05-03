@@ -83,4 +83,46 @@ describe('Tests for programs course', () => {
       );
     });
   });
+
+  describe('ProgramCourse.deleteProgramCourse', () => {
+    const dummy = {
+      id: '123',
+      program: '456',
+      requires: '789',
+    };
+
+    beforeEach(() => {
+      db.query.mockResolvedValue({ rows: [dummy] });
+    });
+
+    test('If it exists and is deleted', async () => {
+      await expect(deleteProgramCourse(dummy.program, dummy.requires)).resolves.toBe(true);
+    });
+
+    test('If it exists and is deleted, but no DB return', async () => {
+      db.query.mockResolvedValueOnce({ rows: [] });
+      await expect(deleteProgramCourse(dummy.program, dummy.requires)).resolves.toBe(undefined);
+    });
+
+    test('If there is a DB error', async () => {
+      db.query.mockRejectedValueOnce(new Error('a testing error'));
+      await expect(deleteProgramCourse(dummy.program, dummy.requires)).rejects.toThrowError(
+        'a testing error'
+      );
+    });
+
+    test('If required parameters are missing', async () => {
+      const expected = expect.objectContaining({
+        statusCode: 400,
+        message: 'Missing Parameters',
+      });
+      await expect(deleteProgramCourse(dummy.program, '')).rejects.toEqual(expected);
+      await expect(deleteProgramCourse('', dummy.requires)).rejects.toEqual(expected);
+      await expect(deleteProgramCourse('', '')).rejects.toEqual(expected);
+      await expect(deleteProgramCourse(dummy.program, undefined)).rejects.toEqual(expected);
+      await expect(deleteProgramCourse(undefined, dummy.requires)).rejects.toEqual(expected);
+      await expect(deleteProgramCourse(dummy.program)).rejects.toEqual(expected);
+      await expect(deleteProgramCourse()).rejects.toEqual(expected);
+    });
+  });
 });
