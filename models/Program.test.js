@@ -245,4 +245,96 @@ describe('Program Model', () => {
       await expect(Program.deleteProgram()).rejects.toThrowError('ProgramId is required.');
     });
   });
+
+  describe('Edit Programs', () => {
+    beforeEach(() => {
+      db.query.mockReset();
+      db.query.mockResolvedValue(null);
+    });
+
+    test('Program.editProgram', async () => {
+      const data = dataForGetProgram(1);
+      const row = data[0];
+      row.title = 'AMCS';
+      row.description = 'Test program';
+      const newValues = { title: row.title, description: row.description };
+
+      db.query.mockResolvedValue({ rows: data });
+      const program = await Program.editProgram(row.id, newValues);
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe(
+        'UPDATE "program" SET "title"=$2, "description"=$3 WHERE "id"=$1 RETURNING *;'
+      );
+      expect(db.query.mock.calls[0][1]).toHaveLength(3);
+      expect(db.query.mock.calls[0][1][0]).toBe(row.id);
+      expect(db.query.mock.calls[0][1][1]).toBe(row.title);
+      expect(db.query.mock.calls[0][1][2]).toBe(row.description);
+      for (const key in Object.keys(row)) {
+        expect(program).toHaveProperty(key, row[key]);
+      }
+    });
+
+    test('Program.editProgram with some values not valid', async () => {
+      const data = dataForGetProgram(1);
+      const row = data[0];
+      row.title = 'AMCS';
+      row.description = 'Test program';
+      const newValues = {
+        title: 'AMCS',
+        description: 'Test program',
+        foo: 'bar',
+        bar: 'foo',
+        not_valid: 'more_not_valid_stuff',
+      };
+
+      db.query.mockResolvedValue({ rows: [] });
+      await expect(Program.editProgram(row.id, newValues)).resolves.toBe(undefined);
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe(
+        'UPDATE "program" SET "title"=$2, "description"=$3 WHERE "id"=$1 RETURNING *;'
+      );
+      expect(db.query.mock.calls[0][1]).toHaveLength(3);
+      expect(db.query.mock.calls[0][1][0]).toBe(row.id);
+      expect(db.query.mock.calls[0][1][1]).toBe(row.title);
+      expect(db.query.mock.calls[0][1][2]).toBe(row.description);
+    });
+
+    test('Program.editProgram with database error', async () => {
+      const data = dataForGetProgram(1);
+      const row = data[0];
+      row.title = 'AMCS';
+      row.description = 'Test program';
+      const newValues = { title: row.title, description: row.description };
+
+      // error thrown during call to db query
+      db.query.mockRejectedValueOnce(new Error('a testing database error'));
+      await expect(Program.editProgram(row.id, newValues)).rejects.toThrowError(
+        'a testing database error'
+      );
+
+      expect(db.query.mock.calls).toHaveLength(1);
+      expect(db.query.mock.calls[0]).toHaveLength(2);
+      expect(db.query.mock.calls[0][0]).toBe(
+        'UPDATE "program" SET "title"=$2, "description"=$3 WHERE "id"=$1 RETURNING *;'
+      );
+      expect(db.query.mock.calls[0][1]).toHaveLength(3);
+      expect(db.query.mock.calls[0][1][0]).toBe(row.id);
+      expect(db.query.mock.calls[0][1][1]).toBe(row.title);
+      expect(db.query.mock.calls[0][1][2]).toBe(row.description);
+    });
+
+    test('Program.editProgram with bad input', async () => {
+      await expect(Program.editProgram('id', 'bad input')).rejects.toThrowError('Id is required.');
+      expect(db.query.mock.calls).toHaveLength(0);
+    });
+
+    test('Program.edit with no input', async () => {
+      await expect(Program.editProgram()).rejects.toThrowError('Id is required.');
+      expect(db.query.mock.calls).toHaveLength(0);
+    });
+  });
 });

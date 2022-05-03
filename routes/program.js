@@ -64,7 +64,7 @@ module.exports = () => {
     }
   );
 
-    // Get one program course
+  // Get one program course
   router.get('/:program(\\d+)/course/:requires(\\d+)', authorizeSession, async (req, res, next) => {
     try {
       const programCourse = await ProgramCourse.findOne(req.params);
@@ -94,7 +94,7 @@ module.exports = () => {
         throw new HttpError.NotFound();
       }
 
-      const editResult = await Program.edit(id, {
+      const editResult = await Program.editProgram(id, {
         title: req.body.title || program.title,
         description: req.body.description || program.description,
       });
