@@ -14,6 +14,8 @@ const {
   samplePrivilegedUser,
 } = global.jest;
 
+const HttpError = require('http-errors');
+
 describe('GET /program', () => {
   beforeEach(Program.resetAllMocks);
 
@@ -671,6 +673,53 @@ describe('GET /program/:id/course/...', () => {
       expect(ProgramCourse.findAll).toHaveBeenCalledTimes(1);
       expect(ProgramCourse.findAll.mock.calls[0]).toHaveLength(1);
       expect(ProgramCourse.findAll.mock.calls[0][0]).toHaveProperty('program', '123');
+    });
+  });
+
+  describe('DELETE /:program/course/:requires', () => {
+    const dummy = {
+      id: '123',
+      program: '456',
+      requires: '789',
+    };
+
+    beforeEach(() => {
+      const deleter = samplePrivilegedUser();
+      auth.loginAs(deleter);
+      ProgramCourse.findOne.mockResolvedValue(dummy);
+      ProgramCourse.deleteProgramCourse.mockResolvedValue(true);
+    });
+
+    test('successfully deleted course', async () => {
+      await expect(
+        request(app).delete(`/program/${dummy.program}/course/${dummy.requires}`)
+      ).resolves.toHaveProperty('statusCode', 200);
+    });
+
+    test("if it doesn't exist", async () => {
+      ProgramCourse.findOne.mockResolvedValueOnce({});
+      await expect(
+        request(app).delete(`/program/${dummy.program}/course/${dummy.requires}`)
+      ).resolves.toHaveProperty('body', {
+        error: {
+          status: 404,
+          message: 'Not Found',
+        },
+      });
+    });
+
+    test('invalid parameters', async () => {
+      ProgramCourse.deleteProgramCourse.mockRejectedValueOnce(
+        HttpError.BadRequest('Missing Parameters')
+      );
+      await expect(
+        request(app).delete(`/program/${dummy.program}/course/`)
+      ).resolves.toHaveProperty('body', {
+        error: {
+          status: 400,
+          message: 'Missing Parameters',
+        },
+      });
     });
   });
 });

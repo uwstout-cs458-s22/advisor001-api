@@ -150,7 +150,7 @@ module.exports = () => {
   });
 
   router.delete(
-    '/:program(\\d+)/course/:requires(\\d+)',
+    '/:program(\\d+)/course/:requires(\\d+)?',
     authorizeSession,
     setClearanceLevel('director'),
     async (req, res, next) => {
