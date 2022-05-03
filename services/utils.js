@@ -17,7 +17,13 @@ function isString(a) {
 function isNumber(a) {
   return typeof a === 'number' || a instanceof Number;
 }
-
+/**
+ * Condences object to only include specific key value pairs
+ * @param  {Object} object Key Value Object
+ * @param  {Array} ...keys Keys to extract from object
+ * 
+ * @returns {Object} Final condenced object 
+ */
 function extractKeys(object, ...keys) {
   const result = {};
   for (const key of keys) {

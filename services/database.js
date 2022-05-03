@@ -4,7 +4,11 @@ module.exports.db = {};
 // for reading sql file
 const fs = require('fs');
 const path = require('path');
-
+/**
+ * Initializes connection to database and prewritten SQL schemas
+ * 
+ * @returns {void}
+ */
 function initialize() {
   const { Pool } = require('pg');
   const { databaseUrl } = require('./environment');
