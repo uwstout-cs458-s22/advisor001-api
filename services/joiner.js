@@ -50,6 +50,18 @@ const schemaGraph = {
   },
 };
 
+/**
+ *
+ * Function to properly stucture a SQL join statement
+ *
+ * @param  {String} curr Current
+ * @param  {String} next
+ * @param  {String} currProp
+ * @param  {String} nextProp
+ * @param  {String} suffix
+ *
+ * @returns {String}
+ */
 const join = (curr, next, currProp, nextProp, suffix) => {
   if (suffix !== undefined) {
     const newNext = `${next}_${suffix}`;

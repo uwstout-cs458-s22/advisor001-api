@@ -3,6 +3,15 @@ const log = require('loglevel');
 const { authenticateStytchSession } = require('./stytchwrapper');
 const { isString } = require('./utils');
 
+/**
+ * Preliminary function for each route that requires authentication of users
+ *
+ * @param  {Request} req
+ * @param  {Result} res
+ * @param  {next} next
+ *
+ * @returns Nothing, will move onto next funtion via next() function when sucessfully completed
+ */
 async function authorizeSession(req, res, next) {
   const authHeader = req.headers.authorization;
   if (isString(authHeader) && authHeader.startsWith('Bearer ') && authHeader.length > 7) {
@@ -28,6 +37,11 @@ async function authorizeSession(req, res, next) {
 const { hasMinimumPermission, findOne } = require('../models/User.js');
 const { isEmpty } = require('./../services/utils');
 
+/**
+ * @param  {String} level Roles: Admin, Director, user
+ *
+ * @returns Nothing, will move onto next funtion via next() function when sucessfully completed
+ */
 function setClearanceLevel(level) {
   return async (req, res, next) => {
     try {

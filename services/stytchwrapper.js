@@ -1,6 +1,13 @@
 const env = require('./environment');
 const stytch = require('stytch');
 
+/**
+ * Checks authentication of current Stythch Session
+ * 
+ * @param  {String} token Authentication Token from authentication header
+ *
+ * @returns {Object} Authentication result from current session
+ */
 async function authenticateStytchSession(token) {
   const client = new stytch.Client({
     project_id: env.stytchProjectId,
