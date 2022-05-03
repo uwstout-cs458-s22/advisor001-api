@@ -252,6 +252,7 @@ describe('Course Model', () => {
     });
   });
 });
+
 describe('editing a course', () => {
   beforeEach(() => {
     db.query.mockReset();

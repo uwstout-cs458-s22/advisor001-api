@@ -1,8 +1,8 @@
 const HttpError = require('http-errors');
 const log = require('loglevel');
 const { db } = require('../services/database');
-const { whereParams, insertValues } = require('../services/sqltools');
-const { isEmpty, isString } = require('../services/utils');
+const { whereParams, insertValues, updateValues } = require('../services/sqltools');
+const { isEmpty, isString, isObject } = require('../services/utils');
 const validParams = {
   title: isString,
   description: isString,
@@ -95,6 +95,38 @@ async function deleteProgram(id) {
 }
 
 /**
+ * Edits the program in the database
+ *
+ * @param  {} id
+ * @param  {} newValues
+ *
+ * @returns {Course}
+ *
+ */
+async function editProgram(id, newValues) {
+  if (id && newValues && isObject(newValues)) {
+    // to be set
+    const setValues = {};
+    // validate newValues
+    for (const param in newValues) {
+      if (validParams[param]) {
+        setValues[param] = newValues[param];
+      }
+    }
+    // now update values
+    const { text, params } = updateValues({ id }, setValues);
+
+    const res = await db.query(`UPDATE "program" ${text} RETURNING *;`, params);
+
+    if (res.rows.length > 0) {
+      return res.rows[0];
+    }
+  } else {
+    throw HttpError(400, 'Id is required.');
+  }
+}
+
+/**
  * Counts programs in the database
  *
  * @returns {object} number of rows in query response
@@ -116,5 +148,6 @@ module.exports = {
   findAll,
   addProgram,
   deleteProgram,
+  editProgram,
   count,
 };
