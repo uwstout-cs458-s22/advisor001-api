@@ -297,7 +297,7 @@ describe('editing a term', () => {
 
       expect(db.query.mock.calls).toHaveLength(1);
       expect(db.query.mock.calls[0]).toHaveLength(2);
-      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "term" WHERE "id"=$1 RETURNIG *;');
+      expect(db.query.mock.calls[0][0]).toBe('DELETE FROM "term" WHERE "id"=$1 RETURNING *;');
       expect(db.query.mock.calls[0][1]).toHaveLength(1);
       expect(db.query.mock.calls[0][1][0]).toBe(termId);
       expect(deleteTerm).toBe(true);

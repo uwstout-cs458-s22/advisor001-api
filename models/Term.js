@@ -71,7 +71,7 @@ async function deleteTerm(id) {
       id: id,
     });
 
-    const res = await db.query(`DELETE FROM "term" ${text} RETURNIG *;`, params);
+    const res = await db.query(`DELETE FROM "term" ${text} RETURNING *;`, params);
     if (res.rows.length > 0) {
       return true;
     }
