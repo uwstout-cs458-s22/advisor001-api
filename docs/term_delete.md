@@ -4,7 +4,7 @@ Deletes a specified term, selected by id.
 
 - **URL**
 
-  /users/
+  /term/
 
 - **Method**
 
@@ -86,6 +86,15 @@ Deletes a specified term, selected by id.
   If the user initiating the deletion is not found in the database.
 
   **Content:**
+
+  ```json
+  {
+    "error": {
+      "status": 500,
+      "message": "Your account is not found in the database!"
+    }
+  }
+  ```
 
   ## Sample Call
 

@@ -12,7 +12,7 @@ Edits a specified course, selected by id.
 
 - **URL Params**
 
-   _Optional:_ Course identifier (Fails if empty)
+  _Optional:_ Course identifier (Fails if empty)
 
   `id=[text]`
 
@@ -22,25 +22,25 @@ Edits a specified course, selected by id.
 
   `prefix=[string]`
   &
-  `sufffix=[string]``
+  `sufffix=[string]`
   &
-  `title=[string]``
+  `title=[string]`
   &
-  `description=[string]``
-   &
-  `credits=[int]``
+  `description=[string]`
+  &
+  `credits=[int]`
 
 - **Auth required** : YES, Bearer token in Authorization header
-
 
 ## Response
 
 - **Success Response:**
 
-  **Code:** 
-    `200`
-  
+  **Code:**
+  `200`
+
   **Content:**
+
   ```json
   {
     "id": 1234,
@@ -51,15 +51,15 @@ Edits a specified course, selected by id.
     "credits": 3
   }
   ```
-    
+
 - **Error Response:**
-  
+
   **Code:**
   `400 Requried Parameters Missing`
-  
+
   If id is empty or of invalid type.
-  
-   **Content:**
+
+  **Content:**
 
   ```json
   {
@@ -69,13 +69,13 @@ Edits a specified course, selected by id.
     }
   }
   ```
-  
-     **Code:**
+
+  **Code:**
   `401 Forbidden`
-  
+
   If the user initiating the deletion lacks high enough clearance to do so.
-  
-   **Content:**
+
+  **Content:**
 
   ```json
   {
@@ -85,13 +85,13 @@ Edits a specified course, selected by id.
     }
   }
   ```
-  
-    **Code:**
+
+  **Code:**
   `404 Not Found`
-  
+
   If no such course has a matching id to the given parameter.
-  
-   **Content:**
+
+  **Content:**
 
   ```json
   {
@@ -101,13 +101,13 @@ Edits a specified course, selected by id.
     }
   }
   ```
-  
-   **Code:**
+
+  **Code:**
   `500 Internal Server Error`
-  
+
   If the user initiating the deletion is not found in the database.
-  
-   **Content:**
+
+  **Content:**
 
   ```json
   {
@@ -117,17 +117,16 @@ Edits a specified course, selected by id.
     }
   }
   ```
-  
-  
+
   ## Sample Call
-  
+
   ```javascript
   $.ajax({
     url: '/course/1234',
     body: '{
-      "prefix": "MATH", 
-      "suffix": "275", 
-      "title": "Linear Algebra", 
+      "prefix": "MATH",
+      "suffix": "275",
+      "title": "Linear Algebra",
       "description": "Algebra of linear transformations and matrices.",
       "credits": 3
     }

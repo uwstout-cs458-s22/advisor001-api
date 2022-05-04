@@ -20,7 +20,9 @@ Edits a specified program, selected by id.
 
   `title=[string]`
   &
-  ` title=[string]`` &  `description=[string]``
+  `title=[string]`
+  &  
+  `description=[string]`
 
 - **Auth required** : YES, Bearer token in Authorization header
 

@@ -1,10 +1,10 @@
-# Add Program
+# Add Term
 
-Adds a program with specified properties.
+Adds a term with specified properties.
 
 - **URL**
 
-  /program/
+  /term/
 
 - **Method**
 
@@ -16,12 +16,13 @@ Adds a program with specified properties.
 
 - **Data Params**
 
-  _Required_: title and description
+  _Required_: title, startyear, and semester
 
   ```json
   {
-    "title": "Computer Science",
-    "description": "Description of the program"
+    "title": "Fall-2022",
+    "startyear": 2022,
+    "semeseter": 2
   }
   ```
 
@@ -35,19 +36,19 @@ Adds a program with specified properties.
   `200`
 
   **Content:**
-  Returns the program that was successfully created.
 
   ```json
   {
-    "title": "Computer Science",
-    "description": "Description of the program"
+    "title": "Fall-2022",
+    "startyear": 2022,
+    "semeseter": 2
   }
   ```
 
 - **Error Response:**
 
   **Code:**
-  `400 Missing Program Parameters`
+  `400 Title, Start Year, and Semester are required`
 
   If any parameters are missing.
 
@@ -57,7 +58,7 @@ Adds a program with specified properties.
   {
     "error": {
       "status": 400,
-      "message": "Missing Program Parameters"
+      "message": "Title, Start Year, and Semester are required."
     }
   }
   ```
@@ -65,16 +66,20 @@ Adds a program with specified properties.
   **Code:**
   `500 Unexpected DB Condition, insert sucessful with no returned record`
 
-  If the program is added but cannot be returned
+  If the course is added but cannot be returned
 
 ## Sample Call:
 
 ```javascript
 try {
-  fetch('/program', {
+  fetch('/term', {
     method: 'POST',
     mode: 'cors',
-    body: JSON.stringify({ title: data.eventData.title, description: data.eventData.description }),
+    body: JSON.stringify({
+      title: data.eventData.title,
+      startyear: data.eventData.startyear,
+      semester: data.eventData.semester,
+    }),
     headers: {
       'Content-Type': 'application/json',
     },

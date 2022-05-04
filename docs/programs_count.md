@@ -32,9 +32,13 @@ None
   {
   count: 1
   }
+
 - **Error Response:**
+
   **Code:** `404 NOT FOUND`
+
   **Content:**
+
   ```json
   {
     "error": {
