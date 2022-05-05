@@ -171,5 +171,34 @@ module.exports = () => {
     }
   );
 
+  router.put(
+    '/:program(\\d+)/course/:requires(\\d+)?',
+    authorizeSession,
+    setClearanceLevel('director'),
+    async (req, res, next) => {
+      try {
+        const { program, requires } = req.params;
+
+        // Check for missing parameters
+        if (!program || !requires) {
+          throw HttpError.BadRequest('Required Parameters Missing');
+        }
+
+        // Check that program course exists
+        const programCourse = await ProgramCourse.findOne({ program: program, requires: requires });
+        if (isEmpty(programCourse)) {
+          throw new HttpError.NotFound();
+        }
+
+        // Perform edit
+        const newProgramCourse = await ProgramCourse.editProgramCourse(programCourse.id, requires);
+
+        return res.send(newProgramCourse);
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
   return router;
 };
