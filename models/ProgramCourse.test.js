@@ -1,11 +1,18 @@
 global.jest.init(false); // Init without models
 global.jest.init_db();
 
-const { db, dataForGetCourse } = global.jest;
-const { findOne, findAll, addProgramCourse, deleteProgramCourse } = require('./ProgramCourse');
+const { db, dataForGetCourse, dataForGetProgram } = global.jest;
+const {
+  findOne,
+  findAll,
+  addProgramCourse,
+  deleteProgramCourse,
+  editProgramCourse,
+} = require('./ProgramCourse');
 
 describe('Tests for programs course', () => {
   const dummy = dataForGetCourse(1)[0];
+  const dummyProgram = dataForGetProgram(1)[0];
 
   beforeEach(() => {
     db.query.mockReset();
@@ -123,6 +130,37 @@ describe('Tests for programs course', () => {
       await expect(deleteProgramCourse(undefined, dummy.requires)).rejects.toEqual(expected);
       await expect(deleteProgramCourse(dummy.program)).rejects.toEqual(expected);
       await expect(deleteProgramCourse()).rejects.toEqual(expected);
+    });
+  });
+
+  describe('ProgramCourse.editProgramCourse', () => {
+    test('Successful edit', async () => {
+      db.query.mockResolvedValue({ rows: [dummyProgram] });
+
+      await expect(
+        editProgramCourse(Number.parseInt(dummyProgram.id), Number.parseInt(dummy.id))
+      ).resolves.toBe(dummyProgram);
+    });
+
+    test('Missing parameters', async () => {
+      const err = 'Missing Parameters';
+
+      await expect(editProgramCourse(0, 0)).rejects.toThrowError(err);
+      await expect(editProgramCourse(null, null)).rejects.toThrowError(err);
+      await expect(editProgramCourse(false, false)).rejects.toThrowError(err);
+      await expect(editProgramCourse(undefined, undefined)).rejects.toThrowError(err);
+      await expect(editProgramCourse('', '')).rejects.toThrowError(err);
+      await expect(editProgramCourse()).rejects.toThrowError(err);
+    });
+
+    test('Invalid parameters', async () => {
+      const err = 'Invalid Parameters';
+
+      await expect(editProgramCourse(true, true)).rejects.toThrowError(err);
+      await expect(editProgramCourse('string', 'string')).rejects.toThrowError(err);
+      await expect(
+        editProgramCourse({ key: 'property' }, { key: 'property' })
+      ).rejects.toThrowError(err);
     });
   });
 });

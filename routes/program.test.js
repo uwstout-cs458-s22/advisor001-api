@@ -723,3 +723,67 @@ describe('GET /program/:id/course/...', () => {
     });
   });
 });
+
+describe('PUT /:program/course/', () => {
+  const dummyCourse = dataForGetCourse(1)[0];
+  const dummyProgram = dataForGetProgram(1)[0];
+  const dummyProgramCourse = {
+    id: '1',
+    program: dummyProgram.id,
+    requires: dummyCourse.id,
+  };
+
+  beforeEach(() => {
+    auth.loginAs(samplePrivilegedUser());
+    Program.resetAllMocks();
+    ProgramCourse.resetAllMocks();
+  });
+
+  test('Missing parameters', async () => {
+    // Set-up
+    ProgramCourse.findOne.mockResolvedValueOnce({});
+
+    // Test
+    const response = await request(app)
+      .put(`/program/${dummyProgramCourse.program}/course/`)
+      .send({});
+
+    // Check
+    expect(response.statusCode).toBe(400);
+  });
+
+  test('Program Course does not exist', async () => {
+    // Set-up
+    const newRequires = '2';
+    ProgramCourse.findOne.mockResolvedValueOnce({});
+    ProgramCourse.editProgramCourse.mockResolvedValue({});
+
+    // Test
+    const response = await request(app).put('/program/1/course/1/').send({ requires: newRequires });
+
+    // Check
+    expect(response.statusCode).toBe(404);
+  });
+
+  test('Succesful edit', async () => {
+    // Set-up
+    const newChange = { requires: '2' };
+    const expectedReturn = Object.assign(dummyProgramCourse, newChange);
+    ProgramCourse.findOne.mockResolvedValueOnce(dummyProgramCourse);
+    ProgramCourse.editProgramCourse.mockResolvedValueOnce(
+      dummyProgramCourse.id,
+      newChange.requires
+    );
+
+    // Test
+    const response = await request(app)
+      .put(`/program/${dummyProgramCourse.program}/course/${dummyProgramCourse.requires}/`)
+      .send(newChange);
+
+    // Check
+    expect(response.statusCode).toBe(200);
+    for (const key of Object.keys(response.body)) {
+      expect(response.body).toHaveProperty(key, expectedReturn[key]);
+    }
+  });
+});
