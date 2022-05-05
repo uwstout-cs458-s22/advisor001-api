@@ -381,7 +381,7 @@ describe('POST /program', () => {
       expect(response.headers['content-type']).toEqual(expect.stringContaining('json'));
     });
 
-    test('should respond with a 200 status code when program is succesfully created', async () => {
+    test('should respond with a 201 status code when program is succesfully created', async () => {
       // Set-up
       const row = dataForGetProgram(1)[0];
       const requestParams = {
@@ -395,7 +395,7 @@ describe('POST /program', () => {
       const response = await request(app).post('/program').send(requestParams);
 
       // Check
-      expect(response.statusCode).toBe(200);
+      expect(response.statusCode).toBe(201);
     });
 
     test('should respond with 409: Conflict when program exists', async () => {
@@ -418,23 +418,6 @@ describe('POST /program', () => {
       expect(Program.findOne.mock.calls[0][0]).toHaveProperty('title', row.title);
       expect(Program.findOne.mock.calls[0][0]).toHaveProperty('description', row.description);
       expect(Program.findOne.mock.calls[0][0]).not.toHaveProperty('id');
-    });
-
-    test('should respond with a 500 status code when an Program.create error occurs', async () => {
-      // Set-up
-      const row = dataForGetProgram(1)[0];
-      const requestParams = {
-        title: row.title,
-        description: row.description,
-      };
-      Program.findOne.mockResolvedValueOnce({});
-      Program.addProgram.mockResolvedValueOnce(null);
-
-      // Test
-      const response = await request(app).post('/program').send(requestParams);
-
-      // Check
-      expect(response.statusCode).toBe(500);
     });
 
     test('should respond with a 500 status code when create database error occurs', async () => {
@@ -676,7 +659,7 @@ describe('GET /program/:id/course/...', () => {
     });
   });
 
-  describe('DELETE /:program/course/:requires', () => {
+  describe('DELETE /program/:program/course/:requires', () => {
     const dummy = {
       id: '123',
       program: '456',
@@ -724,7 +707,7 @@ describe('GET /program/:id/course/...', () => {
   });
 });
 
-describe('PUT /:program/course/', () => {
+describe('PUT /program/:program/course/', () => {
   const dummyCourse = dataForGetCourse(1)[0];
   const dummyProgram = dataForGetProgram(1)[0];
   const dummyProgramCourse = {
@@ -785,5 +768,148 @@ describe('PUT /:program/course/', () => {
     for (const key of Object.keys(response.body)) {
       expect(response.body).toHaveProperty(key, expectedReturn[key]);
     }
+  });
+});
+
+describe('POST /program/:program/course/', () => {
+  beforeEach(ProgramCourse.resetAllMocks);
+  beforeEach(() => auth.loginAs(samplePrivilegedUser()));
+
+  const requestParams = {
+    program: '123',
+    requires: '456',
+  };
+
+  const doReq = () =>
+    request(app).post(`/program/${requestParams.program}/course/${requestParams.requires}`).send();
+
+  describe('given program details', () => {
+    test('should call both ProgramCourse.findOne and ProgramCourse.addProgramCourse', async () => {
+      // Set-up
+
+      ProgramCourse.findOne.mockResolvedValueOnce({});
+      ProgramCourse.addProgramCourse.mockResolvedValueOnce(
+        Object.assign({ id: 789 }, requestParams)
+      );
+
+      // Test
+      const result = await doReq();
+
+      // Check
+      expect(result.statusCode).toBe(201);
+      expect(ProgramCourse.findOne).toBeCalled();
+      expect(ProgramCourse.findOne.mock.calls[0]).toHaveLength(1);
+      expect(ProgramCourse.addProgramCourse.mock.calls).toHaveLength(1);
+      expect(ProgramCourse.addProgramCourse.mock.calls[0]).toHaveLength(1);
+      for (const key in Object.keys(requestParams)) {
+        // Check that the values from the post are the same as from the mocked findOne and addProgram
+        expect(ProgramCourse.addProgramCourse.mock.calls[0][0]).toHaveProperty(
+          key,
+          requestParams[key]
+        );
+        expect(ProgramCourse.findOne.mock.calls[0][0]).toHaveProperty(key, requestParams[key]);
+        expect(result.body).toHaveProperty(key, requestParams[key]);
+      }
+      expect(result.body).toHaveProperty('id', 789);
+    });
+
+    test('should respond with a json object containg the program details', async () => {
+      // Set-up
+      ProgramCourse.findOne.mockResolvedValueOnce({});
+      ProgramCourse.addProgramCourse.mockResolvedValueOnce(
+        Object.assign({ id: 789 }, requestParams)
+      );
+
+      // Test
+      const result = await doReq();
+
+      // Check
+      expect(result.body.program).toBe(requestParams.program);
+      expect(result.body.requires).toBe(requestParams.requires);
+      expect(result.body.id).toBe(789);
+    });
+
+    test('should specify json in the content type header', async () => {
+      // Set-up
+      ProgramCourse.findOne.mockResolvedValueOnce({});
+      ProgramCourse.addProgramCourse.mockResolvedValueOnce(requestParams);
+
+      // Test
+      const response = await doReq();
+
+      // Check
+      expect(response.headers['content-type']).toEqual(expect.stringContaining('json'));
+    });
+
+    test('should respond with a 201 status code when program is succesfully created', async () => {
+      // Set-up
+      ProgramCourse.findOne.mockResolvedValueOnce({});
+      ProgramCourse.addProgramCourse.mockResolvedValueOnce(
+        Object.assign({ id: 789 }, requestParams)
+      );
+
+      // Test
+      const response = await doReq();
+
+      // Check
+      expect(response.statusCode).toBe(201);
+    });
+
+    test('should respond with 409: Conflict when program exists', async () => {
+      // Set-up
+      ProgramCourse.findOne.mockResolvedValueOnce(Object.assign({ id: 789 }, requestParams));
+      ProgramCourse.addProgramCourse.mockResolvedValueOnce(
+        Object.assign({ id: 789 }, requestParams)
+      );
+
+      // Test
+      const response = await doReq();
+
+      // Check
+      expect(response.statusCode).toBe(409);
+      expect(ProgramCourse.findOne).toBeCalled();
+      expect(ProgramCourse.addProgramCourse).not.toBeCalled();
+      expect(ProgramCourse.findOne.mock.calls[0][0]).toHaveProperty(
+        'program',
+        requestParams.program
+      );
+      expect(ProgramCourse.findOne.mock.calls[0][0]).toHaveProperty(
+        'requires',
+        requestParams.requires
+      );
+      expect(ProgramCourse.findOne.mock.calls[0][0]).not.toHaveProperty('id', 789);
+    });
+
+    test('should respond with a 500 status code when an ProgramCourse.create error occurs', async () => {
+      ProgramCourse.findOne.mockResolvedValueOnce({});
+      ProgramCourse.addProgramCourse.mockRejectedValueOnce(HttpError(500, 'a testing error'));
+
+      // Test
+      const response = await doReq();
+
+      // Check
+      expect(response.statusCode).toBe(500);
+      expect(response.body.error.message).toBe('a testing error');
+    });
+  });
+
+  describe('given empty dictionary', () => {
+    test('should respond with a 400 status code', async () => {
+      // Test
+      const response = await request(app).post('/program/0/course/').send({});
+
+      // Check
+      expect(response.statusCode).toBe(400);
+    });
+  });
+
+  describe('given empty string', () => {
+    test('should respond with a 400 status code', async () => {
+      // Test
+      const response = await request(app).post('/program').send('');
+
+      // Check
+      expect(response.statusCode).toBe(400);
+    });
   });
 });
