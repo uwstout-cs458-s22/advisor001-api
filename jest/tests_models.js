@@ -121,6 +121,7 @@ module.exports = {
       findOne: jest.fn(),
       findAll: jest.fn(),
       addProgramCourse: jest.fn(),
+      deleteProgramCourse: jest.fn(),
     };
     // do the mock
     jest.mock('../models/ProgramCourse', () => {
