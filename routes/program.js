@@ -149,5 +149,27 @@ module.exports = () => {
     }
   });
 
+  router.delete(
+    '/:program(\\d+)/course/:requires(\\d+)?',
+    authorizeSession,
+    setClearanceLevel('director'),
+    async (req, res, next) => {
+      try {
+        const { program, requires } = req.params;
+        let programCourse = await ProgramCourse.findOne(req.params);
+        if (isEmpty(programCourse)) {
+          throw new HttpError.NotFound();
+        }
+
+        programCourse = await ProgramCourse.deleteProgramCourse(program, requires);
+
+        res.status(200);
+        res.send();
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
   return router;
 };

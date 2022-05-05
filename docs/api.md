@@ -60,3 +60,9 @@ Every request received by the API must also be accompanied with the Stytch sessi
 [/program POST](program_post.md)
 
 [/program DELETE](program_delete.md)
+
+### Program Course
+
+[/program_course GET](program_course_get.md)
+[/program_course POST](program_course_post.md)
+[/program_course DELETE](program_course_delete.md)

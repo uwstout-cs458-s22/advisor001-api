@@ -56,8 +56,23 @@ async function addProgramCourse(properties) {
   throw HttpError(500, 'Unexpected DB Condition, insert sucessful with no returned record');
 }
 
+async function deleteProgramCourse(programId, courseId) {
+  if (!programId || isEmpty(programId) || !courseId || isEmpty(courseId)) {
+    throw HttpError(400, 'Missing Parameters');
+  }
+
+  const criteria = { program: programId, requires: courseId };
+  const { text, params } = whereParams(criteria);
+
+  const res = await db.query(`DELETE FROM "program_course" ${text};`, params);
+  if (res.rows.length > 0) {
+    return true;
+  }
+}
+
 module.exports = {
   findOne,
   findAll,
   addProgramCourse,
+  deleteProgramCourse,
 };
