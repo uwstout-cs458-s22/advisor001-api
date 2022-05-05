@@ -1,5 +1,6 @@
 const { isEmpty } = require('../services/utils');
-const { whereParams, insertValues } = require('../services/sqltools');
+const { whereParams, insertValues, updateValues } = require('../services/sqltools');
+const { isNumber } = require('../services/utils');
 const { db } = require('../services/database');
 const log = require('loglevel');
 const HttpError = require('http-errors');
@@ -70,9 +71,36 @@ async function deleteProgramCourse(programId, courseId) {
   }
 }
 
+/**
+ * Edits a program course in the database
+ *
+ * @param  {} programId
+ * @param  {} courseId
+ *
+ * @returns {Program}
+ *
+ */
+async function editProgramCourse(programId, courseId) {
+  // check the params are not nullable
+  if (!programId || isEmpty(programId) || !courseId || isEmpty(courseId))
+    throw HttpError.BadRequest('Missing Parameters');
+
+  // validate programId
+  if (!isNumber(programId) || !isNumber(courseId)) throw HttpError.BadRequest('Invalid Parameters');
+
+  // update programId
+  const { text, params } = updateValues({ program: programId }, { requires: courseId });
+  const res = await db.query(`UPDATE "program_course" ${text} RETURNING *;`, params);
+
+  if (res.rows.length > 0) {
+    return res.rows[0];
+  }
+}
+
 module.exports = {
   findOne,
   findAll,
   addProgramCourse,
   deleteProgramCourse,
+  editProgramCourse,
 };
