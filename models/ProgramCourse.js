@@ -74,22 +74,21 @@ async function deleteProgramCourse(programId, courseId) {
 /**
  * Edits a program course in the database
  *
- * @param  {} programId
- * @param  {} courseId
+ * @param  {} id
+ * @param  {} newRequires
  *
  * @returns {Program}
  *
  */
-async function editProgramCourse(programId, courseId) {
+async function editProgramCourse(id, newRequires) {
   // check the params are not nullable
-  if (!programId || isEmpty(programId) || !courseId || isEmpty(courseId))
-    throw HttpError.BadRequest('Missing Parameters');
+  if (!id || !newRequires) throw HttpError.BadRequest('Missing Parameters');
 
   // validate programId
-  if (!isNumber(programId) || !isNumber(courseId)) throw HttpError.BadRequest('Invalid Parameters');
+  if (!isNumber(id) || !isNumber(newRequires)) throw HttpError.BadRequest('Invalid Parameters');
 
   // update programId
-  const { text, params } = updateValues({ program: programId }, { requires: courseId });
+  const { text, params } = updateValues({ id: id }, { requires: newRequires });
   const res = await db.query(`UPDATE "program_course" ${text} RETURNING *;`, params);
 
   if (res.rows.length > 0) {

@@ -150,7 +150,6 @@ describe('Tests for programs course', () => {
       await expect(editProgramCourse(false, false)).rejects.toThrowError(err);
       await expect(editProgramCourse(undefined, undefined)).rejects.toThrowError(err);
       await expect(editProgramCourse('', '')).rejects.toThrowError(err);
-      await expect(editProgramCourse({}, {})).rejects.toThrowError(err);
       await expect(editProgramCourse()).rejects.toThrowError(err);
     });
 
