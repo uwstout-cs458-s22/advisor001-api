@@ -4,7 +4,7 @@ Deletes a specified course, selected by id.
 
 - **URL**
 
-  /users/
+  /course/
 
 - **Method**
 
